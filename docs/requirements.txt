@@ -1,1 +1,6 @@
 sphinx-argparse
+didcomm
+peerdid
+matplotlib
+qrcode
+requests
