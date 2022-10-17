@@ -3,7 +3,7 @@
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-21.11";
   outputs = { self, nixpkgs }: rec {
     nixosConfigurations.rpi2 = nixpkgs.lib.nixosSystem {
-      system = "armv7l-linux";
+      system = "x86_64-linux";
       modules = [
         "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-raspberrypi.nix"
         {

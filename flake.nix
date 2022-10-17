@@ -25,8 +25,22 @@
           requirements = builtins.readFile ./requirements.txt;
         };
         mpyc = pkgs.python3Packages.buildPythonPackage {
-          name = "mpyc";
+          # name = "mpyc";
+          pname = "mpyc";
+          version = "0.8.8";
           src = ./.;
+        };
+        mpycDocker = mach-nix.lib.${system}.buildPythonPackage {
+          # name = "mpyc";
+          pname = "mpyc";
+          version = "0.8.8";
+          src = ./.;
+        };
+
+        pythonDockerEnv = mach-nix.lib."${system}".mkPython {
+          requirements = builtins.readFile ./requirements.txt;
+
+          packagesExtra = [ mpycDocker ];
         };
 
         baseImage = pkgs.dockerTools.pullImage {
@@ -38,6 +52,30 @@
           finalImageName = "nix";
         };
       in {
+
+        packages.image = pkgs.dockerTools.buildLayeredImage {
+          name = "mpyc-demo";
+          tag = "0.0.1";
+          created = builtins.substring 0 8 self.lastModifiedDate;
+
+          contents = with pkgs;
+            [
+              bashInteractive
+              coreutils-full
+              which
+              curl
+              less
+              wget
+              man
+              findutils
+              cacert.out
+              gnugrep
+              gzip
+              gnutar
+              nix
+            ] ++ [ pythonEnv ./. mpyc ];
+        };
+
         packages.docker = pkgs.dockerTools.buildLayeredImage {
           name = "mpyc-demo";
           tag = "0.0.1";
@@ -65,19 +103,78 @@
                 # nix
               ] ++ [
                 pythonEnv
-                (pkgs.python3Packages.buildPythonPackage {
-                  name = "mpyc";
-                  src = ./.;
-                })
+                # mpyc
                 ./.
                 # mpyc
               ];
           };
 
           config = {
+            # Cmd = [ "bash" "-c" "python" "./demos/secretsanta.py" ];
+            # WorkingDir = "/home";
+            # Entrypoint = [ "/bin/bash" "-c" ];
+            # Env = [ "SHELL=/bin/bash" ];
+          };
+        };
+
+        packages.docker2 = pkgs.dockerTools.buildLayeredImage {
+          name = "mpyc-demo";
+          tag = "0.0.1";
+          created = builtins.substring 0 8 self.lastModifiedDate;
+          # fromImage = nixImage.hydraJobs.dockerImage;
+          fromImage = baseImage;
+
+          contents = [
+            pkgs.bashInteractive
+            pythonDockerEnv
+            (pkgs.buildEnv {
+              name = "demos";
+              paths = [ ./. ];
+              pathsToLink = [ "/demos" ];
+            })
+          ];
+
+          config = {
             Cmd = [ "bash" "-c" "python" "./demos/secretsanta.py" ];
-            WorkingDir = "/home";
             Entrypoint = [ "/bin/bash" "-c" ];
+          };
+        };
+
+        packages.docker3 = pkgs.dockerTools.buildLayeredImage {
+          name = "mpyc-demo";
+          tag = "0.0.1";
+          created = builtins.substring 0 8 self.lastModifiedDate;
+          # fromImage = nixImage.hydraJobs.dockerImage;
+          fromImage = baseImage;
+          # contents = pkgs.buildEnv {
+          #   name = "image-root";
+          #   pathsToLink = [ "/bin" ];
+          #   paths = with pkgs;
+          #     [
+          #       bashInteractive
+
+          #       coreutils-full
+          #       which
+          #       curl
+          #       less
+          #       wget
+          #       man
+          #       findutils
+          #       cacert.out
+          #       gnugrep
+          #       gzip
+          #       gnutar
+          #       nix
+          #     ] ++ [
+          #       pythonEnv
+          #       # mpyc
+          #       ./.
+          #       # mpyc
+          #     ];
+          # };
+
+          config = {
+            Cmd = [ "bash" "-c" "python" "./demos/secretsanta.py" ];
             # Env = [ "SHELL=/bin/bash" ];
           };
         };
