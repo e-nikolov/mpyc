@@ -9,6 +9,10 @@
         {
           nixpkgs.config.allowUnsupportedSystem = true;
           nixpkgs.crossSystem.system = "armv7l-linux";
+          imports = [
+            "${nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
+          ];
+
           # ... extra configs as above
         }
       ];

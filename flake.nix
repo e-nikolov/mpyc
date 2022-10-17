@@ -43,41 +43,48 @@
           tag = "0.0.1";
           created = builtins.substring 0 8 self.lastModifiedDate;
           # fromImage = nixImage.hydraJobs.dockerImage;
-          contents = with pkgs;
-            [
-              # bashInteractive
-              # coreutils-full
-              # which
-              # curl
-              # less
-              # wget
-              # man
-              # findutils
-              # cacert.out
-              # gnugrep
-              # gzip
-              # gnutar
-              # nix
-            ] ++ [
-              pythonEnv
-              # mpyc
-              (pkgs.python3Packages.buildPythonPackage {
-                name = "mpyc";
-                src = ./.;
-              })
-            ];
+          fromImage = baseImage;
+          contents = pkgs.buildEnv {
+            name = "image-root";
+            pathsToLink = [ "/bin" ];
+            paths = with pkgs;
+              [
+                bashInteractive
+
+                # coreutils-full
+                # which
+                # curl
+                # less
+                # wget
+                # man
+                # findutils
+                # cacert.out
+                # gnugrep
+                # gzip
+                # gnutar
+                # nix
+              ] ++ [
+                pythonEnv
+                (pkgs.python3Packages.buildPythonPackage {
+                  name = "mpyc";
+                  src = ./.;
+                })
+                ./.
+                # mpyc
+              ];
+          };
 
           config = {
             Cmd = [ "bash" "-c" "python" "./demos/secretsanta.py" ];
             WorkingDir = "/home";
+            Entrypoint = [ "/bin/bash" "-c" ];
             # Env = [ "SHELL=/bin/bash" ];
-            # Entrypoint = [ "/bin/bash" "-c" ];
           };
         };
 
         devShell = pkgs.mkShell {
 
-          buildInputs = [ pythonEnv mpyc ];
+          buildInputs = [ pythonEnv mpyc pkgs.ansible ];
           # shellHook = "";
         };
       });
