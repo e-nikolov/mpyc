@@ -3128,13 +3128,6 @@ def setup():
     mpyc.statistics.runtime = rt
     return rt
 
-
-
-print ("++++++++++++++++++++++++++++")
-print ("++++++++++++++++++++++++++++")
-print ("++++++++++++++++++++++++++++")
-print ("++++++++++++++++++++++++++++")
-
 if os.getenv('READTHEDOCS') != 'True':
     try:
         logging.debug('Run MPyC runtime.setup()')

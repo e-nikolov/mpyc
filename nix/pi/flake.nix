@@ -19,4 +19,4 @@
     };
     images.rpi2 = nixosConfigurations.rpi2.config.system.build.sdImage;
   };
-}
+} gst
