@@ -14,7 +14,6 @@ from peerdid.did_doc import DIDDocPeerDID
 from peerdid.types import VerificationMaterialAuthentication, VerificationMethodTypeAuthentication, VerificationMaterialAgreement, VerificationMethodTypeAgreement, VerificationMaterialFormatPeerDID
 from peerdid.core.did_doc_types import DIDCommServicePeerDID
 
-
 class DIDResolverPeerDID(DIDResolver):
     async def resolve(self, did: DID) -> DIDDoc:
         did_doc_json = peer_did.resolve_peer_did(did, format=VerificationMaterialFormatPeerDID.JWK)
