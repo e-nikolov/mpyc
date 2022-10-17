@@ -35,7 +35,7 @@
         };
       in {
         packages.default = pkgs.dockerTools.buildLayeredImage {
-          name = "enikolov:mpyc-demo";
+          name = "enikolov/mpyc-demo";
           tag = "0.0.1";
           created = builtins.substring 0 8 self.lastModifiedDate;
           fromImage = baseImage;
@@ -55,7 +55,7 @@
           ];
 
           config = {
-            Cmd = [ "bash" "-c" "python" "./demos/secretsanta.py" ];
+            Cmd = [ "python ./demos/secretsanta.py" ];
             Entrypoint = [ "/bin/bash" "-c" ];
           };
         };
@@ -64,6 +64,20 @@
           inherit (mpyc) pname version src;
           propagatedBuildInputs =
             [ (mach-nix.lib.${system}.mkPython { inherit requirements; }) ];
+        };
+
+        devShells.dev = pkgs.mkShell {
+          buildInputs =
+            [ (mach-nix.lib.${system}.mkPython { inherit requirements; }) ];
+
+          shellHook = ''
+            echo 456
+            pip install -e .
+          '';
+          postShellHook = ''
+            echo 123
+            pip install -e .
+          '';
         };
 
         devShells.ops = pkgs.mkShell { buildInputs = [ pkgs.ansible ]; };

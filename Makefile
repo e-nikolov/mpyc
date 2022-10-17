@@ -1,13 +1,17 @@
+DEFAULT_SHELL = $(shell getent passwd ${USER} | awk -F: '{print $$NF}' )
 
 dev:
-	nix develop
+	nix develop --command "${DEFAULT_SHELL}"
 
 ops:
-	nix develop .#ops
+	nix develop .#ops --command "${DEFAULT_SHELL}"
 
 demo:
 	cd ./demos && ./run-all.sh
 
 image:
-	docker load < $(nix build .#docker --print-out-paths --no-link)
-	docker push e-nikolov:mpyc-demo:v0.0.1
+	docker load < $(shell nix build --print-out-paths --no-link)
+	docker push enikolov/mpyc-demo:0.0.1
+
+run-image:
+	docker run enikolov/mpyc-demo:0.0.1
