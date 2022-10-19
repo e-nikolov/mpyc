@@ -1,15 +1,22 @@
-python helloworld.py "$@"
-python oneliners.py "$@"
-python ot.py "$@"
-python unanimous.py "$@"
-python parallelsort.py "$@"
-python sort.py "$@"
-python indextounitvector.py "$@"
-python secretsanta.py "$@"
-python id3gini.py "$@"
-python lpsolver.py "$@"
-python lpsolverfxp.py "$@"
-python aes.py "$@" -1
-python onewayhashchains.py --no-barrier "$@"
-python elgamal.py -b2 -o3 "$@"
-python dsa.py --no-barrier "$@"
+run () {
+    cmd="python $@"
+    echo $cmd
+    $cmd
+}
+
+run helloworld.py "$@"
+run helloworld.py "$@"
+run oneliners.py "$@"
+run ot.py "$@"
+run unanimous.py "$@"
+run parallelsort.py "$@"
+run sort.py "$@"
+run indextounitvector.py "$@"
+run secretsanta.py "$@"
+run id3gini.py "$@"
+run lpsolver.py "$@"
+run lpsolverfxp.py "$@"
+run aes.py "$@" -1
+run onewayhashchains.py --no-barrier "$@"
+run elgamal.py -b2 -o3 "$@"
+run dsa.py --no-barrier "$@"
