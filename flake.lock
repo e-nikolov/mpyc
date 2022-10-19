@@ -44,17 +44,18 @@
         ]
       },
       "locked": {
-        "lastModified": 1662635943,
-        "narHash": "sha256-1OBBlBzZ894or8eHZjyADOMnGH89pPUKYGVVS5rwW/0=",
-        "owner": "DavHau",
+        "lastModified": 1666186424,
+        "narHash": "sha256-i1sFx3rTQdgUT2gs69s9X1yr7BB1nfux7i1fA5zKzCU=",
+        "owner": "e-nikolov",
         "repo": "mach-nix",
-        "rev": "65266b5cc867fec2cb6a25409dd7cd12251f6107",
+        "rev": "c3b3ec722285feeb1277c9fb5e27f95e1175b52f",
         "type": "github"
       },
       "original": {
-        "id": "mach-nix",
+        "owner": "e-nikolov",
         "ref": "master",
-        "type": "indirect"
+        "repo": "mach-nix",
+        "type": "github"
       }
     },
     "nixImage": {

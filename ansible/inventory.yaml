@@ -5,7 +5,6 @@ virtualmachines:
     home-wsl:
       ansible_host: enikolov@home-wsl.emil-e-nikolov.gmail.com.beta.tailscale.net
       ansible_port: 2222
-      
     pi-hole:
       ansible_host: pi@pi-hole.emil-e-nikolov.gmail.com.beta.tailscale.net
   
