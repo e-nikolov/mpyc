@@ -13,5 +13,9 @@ image:
 	docker load < $(shell nix build --print-out-paths --no-link)
 	docker push enikolov/mpyc-demo:0.0.1
 
+image-arm:
+	docker load < $(shell nix build .#arm --print-out-paths --no-link)
+	docker push enikolov/mpyc-demo-arm:0.0.1
+
 run-image:
 	docker run enikolov/mpyc-demo:0.0.1
