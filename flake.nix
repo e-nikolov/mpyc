@@ -22,8 +22,8 @@
   };
 
   outputs = { self, nixpkgs, flake-utils, mach-nix, poetry2nix, ... }:
-    # flake-utils.lib.eachSystem (flake-utils.lib.defaultSystems ++ [ flake-utils.lib.system.armv7l-linux ])
-    flake-utils.lib.eachSystem (flake-utils.lib.defaultSystems)
+    flake-utils.lib.eachSystem (flake-utils.lib.defaultSystems ++ [ flake-utils.lib.system.armv7l-linux ])
+      # flake-utils.lib.eachSystem (flake-utils.lib.defaultSystems)
       (system:
         let
 
