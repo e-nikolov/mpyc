@@ -4,19 +4,19 @@
   inputs = rec {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    pypi-deps-db = { url = "github:DavHau/pypi-deps-db/master"; };
+    # pypi-deps-db = { url = "github:DavHau/pypi-deps-db/master"; };
     mach-nix = {
-      url = "github:e-nikolov/mach-nix/master";
+      url = "mach-nix/master";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
-      inputs.pypi-deps-db.follows = "pypi-deps-db";
+      # inputs.pypi-deps-db.follows = "pypi-deps-db";
     };
-    nixImage.url = "github:nixos/nix/master";
+    # nixImage.url = "github:nixos/nix/master";
   };
 
-  outputs = { self, nixpkgs, flake-utils, mach-nix, pypi-deps-db, nixImage }:
-
-    flake-utils.lib.eachSystem (flake-utils.lib.defaultSystems ++ [ flake-utils.lib.system.armv7l-linux ])
+  outputs = { self, nixpkgs, flake-utils, mach-nix }:
+    # flake-utils.lib.eachSystem (flake-utils.lib.defaultSystems ++ [ flake-utils.lib.system.armv7l-linux ])
+    flake-utils.lib.eachSystem (flake-utils.lib.defaultSystems)
       (system:
         let
 
@@ -60,7 +60,12 @@
             '';
           };
 
-          devShells.ops = pkgs.mkShell { buildInputs = [ pkgs.ansible ]; };
+          devShells.ops = pkgs.mkShell {
+            buildInputs = [
+              pkgs.ansible
+              pkgs.nixops_unstable
+            ];
+          };
 
           packages.default = pkgs.dockerTools.buildLayeredImage {
             name = "enikolov/mpyc-demo";
