@@ -30,6 +30,25 @@ See `demos` for Python programs and Jupyter notebooks with lots of example code.
 See [Read the Docs](https://mpyc.readthedocs.io/) for `Sphinx`-based documentation, including an overview of the `demos`.\
 See [GitHub Pages](https://lschoe.github.io/mpyc/) for `pydoc`-based documentation.
 
+## Building the docker images
+
+### Using docker buildx
+
+Setup for multi-arch builds:
+
+```shell
+docker buildx create --name mybuilder --driver docker-container --bootstrap
+docker run --privileged --rm tonistiigi/binfmt --install all
+docker buildx use mybuilder
+```
+
+Building the images:
+
+```shell
+	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 . --tag <image-tag> --push
+```
+
+
 ## Notes:
 
 1. Python 3.8+ (following NumPy's [deprecation policy](https://numpy.org/neps/nep-0029-deprecation_policy.html#support-table)).

@@ -1,3 +1,4 @@
+# https://docs.docker.com/build/building/multi-platform/
 FROM --platform=$BUILDPLATFORM python:3.10.7-slim-buster
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -10,13 +11,6 @@ ENV POETRY_HOME=/opt/poetry
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 ENV PATH="$POETRY_HOME/bin:$PATH"
 RUN python -c 'from urllib.request import urlopen; print(urlopen("https://install.python-poetry.org").read().decode())' | python -
-
-# RUN curl -sSL https://install.python-poetry.org | python3 -
-RUN echo $PATH
-RUN ls /opt/
-# RUN which poetry
-# RUN poetry install
-
 
 COPY . /mpyc
 
