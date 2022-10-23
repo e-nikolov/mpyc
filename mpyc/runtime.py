@@ -35,8 +35,6 @@ Future = asyncio.Future
 mpc_coro = asyncoro.mpc_coro
 mpc_coro_no_pc = asyncoro._mpc_coro_no_pc
 
-print("::::::::::::::::::::::::::")
-
 class Runtime:
     """MPyC runtime secure against passive attacks.
 

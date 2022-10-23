@@ -1,8 +1,0 @@
-numpy
-gmpy2
-qrcode
-matplotlib
-didcomm==0.3.0
-peerdid==0.4.0
-requests
-pip

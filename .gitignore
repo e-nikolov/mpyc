@@ -105,3 +105,4 @@ ENV/
 # nix
 
 result
+secrets.json

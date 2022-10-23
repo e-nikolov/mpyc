@@ -11,11 +11,14 @@ demo:
 
 image:
 	docker load < $(shell nix build --print-out-paths --no-link)
-	docker push enikolov/mpyc-demo:0.0.1
+	docker push enikolov/mpyc-demo:nix-v0.0.1
 
-image-arm:
+image-nix-arm:
 	docker load < $(shell nix build .#arm --print-out-paths --no-link)
-	docker push enikolov/mpyc-demo-arm:0.0.1
+	docker push enikolov/mpyc-demo:nix-armv7l-v0.0.1
+
+image-docker:
+	docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 . --tag enikolov/mpyc-demo:slim-v0.0.1 --push
 
 run-image:
-	docker run enikolov/mpyc-demo:0.0.1
+	docker run enikolov/mpyc-demo:nix-v0.0.1
