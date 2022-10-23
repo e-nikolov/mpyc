@@ -31,10 +31,11 @@
         let
 
           # nixpkgs.crossSystem.system = "armv7l-linux";
-          # pkgs = nixpkgs.legacyPackages.${system};
-          armPkgs = pkgs.pkgsCross.raspberryPi;
+          pkgs = nixpkgs.legacyPackages.${system};
+          # armPkgs = pkgs.pkgsCross.raspberryPi;
+          armPkgs = pkgs.pkgsCross.armv7l-hf-multiplatform;
 
-          pkgs = import nixpkgs { inherit system; overlays = [ poetry2nix.overlay ]; };
+          # pkgs = import nixpkgs { inherit system; overlays = [ poetry2nix.overlay ]; };
 
           mpyc = {
             name = "mpyc";
@@ -91,112 +92,76 @@
               contents = pkgs.buildEnv
                 {
                   name = "zzz-python-env-123";
-                  # venvDir = "./.venv";
                   paths = [
-                    # (mach-nix.lib.armv7l-linux.mkPython {
-                    #   inherit requirements;
-                    #   packagesExtra =
-                    #     [ (mach-nix.lib.armv7l-linux.buildPythonPackage mpyc) ];
+                    (pkgs.poetry2nix.mkPoetryEnv
+                      # (pkgs.poetry2nix.mkPoetryApplication
+                      # (pkgs.poetry2nix.mkPoetryPackages
+                      {
+                        python = pkgs.python3;
+                        projectDir = ./.;
+
+                        editablePackageSources = {
+                          # mpyc = if builtins.getEnv "PWD" == "" then ./. else builtins.getEnv "PWD";
+                          mpyc = null;
+                        };
+                        extraPackages = (ps: [
+                          (pkgs.python3Packages.buildPythonPackage
+                            {
+                              # inherit (mpyc) pname version src;
+                              name = "mpyc";
+                              src = ./.;
+                            })
+                        ]);
+
+                        overrides = pkgs.poetry2nix.overrides.withDefaults (
+                          self: super: {
+                            didcomm = super.didcomm.overrideAttrs (
+                              old: {
+                                buildInputs = old.buildInputs ++ [ super.setuptools ];
+                              }
+                            );
+                            peerdid = super.peerdid.overrideAttrs (
+                              old: {
+                                buildInputs = old.buildInputs ++ [ super.setuptools ];
+                              }
+                            );
+                            gmpy2 = pkgs.python3Packages.gmpy2;
+                            # gmpy2 = super.gmpy2.overrideAttrs (
+                            #   old: {
+                            #     buildInputs = old.buildInputs ++ [ pkgs.gmp.dev pkgs.mpfr.dev pkgs.libmpc ];
+                            #   }
+                            # );
+                          }
+                        );
+                      })
+                    # pkgs.poetry
+                    # # pkgs.python3
+                    # pkgs.python3Packages.pip
+                    # # pkgs.hello
+                    # pkgs.gnugrep
+                    # # pkgs.python3
+                    # pkgs.coreutils
+                    # pkgs.bashInteractive
+                    # pkgs.nix
+                    # pkgs.which
+                    # pkgs.curl
+                    # pkgs.gnumake
+                    # pkgs.zsh
+                    # pkgs.fzf
+                    # pkgs.fzf-zsh
+                    # pkgs.gawk
+                    # pkgs.unixtools.nettools
+                    # pkgs.unixtools.ping
+                    # pkgs.unixtools.top
+                    # pkgs.wget
+                    # pkgs.htop
+
+
+                    # (pkgs.buildEnv {
+                    #   name = "demos";
+                    #   paths = [ ./. ];
+                    #   pathsToLink = [ "/demos" ];
                     # })
-
-
-                    (pkgs.python3.withPackages (ps: [
-                      (pkgs.python3Packages.buildPythonPackage
-                        {
-                          # inherit (mpyc) pname version src;
-                          name = "mpyccc";
-                          src = ./.;
-                          propagatedBuildInputs = [
-                            # ps.poetry
-                            ps.venvShellHook
-
-                            (pkgs.poetry2nix.mkPoetryApplication
-                              {
-                                projectDir = ./.;
-
-                                # editablePackageSources = {
-                                #   mpyc = ./.;
-                                # };
-                              })
-                          ];
-
-                          # format = "pyproject";
-
-                          postVenvCreation = ''
-                            unset SOURCE_DATE_EPOCH
-                            pip install -r requirements.txt
-                          '';
-
-                          postBuild = ''
-                            echo env+++++++++++++++++
-                            env
-                            echo env-----------------
-                            ls -al
-                            pwd
-                            # touch /debug.txt
-                            # poetry
-                            # touch ~/debug.txt
-                            echo INSTALLING
-                            echo zfkjsdlfkjsdkf23123
-                            echo zfkjsdlfkjsdkf23121
-                            echo zfkjsdlfkjsdkf23121
-                            echo $PATH
-                            # echo $PYTHONPATH
-                            echo $self
-                            echo $mpyc
-                            # which poetry
-                            # poetry install
-                            export DEBUG1=$self
-                            export DEBUG2=$mpyc
-                            export DEBUG3=$PYTHONPATH
-                            export DEBUG4="1234"
-                            # export PYTHONPATH=./
-                          '';
-
-                          postShellHook = ''
-                            echo zfkjsdlfkjsdkf23124
-                            echo zfkjsdlfkjsdkf23124
-                            echo zfkjsdlfkjsdkf23125
-                            touch ~/debug.txt
-                            echo INSTALLING >> ~/debug.txt
-                            poetry install >> ~/debug.txt
-                            echo $PYTHONPATH >> ~/debug.txt
-                            echo $mpyc >> ~/debug.txt
-                            export DEBUG1=$self
-                            export DEBUG2=$mpyc
-                            export DEBUG3=$PYTHONPATH
-                            export PYTHONPATH=./
-                          '';
-                        })
-                    ]))
-
-                    # pkgs.hello
-                    pkgs.gnugrep
-                    # pkgs.python3
-                    pkgs.coreutils
-                    pkgs.bashInteractive
-                    pkgs.nix
-                    pkgs.which
-                    pkgs.curl
-                    pkgs.python3Packages.pip
-                    pkgs.gnumake
-                    pkgs.zsh
-                    pkgs.fzf
-                    pkgs.fzf-zsh
-                    pkgs.gawk
-                    pkgs.poetry
-                    pkgs.unixtools.nettools
-                    pkgs.unixtools.ping
-                    pkgs.unixtools.top
-                    pkgs.wget
-                    pkgs.htop
-
-
-                    (pkgs.buildEnv {
-                      name = "demos";
-                      paths = [ ./. ];
-                      pathsToLink = [ "/demos" ];
-                    })
                     (pkgs.buildEnv {
                       name = "mpyc-root";
                       paths = [ ./. ];
@@ -235,7 +200,7 @@
                       name = "docker-home";
                       paths = [ ./docker-home ];
                       pathsToLink = [ "/" ];
-                      extraPrefix = "/home/root";
+                      extraPrefix = "/root";
                     })
                   ] ++ nonRootShadowSetup {
                     uid = 999;
@@ -293,33 +258,33 @@
               # '';
 
 
-              enableFakechroot = true;
-              fakeRootCommands = ''
-                #!/bin/bash
-                set -e
-
-                mkdir /binzz
-                ln -s ${pkgs.hello}/binzz/hello /binzz/hello
-                whoami
-                ls -al
-                mkdir /tmp
-                cd mpyc
-                # echo ${pkgs.unixtools.ping}/bin/ping google.com
-                # ${pkgs.curl}/bin/curl google.com
-                # /nix/store/lcpnyijblclmjj58wgbs2fk7w100dciq-ping-iputils-20211215/bin/ping --help
-                # /nix/store/lcpnyijblclmjj58wgbs2fk7w100dciq-ping-iputils-20211215/bin/ping google.com -c 3 -w 2
-                # echo ${pkgs.unixtools.ping}/bin/ping google.com -c 3 -w 2
-                # ${pkgs.unixtools.ping}/bin/ping google.com
-                ${pkgs.poetry}/bin/poetry install
-              '';
+              # enableFakechroot = true;
               # fakeRootCommands = ''
-              #   #!${pkgs.runtimeShell}
-              #   ${pkgs.dockerTools.shadowSetup}
-              #   groupadd -r redis
-              #   useradd -r -g redis redis
-              #   mkdir /data
-              #   chown redis:redis /data
+              #   #!/bin/bash
+              #   set -e
+
+              #   mkdir /binzz
+              #   ln -s ${pkgs.hello}/binzz/hello /binzz/hello
+              #   whoami
+              #   ls -al
+              #   mkdir /tmp
+              #   cd mpyc
+              #   # echo ${pkgs.unixtools.ping}/bin/ping google.com
+              #   # ${pkgs.curl}/bin/curl google.com
+              #   # /nix/store/lcpnyijblclmjj58wgbs2fk7w100dciq-ping-iputils-20211215/bin/ping --help
+              #   # /nix/store/lcpnyijblclmjj58wgbs2fk7w100dciq-ping-iputils-20211215/bin/ping google.com -c 3 -w 2
+              #   # echo ${pkgs.unixtools.ping}/bin/ping google.com -c 3 -w 2
+              #   # ${pkgs.unixtools.ping}/bin/ping google.com
+              #   ${pkgs.poetry}/bin/poetry install
               # '';
+              # # fakeRootCommands = ''
+              # #   #!${pkgs.runtimeShell}
+              # #   ${pkgs.dockerTools.shadowSetup}
+              # #   groupadd -r redis
+              # #   useradd -r -g redis redis
+              # #   mkdir /data
+              # #   chown redis:redis /data
+              # # '';
             };
         in
         {
@@ -338,10 +303,10 @@
                     python = pkgs.python3;
                     projectDir = ./.;
 
-                    editablePackageSources = {
-                      # mpyc = if builtins.getEnv "PWD" == "" then ./. else builtins.getEnv "PWD";
-                      mpyc = ./.;
-                    };
+                    # editablePackageSources = {
+                    #   # mpyc = if builtins.getEnv "PWD" == "" then ./. else builtins.getEnv "PWD";
+                    #   mpyc = ./.;
+                    # };
 
                     overrides = pkgs.poetry2nix.overrides.withDefaults (
                       self: super: {
@@ -368,168 +333,5 @@
                 pkgs.python3Packages.pip
               ];
             };
-
-          devShells.mach-nix = pkgs.mkShell {
-            buildInputs =
-              [ (mach-nix.lib.${system}.mkPython { inherit requirements; }) ];
-
-            shellHook = ''
-              export PYTHONPATH=./
-            '';
-          };
-
-          devShells.pip2nix =
-            let
-              packageOverrides = pkgs.callPackage ./python-packages.nix { };
-              python = pkgs.python3.override { inherit packageOverrides; };
-              pythonWithPackages = python.withPackages (ps: [ ps.requests ]);
-            in
-            pkgs.python3Packages.buildPythonPackage
-              {
-                name = "mpyc";
-                src = ./.;
-              };
-
-          devShells.pip2nix3 =
-            let
-              packageOverrides = pkgs.callPackage ./python-packages.nix { };
-              python = pkgs.python3.override { inherit packageOverrides; };
-              pythonWithPackages = python.withPackages (ps: [ ps.peerdid ps.didcomm ]);
-            in
-            pkgs.mkShell {
-              nativeBuildInputs =
-                [ pythonWithPackages ];
-
-              shellHook = ''
-                export PYTHONPATH=./
-              '';
-              postShellHook = ''
-                export PYTHONPATH=./
-              '';
-            };
-
-          devShells.default2 =
-            (pkgs.poetry2nix.mkPoetryEnv {
-              projectDir = ./.;
-              # editablePackageSources = {
-              #   my-app = ./src;
-              # };
-            }).env;
-
-          devShells.shell3 =
-            ((pkgs.poetry2nix.mkPoetryEnv
-              # (pkgs.poetry2nix.mkPoetryPackages
-              {
-                projectDir = ./.;
-
-                editablePackageSources = {
-                  mpyc = ./.;
-                  mpyczzz = ./.;
-                  mpyczzzzzz = ./mpyc.;
-                };
-
-
-                overrides = pkgs.poetry2nix.overrides.withDefaults (
-                  self: super: {
-                    didcomm = super.didcomm.overrideAttrs (
-                      old: {
-                        buildInputs = old.buildInputs ++ [ super.setuptools ];
-                      }
-                    );
-                    peerdid = super.peerdid.overrideAttrs (
-                      old: {
-                        buildInputs = old.buildInputs ++ [ super.setuptools ];
-                      }
-                    );
-                    gmpy2 = pkgs.python3Packages.gmpy2;
-                    # gmpy2 = super.gmpy2.overrideAttrs (
-                    #   old: {
-                    #     buildInputs = old.buildInputs ++ [ pkgs.gmp.dev pkgs.mpfr.dev pkgs.libmpc ];
-                    #   }
-                    # );
-                  }
-                );
-              }).env.overrideAttrs
-              (oldAttrs: {
-                buildInputs = [
-                  pkgs.poetry
-                  pkgs.python3Packages.pip
-                ];
-              }));
-
-          devShells.shell = pkgs.mkShell
-            {
-              buildInputs = [
-                (pkgs.poetry2nix.mkPoetryEnv
-                  {
-                    projectDir = ./.;
-                    # editablePackageSources = {
-                    #   mpyc = ./.;
-                    # };
-                  })
-                pkgs.poetry
-              ];
-            };
-
-          devShells.env = pkgs.buildEnv {
-            name = "name";
-            paths = [
-              (poetry2nix.mkPoetryEnv
-                {
-
-                  projectDir = ./.;
-
-                })
-            ];
-          };
-          devShells.devv = pkgs.python3Packages.buildPythonPackage
-            {
-              # inherit (mpyc) pname version src;
-              name = "waaaaaaaaaaaaaaaaaaa";
-              src = ./demos;
-              # src = pkgs.python3Packages.fetchPypi {
-              #   pname = "mpycc";
-              #   version = "0.8.0";
-              #   sha256 = "08fdd5ef7c96480ad11c12d472de21acd32359996f69a5259299b540feba4560";
-              # };
-              # src = "mpyc";
-              # propagatedBuildInputs =
-              # [ (mach-nix.lib.${system}.mkPython { inherit requirements; }) ];
-            };
-
-
-          devShells.ops = pkgs.mkShell {
-            buildInputs = [
-              pkgs.ansible
-              pkgs.nixops_unstable
-            ];
-          };
-
-          packages.default = pkgs.dockerTools.buildLayeredImage {
-            name = "enikolov/mpyc-demo";
-            tag = "0.0.1";
-            created = builtins.substring 0 8 self.lastModifiedDate;
-            # fromImage = baseImage;
-
-
-            contents = [
-              pkgs.bashInteractive
-              (mach-nix.lib.x86_64-linux.mkPython {
-                inherit requirements;
-                packagesExtra =
-                  [ (mach-nix.lib.armv7l-linux.buildPythonPackage mpyc) ];
-              })
-              (pkgs.buildEnv {
-                name = "demos";
-                paths = [ ./. ];
-                pathsToLink = [ "/demos" ];
-              })
-            ];
-
-            config = {
-              Cmd = [ "python ./demos/secretsanta.py" ];
-              Entrypoint = [ "/bin/bash" "-c" ];
-            };
-          };
         });
 }
