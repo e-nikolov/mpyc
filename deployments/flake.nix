@@ -1,6 +1,11 @@
 {
   description = "A very basic flake";
 
+  inputs = rec {
+
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  };
+
   outputs = { self, nixpkgs }:
     let
       networkName = "mpyc-net";
@@ -28,13 +33,26 @@
           inherit networkName;
         };
 
-        rpi1 =
-          { config, pkgs, ... }:
-          {
-            deployment.targetHost = "pi-hole.emil-e-nikolov.gmail.com.beta.tailscale.net";
-            deployment.targetUser = "pi";
+        # rpi1 =
+        #   { config, pkgs, ... }:
+        #   {
+        #     deployment.targetHost = "pi-hole.emil-e-nikolov.gmail.com.beta.tailscale.net";
+        #     deployment.targetUser = "pi";
+        #   };
+
+        do1 = {
+          resources.sshKeyPairs.ssh-key = { };
+
+          machine = { config, pkgs, ... }: {
+            services.nginx.enable = true;
+            services.openssh.enable = true;
+
+            deployment.targetEnv = "digitalOcean";
+            deployment.digitalOcean.enableIpv6 = true;
+            deployment.digitalOcean.region = "ams2";
+            deployment.digitalOcean.size = "512mb";
           };
-        # webserver = import ./machine;
+        };
       };
 
     };
