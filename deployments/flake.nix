@@ -39,19 +39,16 @@
         #     deployment.targetHost = "pi-hole.emil-e-nikolov.gmail.com.beta.tailscale.net";
         #     deployment.targetUser = "pi";
         #   };
+        resources.sshKeyPairs."mykey" = { };
 
         do1 = {
-          resources.sshKeyPairs.ssh-key = { };
+          services.nginx.enable = true;
+          services.openssh.enable = true;
 
-          machine = { config, pkgs, ... }: {
-            services.nginx.enable = true;
-            services.openssh.enable = true;
-
-            deployment.targetEnv = "digitalOcean";
-            deployment.digitalOcean.enableIpv6 = true;
-            deployment.digitalOcean.region = "ams2";
-            deployment.digitalOcean.size = "512mb";
-          };
+          deployment.targetEnv = "droplet";
+          deployment.droplet.enableIpv6 = true;
+          deployment.droplet.region = "ams2";
+          deployment.droplet.size = "512mb";
         };
       };
 
