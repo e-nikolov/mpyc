@@ -12,7 +12,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, ... }:
+  outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachSystem (flake-utils.lib.defaultSystems ++ [ flake-utils.lib.system.armv7l-linux ])
       (system:
         let
@@ -85,5 +85,6 @@
 
           packages.docker = buildImage pkgs "enikolov/mpyc-demo" "nix-v0.0.1";
           packages.arm = buildImage armPkgs "enikolov/mpyc-demo" "nix-armv7l-v0.0.1";
+          packages.doImage = import ./deployments/do/image/image.nix { inherit pkgs inputs; };
         });
 }
