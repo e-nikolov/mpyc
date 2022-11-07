@@ -22,3 +22,12 @@ image-docker:
 
 run-image:
 	docker run enikolov/mpyc-demo:nix-v0.0.1
+
+deploy:
+	cd deployments/terraform && ter apply
+
+destroy:
+	cd deployments/terraform && ter destroy
+
+do-image:
+	nix build .#doImage -o bin/image
