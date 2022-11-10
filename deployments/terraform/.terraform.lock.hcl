@@ -22,3 +22,10 @@ provider "registry.terraform.io/hashicorp/null" {
     "h1:pcDAQbe6xhJBgiyDAqfMD1m81+lJXtHlzS2W6YMSP9g=",
   ]
 }
+
+provider "registry.terraform.io/tailscale/tailscale" {
+  version = "0.13.5"
+  hashes = [
+    "h1:DTMDnt14+H+tLO/DUyTwbhJkV/1npvBPCLh0IgLCsfo=",
+  ]
+}

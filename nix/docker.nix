@@ -1,84 +1,45 @@
-pkgs: name: tag:
-let nonRootShadowSetup = { user, uid, gid ? uid }: with pkgs; [
-  (
-    writeTextDir "etc/shadow" ''
-      root:!x:::::::
-      ${user}:!:::::::
-    ''
-  )
-  (
-    writeTextDir "etc/passwd" ''
-      root:x:0:0::/root:${runtimeShell}
-      ${user}:x:${toString uid}:${toString gid}::/home/${user}:
-    ''
-  )
-  (
-    writeTextDir "etc/group" ''
-      root:x:0:
-      ${user}:x:${toString gid}:
-    ''
-  )
-  (
-    writeTextDir "etc/gshadow" ''
-      root:x::
-      ${user}:x::
-    ''
-  )
-];
+{ self, pkgs, name, tag, dir }:
+let
+  nonRootShadowSetup = { user, uid, gid ? uid }: with pkgs; [
+    (
+      writeTextDir "etc/shadow" ''
+        root:!x:::::::
+        ${user}:!:::::::
+      ''
+    )
+    (
+      writeTextDir "etc/passwd" ''
+        root:x:0:0::/root:${runtimeShell}
+        ${user}:x:${toString uid}:${toString gid}::/home/${user}:
+      ''
+    )
+    (
+      writeTextDir "etc/group" ''
+        root:x:0:
+        ${user}:x:${toString gid}:
+      ''
+    )
+    (
+      writeTextDir "etc/gshadow" ''
+        root:x::
+        ${user}:x::
+      ''
+    )
+  ];
+  python-mpyc = import ./python-mpyc.nix { inherit pkgs dir; };
 in
 pkgs.dockerTools.buildLayeredImage
 {
   name = name;
   tag = tag;
   created = builtins.substring 0 8 self.lastModifiedDate;
+  maxLayers = 10;
 
   contents = pkgs.buildEnv
     {
       name = "zzz-python-env-123";
       paths = [
-        (pkgs.poetry2nix.mkPoetryEnv
-          {
-            python = pkgs.python3;
-            projectDir = ./.;
-
-            editablePackageSources = {
-              # mpyc = if builtins.getEnv "PWD" == "" then ./. else builtins.getEnv "PWD";
-              mpyc = null;
-            };
-            extraPackages = (ps: [
-              (pkgs.python3Packages.buildPythonPackage
-                {
-                  # inherit (mpyc) pname version src;
-                  name = "mpyc";
-                  src = ./.;
-                })
-            ]);
-
-            overrides = pkgs.poetry2nix.overrides.withDefaults (
-              self: super: {
-                didcomm = super.didcomm.overrideAttrs (
-                  old: {
-                    buildInputs = old.buildInputs ++ [ super.setuptools ];
-                  }
-                );
-                peerdid = super.peerdid.overrideAttrs (
-                  old: {
-                    buildInputs = old.buildInputs ++ [ super.setuptools ];
-                  }
-                );
-
-                gmpy2 = pkgs.python3Packages.gmpy2;
-                # numpy = pkgs.python3Packages.numpy;
-                # cryptography = pkgs.python3Packages.cryptography;
-                # matplotlib = pkgs.python3Packages.matplotlib;
-                # gmpy2 = super.gmpy2.overrideAttrs (
-                #   old: {
-                #     buildInputs = old.buildInputs ++ [ pkgs.gmp.dev pkgs.mpfr.dev pkgs.libmpc ];
-                #   }
-                # );
-              }
-            );
-          })
+        python-mpyc
         pkgs.poetry
         # pkgs.python3Packages.numpy
         # pkgs.python3Packages.matplotlib
@@ -103,14 +64,14 @@ pkgs.dockerTools.buildLayeredImage
         pkgs.tailscale
         (pkgs.buildEnv {
           name = "mpyc-root";
-          paths = [ ./. ];
+          paths = [ dir ];
           # pathsToLink = [ "/demos" ];
           extraPrefix = "/mpyc";
         })
 
         (pkgs.buildEnv {
           name = "docker-home";
-          paths = [ ./docker-home ];
+          paths = [ "${dir}/docker-home" ];
           pathsToLink = [ "/" ];
           extraPrefix = "/root";
         })
@@ -121,7 +82,7 @@ pkgs.dockerTools.buildLayeredImage
     };
 
   config = {
-    Cmd = [ "demo" ];
+    Cmd = [ "python ./demos/secretsanta.py" ];
     WorkingDir = "/mpyc/";
     Entrypoint = [ "/bin/bash" "-c" ];
     # Entrypoint = [ "/bin/bash" "-c" "cd /mpyc && $@" ];
@@ -133,4 +94,4 @@ pkgs.dockerTools.buildLayeredImage
       "USER=somebody"
     ];
   };
-} 
+}

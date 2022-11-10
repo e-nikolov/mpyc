@@ -10,7 +10,7 @@ demo:
 	cd ./demos && ./run-all.sh
 
 image:
-	docker load < $(shell nix build --print-out-paths --no-link)
+	docker load < $(shell nix build .#docker --print-out-paths --no-link)
 	docker push enikolov/mpyc-demo:nix-v0.0.1
 
 image-nix-arm:
@@ -24,10 +24,12 @@ run-image:
 	docker run enikolov/mpyc-demo:nix-v0.0.1
 
 deploy:
-	cd deployments/terraform && ter apply
+	terraform -chdir=./deployments/terraform apply
+	terraform -chdir=./deployments/terraform output -json hosts2> hosts.json
+	colmena apply
 
 destroy:
 	cd deployments/terraform && ter destroy
 
 do-image:
-	nix build .#doImage -o bin/image
+	nix build .#digitalocean-image -o bin/image

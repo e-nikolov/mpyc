@@ -4,5 +4,8 @@ terraform {
       source  = "digitalocean/digitalocean"
       version = "2.23.0"
     }
+    tailscale = {
+      source = "tailscale/tailscale"
+    }
   }
 }

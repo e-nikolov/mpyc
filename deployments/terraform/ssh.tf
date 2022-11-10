@@ -1,8 +1,3 @@
-variable "SSH_KEY_PATHS" {
-  type    = set(string)
-  default = ["./ssh/*.pub"]
-}
-
 resource "digitalocean_ssh_key" "ssh-keys" {
   for_each = local.ssh_key_paths
 
