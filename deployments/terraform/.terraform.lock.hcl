@@ -9,17 +9,10 @@ provider "registry.terraform.io/digitalocean/digitalocean" {
   ]
 }
 
-provider "registry.terraform.io/hashicorp/external" {
-  version = "2.2.2"
+provider "registry.terraform.io/hashicorp/random" {
+  version = "3.4.3"
   hashes = [
-    "h1:fKhjfrhqG0FE3ypFP5/mp+paqQYJEvksjrSAU83tu0Q=",
-  ]
-}
-
-provider "registry.terraform.io/hashicorp/null" {
-  version = "3.1.1"
-  hashes = [
-    "h1:pcDAQbe6xhJBgiyDAqfMD1m81+lJXtHlzS2W6YMSP9g=",
+    "h1:zHkoCXGO9TtZLBdsHzYHH8ol8imShIicWdEvYuUTWek=",
   ]
 }
 

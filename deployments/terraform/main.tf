@@ -10,7 +10,12 @@ provider "tailscale" {}
 # }
 
 locals {
-  nodes = [
+  node_definitions = var.DESTROY_NODES != "" ? [
+    { region = "ams3", num = 0 },
+    { region = "sfo3", num = 0 },
+    { region = "nyc3", num = 0 },
+    { region = "sgp1", num = 0 },
+    ] : [
     { region = "ams3", num = 3 },
     { region = "sfo3", num = 1 },
     { region = "nyc3", num = 1 },
@@ -18,7 +23,7 @@ locals {
   ]
 
   nodes_expanded = flatten([
-    for node in local.nodes : [
+    for node in local.node_definitions : [
       for i in range(node.num) :
       merge(node, {
         name = "mpyc-demo--${node.region}-${i}"
@@ -26,20 +31,42 @@ locals {
     ]
   ])
 
-  all_regions = distinct(local.nodes[*].region)
+  nodes = {
+    for node in local.nodes_expanded :
+    node.name => merge(node, {
+      hostname = "${node.name}-${random_id.mpyc-node-hostname[node.name].hex}"
+    })
+  }
+
+  all_regions = distinct(local.node_definitions[*].region)
 
   generation = 1
 }
 
+resource "random_id" "mpyc-node-hostname" {
+  for_each = { for node in local.nodes_expanded : node.name => node }
+
+  keepers = {
+    # Generate a new id each time we switch to a new AMI id
+    hostname = each.key
+  }
+
+  byte_length = 4
+}
+
+
 output "node" {
   value = local.nodes_expanded
 }
+output "node-hostnames" {
+  value = { for i, node in local.nodes_expanded : node.name => merge(node, { hostname = "${node.name}-${random_id.mpyc-node-hostname[node.name].hex}" }) }
+}
 
 resource "digitalocean_droplet" "mpyc-node" {
-  for_each = { for node in local.nodes_expanded : node.name => node }
+  for_each = local.nodes
 
   image    = digitalocean_custom_image.nixos-image.id
-  name     = each.value.name
+  name     = each.value.hostname
   region   = each.value.region
   size     = "s-1vcpu-1gb"
   ssh_keys = [for key in digitalocean_ssh_key.ssh-keys : key.fingerprint]
@@ -63,6 +90,13 @@ resource "digitalocean_droplet" "mpyc-node" {
     ]
   }
 
+  provisioner "remote-exec" {
+    when = destroy
+    inline = [
+      "tailscale logout"
+    ]
+  }
+
   lifecycle {
     replace_triggered_by = [
       tailscale_tailnet_key.keys
@@ -72,7 +106,7 @@ resource "digitalocean_droplet" "mpyc-node" {
 
 
 # resource "null_resource" "upload-mpyc" {
-#   for_each = { for node in local.nodes_expanded : node.name => node }
+#   for_each = local.nodes
 
 #   connection {
 #     type  = "ssh"
@@ -98,7 +132,7 @@ resource "digitalocean_droplet" "mpyc-node" {
 # }
 
 # resource "tailscale_tailnet_key" "keys" {
-#   for_each = { for i, node in local.nodes_expanded : node.name => node }
+#   for_each = local.nodes
 
 #   # name          = each.value.name
 #   reusable      = true
@@ -113,27 +147,6 @@ resource "tailscale_tailnet_key" "keys" {
   tags          = ["tag:mpyc"]
 }
 
-# module "deploy_nixos" {
-#   source = "github.com/tweag/terraform-nixos//deploy_nixos?ref=646cacb12439ca477c05315a7bfd49e9832bc4e3"
-#   # for_each = { for node in local.nodes_expanded : node.name => node }
-#   # for_each = [for i, node in local.nodes_expanded : node]
-#   for_each = { for i, node in local.nodes_expanded : node.name => node }
-#   # for_each = toset([for node in digitalocean_droplet.mpyc-node : node.ipv4_address])
-
-#   nixos_config = ""
-#   # nixos_config    = "doHost"
-#   build_on_target = true
-#   # flake       = true
-#   target_user = "root"
-#   target_host = digitalocean_droplet.mpyc-node[each.key].ipv4_address # each.value
-#   # target_host  = each.value.ipv4_address
-#   ssh_agent = true
-#   keys = {
-#     # "tailscale" = "${tailscale_tailnet_key.keys}"
-#     foo = "bar"
-#   }
-# }
-
 output "regions" {
   value = local.all_regions
 }
@@ -145,12 +158,9 @@ output "nixos-etag" {
   value = digitalocean_spaces_bucket_object.nixos-image.etag
 }
 
-output "hosts" {
-  value = jsonencode([for node in digitalocean_droplet.mpyc-node : { "${node.name}" : node.ipv4_address }])
-}
 
-output "hosts2" {
-  value = { for node in digitalocean_droplet.mpyc-node : node.name => {} }
+output "hosts" {
+  value = { for node in local.nodes : node.hostname => {} }
 }
 
 output "nixos-id" {

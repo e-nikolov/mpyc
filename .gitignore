@@ -146,3 +146,5 @@ override.tf.json
 terraform.rc
 
 deployments/terraform/show.json
+hosts.json
+show.json

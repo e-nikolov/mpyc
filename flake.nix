@@ -68,7 +68,7 @@
           devShells.ops = (pkgs.mkShell (pkgs.lib.recursiveUpdate shellAttrs {
             nativeBuildInputs = with pkgs; [
               (terraform.withPlugins
-                (tp: [ tp.digitalocean tp.null tp.external tp.tailscale ]))
+                (tp: [ tp.digitalocean tp.null tp.external tp.tailscale tp.random ]))
               (pkgs.writeShellScriptBin "ter" ''
                 terraform $@ && terraform show -json > show.json
               '')

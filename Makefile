@@ -25,11 +25,17 @@ run-image:
 
 deploy:
 	terraform -chdir=./deployments/terraform apply
-	terraform -chdir=./deployments/terraform output -json hosts2> hosts.json
+	terraform -chdir=./deployments/terraform output -json hosts> hosts.json
 	colmena apply
 
 destroy:
-	cd deployments/terraform && ter destroy
+	TF_VAR_DESTROY_NODES=1 terraform -chdir=./deployments/terraform apply
+	terraform -chdir=./deployments/terraform output -json hosts> hosts.json
+
+destroy-all:
+	terraform -chdir=./deployments/terraform destroy
+	terraform -chdir=./deployments/terraform output -json hosts> hosts.json
+
 
 do-image:
 	nix build .#digitalocean-image -o bin/image
