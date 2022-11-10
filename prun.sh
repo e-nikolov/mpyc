@@ -1,7 +1,8 @@
 #!/bin/sh
 
-MAX_PARTIES=3
+MAX_PARTIES=600
 hosts="./hosts.pssh"
+port=11599
 
 i=0
 MY_PID=-1
@@ -13,6 +14,10 @@ do
     then
         break
     fi
+    if [ -z "$line" ]
+    then 
+        break
+    fi
 
     host=${line#"root@"}
 
@@ -22,12 +27,12 @@ do
     fi
     ((i = i + 1))
 
-    args+=" -P $host:11377" 
+    args+=" -P $host:$port" 
 done < "$hosts"
 
 if [ $MY_PID = -1 ]
 then
-    echo Only $MAX_PARTIES parties are allowed. $HOSTNAME will not participate in this MPC session
+    echo Only $i parties are allowed. $HOSTNAME will not participate in this MPC session
 else
 
 # cmd="python ./demos/helloworld.py --log-level debug \

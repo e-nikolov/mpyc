@@ -50,5 +50,8 @@ run:
 	ln -rs ./logs/$t ./logs/latest 
 	pssh -h hosts.pssh -iv -o ./logs/$t "cd /root/mpyc && ./prun.sh"
 
+shuffle:
+	shuf hosts.pssh -o hosts.pssh
+
 do-image:
 	nix build .#digitalocean-image -o bin/image
