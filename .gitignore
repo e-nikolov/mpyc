@@ -147,4 +147,6 @@ terraform.rc
 
 deployments/terraform/show.json
 hosts.json
+hosts.pssh
 show.json
+logs/

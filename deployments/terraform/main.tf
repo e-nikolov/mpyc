@@ -158,9 +158,12 @@ output "nixos-etag" {
   value = digitalocean_spaces_bucket_object.nixos-image.etag
 }
 
-
-output "hosts" {
+output "hosts-colmena" {
   value = { for node in local.nodes : node.hostname => {} }
+}
+
+output "hosts-pssh" {
+  value = join("", [for node in local.nodes : "root@${node.hostname}\n"])
 }
 
 output "nixos-id" {

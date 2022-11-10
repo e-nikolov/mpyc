@@ -75,6 +75,7 @@
               jq
               arion
               pkgs.colmena
+              pssh
             ];
 
             shellHook = ''

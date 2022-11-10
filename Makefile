@@ -25,17 +25,30 @@ run-image:
 
 deploy:
 	terraform -chdir=./deployments/terraform apply
-	terraform -chdir=./deployments/terraform output -json hosts> hosts.json
+	terraform -chdir=./deployments/terraform output -json hosts-colmena> hosts.json
+	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
 	colmena apply
 
 destroy:
 	TF_VAR_DESTROY_NODES=1 terraform -chdir=./deployments/terraform apply
-	terraform -chdir=./deployments/terraform output -json hosts> hosts.json
+	terraform -chdir=./deployments/terraform output -json hosts-colmena> hosts.json
+	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
 
 destroy-all:
 	terraform -chdir=./deployments/terraform destroy
-	terraform -chdir=./deployments/terraform output -json hosts> hosts.json
+	terraform -chdir=./deployments/terraform output -json hosts-colmena> hosts.json
+	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
 
+sync:
+	prsync -h hosts.pssh -zarvvvv -p 4 ./ /root/mpyc
+
+t=$(shell date +%s)
+
+run:
+	mkdir -p ./logs/$t
+	rm -rf ./logs/latest
+	ln -rs ./logs/$t ./logs/latest 
+	pssh -h hosts.pssh -iv -o ./logs/$t "cd /root/mpyc && ./prun.sh"
 
 do-image:
 	nix build .#digitalocean-image -o bin/image

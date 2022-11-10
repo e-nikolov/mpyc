@@ -21,6 +21,7 @@
   virtualisation.podman.defaultNetwork.dnsname.enable = true;
   services.tailscale.enable = true;
   networking.firewall.checkReversePath = "loose";
+  networking.firewall.enable = false;
 
 
   # Use your username instead of `myuser`
