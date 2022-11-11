@@ -1,7 +1,7 @@
 version: "3"
 services:
   tailscale:
-    hostname: mpyc-node-kdell
+    hostname: mpyc-demo-test-node
     image: ghcr.io/tailscale/tailscale:v1.32.2
     volumes:
       - "/dev/net/tun:/dev/net/tun"
@@ -11,9 +11,9 @@ services:
       - sys_module
     restart: unless-stopped
     environment:
-      - TS_AUTH_KEY=tskey-auth-kvqfiX5CNTRL-2D66Do7xXqLau3eYnRctqLSR3dTLe4Dcj
+      - TS_AUTH_KEY=
       - TS_ACCEPT_DNS=true
-      - TS_EXTRA_ARGS=--hostname=mpyc-node-kdell
+      - TS_EXTRA_ARGS=--hostname=mpyc-demo-test-node
       - TS_USERSPACE=false
   demo1:
     image: enikolov/mpyc-demo:nix-v0.0.1
@@ -21,18 +21,18 @@ services:
     restart: on-failure
     command:
       # - "python ./demos/secretsanta.py"
-      - "python ./demos/secretsanta.py -I 0 -P mpyc-node-kdell.tail1ff4d.ts.net:11365 -P mpyc-node-kdell.tail1ff4d.ts.net:11366 -P mpyc-node-kdell.tail1ff4d.ts.net:11367 --log-level debug   --mix32-64bit"
+      - "python ./demos/secretsanta.py -I 0 -P mpyc-demo-test-node.tail1ff4d.ts.net:11365 -P mpyc-demo-test-node.tail1ff4d.ts.net:11366 -P mpyc-demo-test-node.tail1ff4d.ts.net:11367 --log-level debug   --mix32-64bit"
   demo2:
     image: enikolov/mpyc-demo:nix-v0.0.1
     network_mode: service:tailscale
     restart: on-failure
     command:
       # - "python ./demos/secretsanta.py"
-      - "python ./demos/secretsanta.py -I 1 -P mpyc-node-kdell.tail1ff4d.ts.net:11365 -P mpyc-node-kdell.tail1ff4d.ts.net:11366 -P mpyc-node-kdell.tail1ff4d.ts.net:11367 --log-level debug   --mix32-64bit"
+      - "python ./demos/secretsanta.py -I 1 -P mpyc-demo-test-node.tail1ff4d.ts.net:11365 -P mpyc-demo-test-node.tail1ff4d.ts.net:11366 -P mpyc-demo-test-node.tail1ff4d.ts.net:11367 --log-level debug   --mix32-64bit"
   demo3:
     image: enikolov/mpyc-demo:nix-v0.0.1
     network_mode: service:tailscale
     restart: on-failure
     command:
       # - "python ./demos/secretsanta.py"
-      - "python ./demos/secretsanta.py -I 2 -P mpyc-node-kdell.tail1ff4d.ts.net:11365 -P mpyc-node-kdell.tail1ff4d.ts.net:11366 -P mpyc-node-kdell.tail1ff4d.ts.net:11367 --log-level debug   --mix32-64bit"
+      - "python ./demos/secretsanta.py -I 2 -P mpyc-demo-test-node.tail1ff4d.ts.net:11365 -P mpyc-demo-test-node.tail1ff4d.ts.net:11366 -P mpyc-demo-test-node.tail1ff4d.ts.net:11367 --log-level debug   --mix32-64bit"

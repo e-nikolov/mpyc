@@ -39,7 +39,12 @@ else
 #     -I ${MY_PID} \
 #     ${args}"
 
-cmd="python ./demos/secretsanta.py --log-level debug \
+# cmd="python ./demos/secretsanta.py --log-level debug \
+#     -I ${MY_PID} \
+#     ${args}"
+
+
+cmd="python ./demos/secretsanta.py 3 --log-level debug \
     -I ${MY_PID} \
     ${args}"
 

@@ -19,11 +19,21 @@
   virtualisation.podman.enable = true;
   virtualisation.podman.dockerSocket.enable = true;
   virtualisation.podman.defaultNetwork.dnsname.enable = true;
+  networking.firewall = {
+    # enable the firewall
+    enable = true;
+    checkReversePath = "loose";
+    # # always allow traffic from your Tailscale network
+    trustedInterfaces = [ "tailscale0" ];
+
+    # # allow the Tailscale UDP port through the firewall
+    # allowedUDPPorts = [ 41643 3478 ];
+
+    # # allow you to SSH in over the public internet
+    # allowedTCPPorts = [ 22 443 ];
+  };
+
   services.tailscale.enable = true;
-  networking.firewall.checkReversePath = "loose";
-  networking.firewall.enable = false;
 
-
-  # Use your username instead of `myuser`
   users.extraUsers.root.extraGroups = [ "podman" ];
 }

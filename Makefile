@@ -33,6 +33,8 @@ destroy:
 	TF_VAR_DESTROY_NODES=1 terraform -chdir=./deployments/terraform apply
 	terraform -chdir=./deployments/terraform output -json hosts-colmena> hosts.json
 	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
+	./scripts/destroy-tailscale.sh
+
 
 destroy-all:
 	terraform -chdir=./deployments/terraform destroy
