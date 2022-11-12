@@ -22,6 +22,7 @@
           pkgs = import nixpkgs {
             inherit system;
             config = {
+              allowUnsupportedSystem = true;
               allowUnfree = true;
             };
             overlays = [ (self: super: { inherit mpyc-demo; }) ];
