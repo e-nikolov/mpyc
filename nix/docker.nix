@@ -26,7 +26,6 @@ let
       ''
     )
   ];
-  python-mpyc = import ./python-mpyc.nix { inherit pkgs dir; };
 in
 pkgs.dockerTools.buildLayeredImage
 {
@@ -39,7 +38,7 @@ pkgs.dockerTools.buildLayeredImage
     {
       name = "zzz-python-env-123";
       paths = [
-        python-mpyc
+        pkgs.mpyc-demo
         pkgs.poetry
         # pkgs.python3Packages.numpy
         # pkgs.python3Packages.matplotlib
@@ -71,7 +70,7 @@ pkgs.dockerTools.buildLayeredImage
 
         (pkgs.buildEnv {
           name = "docker-home";
-          paths = [ "${dir}/docker-home" ];
+          paths = [ "./docker-home" ];
           pathsToLink = [ "/" ];
           extraPrefix = "/root";
         })

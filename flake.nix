@@ -19,102 +19,77 @@
     flake-utils.lib.eachSystem (flake-utils.lib.defaultSystems ++ [ flake-utils.lib.system.armv7l-linux ])
       (system:
         let
-          # nixpkgs.crossSystem.system = "armv7l-linux";
-          # pkgs = nixpkgs.legacyPackages.${system};
           pkgs = import nixpkgs {
             inherit system;
             config = {
-              permittedInsecurePackages = [
-                "python2.7-pyjwt-1.7.1"
-              ];
               allowUnfree = true;
             };
+            overlays = [ (self: super: { inherit mpyc-demo; }) ];
           };
-
-
-          # armPkgs = pkgs.pkgsCross.raspberryPi;
           armPkgs = pkgs.pkgsCross.armv7l-hf-multiplatform;
-
-          # pkgs = import nixpkgs { inherit system; overlays = [ poetry2nix.overlay ]; };
-
-          buildImage = import ./nix/docker.nix;
-
-          python-mpyc = (import ./nix/python-mpyc.nix { inherit pkgs; dir = ./.; });
-
-          shellAttrs = {
-            shellHook = ''
-              export PYTHONPATH=./
-            '';
-
-            nativeBuildInputs = with pkgs; [
-              python-mpyc
-              poetry
-              python3Packages.pip
-              curl
-              # bashInteractive
-              # bash-completion
-
-            ];
-          };
-          mkDigitalOceanImage = import ./deployments/digitalocean/image.nix;
 
           modulesPath = "${pkgs.path}/nixos/modules/";
           lib = pkgs.lib;
+
+          mkDockerImage = import ./nix/docker.nix;
+
+          mpyc-demo = (import ./nix/mpyc-demo.nix { inherit pkgs; dir = ./.; });
+
+          shell = import ./nix/shell.nix { inherit pkgs; };
+
+          mkDigitalOceanImage = import ./nix/digitalocean/image.nix;
         in
         {
-          devShells.default = pkgs.mkShell shellAttrs;
-
-
-          devShells.ops = (pkgs.mkShell (pkgs.lib.recursiveUpdate shellAttrs {
-            nativeBuildInputs = with pkgs; [
-              (terraform.withPlugins
-                (tp: [ tp.digitalocean tp.null tp.external tp.tailscale tp.random ]))
-              (pkgs.writeShellScriptBin "ter" ''
-                terraform $@ && terraform show -json > show.json
-              '')
-              jq
-              arion
-              pkgs.colmena
-              pssh
-            ];
-
-            shellHook = ''
-              # complete -o nospace -C /nix/store/zbzv9x7y2z690pj4kwpq1f4lak47w9f9-terraform-1.3.3/bin/terraform terraform
-
-              export PYTHONPATH=./
-            '';
-          }));
-
-          packages.docker = buildImage
-            {
-              inherit self pkgs;
-              name = "enikolov/mpyc-demo";
-              tag = "nix-v0.0.1";
-              dir = ./.;
-            };
-          packages.arm = buildImage
-            {
-              inherit self;
-              pkgs = armPkgs;
-              name = "enikolov/mpyc-demo";
-              tag = "nix-armv7l-v0.0.1";
-              dir = ./.;
-            };
+          devShells.default = pkgs.mkShell shell;
 
           packages.digitalocean-image = (pkgs.nixos (mkDigitalOceanImage {
             inherit pkgs lib modulesPath;
+            extraPackages = [ mpyc-demo ];
           })).digitalOceanImage;
 
           packages.colmena = {
             meta = {
               nixpkgs = pkgs;
             };
-
-            defaults = { pkgs, lib, modulesPath, ... }: mkDigitalOceanImage {
-              inherit pkgs modulesPath lib;
-              extraPackages = [ python-mpyc ];
+            defaults = mkDigitalOceanImage {
+              inherit pkgs lib modulesPath;
+              extraPackages = [ mpyc-demo ];
             };
           } // builtins.fromJSON (builtins.readFile ./hosts.json);
+
+          packages.docker = mkDockerImage {
+            inherit self pkgs;
+            name = "enikolov/mpyc-demo";
+            tag = "nix-v0.0.1";
+            dir = ./.;
+          };
+          packages.arm = mkDockerImage {
+            inherit self;
+            pkgs = armPkgs;
+            name = "enikolov/mpyc-demo";
+            tag = "nix-armv7l-v0.0.1";
+            dir = ./.;
+          };
+
+          packages.raspberry-pi2-image = (pkgs.nixos ({ config, lib, pkgs, modulesPath, ... }: {
+            system.stateVersion = "22.11";
+            imports = [
+              (modulesPath + "/installer/sd-card/sd-image-armv7l-multiplatform-installer.nix")
+              {
+                nix.settings = {
+                  substituters = [
+                    "https://cache.armv7l.xyz"
+                  ];
+                  trusted-public-keys = [
+                    "cache.armv7l.xyz-1:kBY/eGnBAYiqYfg0fy0inWhshUo+pGFM3Pj7kIkmlBk="
+                  ];
+                };
+              }
+
+            ];
+            boot.kernelPackages = lib.mkForce config.boot.zfs.package.latestCompatibleLinuxPackages;
+          })).config.system.build.sdImage;
+
 
           packages.arionTest = import ./deployments/arion/arion-compose.nix;
         });
