@@ -11,11 +11,7 @@
 
     (terraform.withPlugins
       (tp: [ tp.digitalocean tp.null tp.external tp.tailscale tp.random ]))
-    (pkgs.writeShellScriptBin "ter" ''
-      terraform $@ && terraform show -json > show.json
-    '')
     jq
-    arion
     colmena
     pssh
   ];

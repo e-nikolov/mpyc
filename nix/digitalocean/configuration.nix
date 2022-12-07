@@ -1,11 +1,12 @@
-{ pkgs, extraPackages ? [ ], ... }:
+{ pkgs, lib, modulesPath, extraPackages ? [ ], ... }:
 {
   imports = [ "${pkgs.path}/nixos/modules/virtualisation/digital-ocean-image.nix" ];
   system.stateVersion = "22.11";
 
-  environment.systemPackages = with pkgs; [
-    jq
-  ] ++ extraPackages;
+  environment.systemPackages = [
+    pkgs.jq
+    mpyc-demo
+  ];
 
   services.tailscale.enable = true;
 

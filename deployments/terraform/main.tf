@@ -2,13 +2,6 @@ provider "digitalocean" {}
 
 provider "tailscale" {}
 
-# locals {
-#   ssh_key_paths = toset(flatten([
-#     for pattern in var.SSH_KEY_PATHS :
-#     formatlist("/%s", fileset("/", abspath(pathexpand(pattern))))
-#   ]))
-# }
-
 locals {
   node_definitions = var.DESTROY_NODES != "" ? [
     { region = "ams3", num = 0 },
@@ -47,19 +40,10 @@ resource "random_id" "mpyc-node-hostname" {
   for_each = { for node in local.nodes_expanded : node.name => node }
 
   keepers = {
-    # Generate a new id each time we switch to a new AMI id
     hostname = each.key
   }
 
   byte_length = 4
-}
-
-
-output "node" {
-  value = local.nodes_expanded
-}
-output "node-hostnames" {
-  value = { for i, node in local.nodes_expanded : node.name => merge(node, { hostname = "${node.name}-${random_id.mpyc-node-hostname[node.name].hex}" }) }
 }
 
 resource "digitalocean_droplet" "mpyc-node" {
@@ -76,11 +60,6 @@ resource "digitalocean_droplet" "mpyc-node" {
     user = "root"
     host = self.ipv4_address
   }
-
-  # provisioner "file" {
-  #   content     = tailscale_tailnet_key.keys.key
-  #   destination = "/root/keys/tailscale"
-  # }
 
   provisioner "remote-exec" {
     inline = [
@@ -104,58 +83,10 @@ resource "digitalocean_droplet" "mpyc-node" {
   }
 }
 
-
-# resource "null_resource" "upload-mpyc" {
-#   for_each = local.nodes
-
-#   connection {
-#     type  = "ssh"
-#     user  = "root"
-#     agent = true
-#     host  = each.value.ipv4_address
-#   }
-#   provisioner "file" {
-#     # triggers = {
-
-#     # }
-#     source      = "../../"
-#     destination = "/root/mpyc"
-#   }
-
-#   provisioner "remote-exec" {
-#     inline = [
-#       "cd /root/mpyc",
-#       "nix develop",
-#       "python ./demos/secretsanta.py"
-#     ]
-#   }
-# }
-
-# resource "tailscale_tailnet_key" "keys" {
-#   for_each = local.nodes
-
-#   # name          = each.value.name
-#   reusable      = true
-#   ephemeral     = false
-#   preauthorized = true
-# }
 resource "tailscale_tailnet_key" "keys" {
-  # name          = each.value.name
   reusable      = true
   ephemeral     = true
   preauthorized = true
-  tags          = ["tag:mpyc"]
-}
-
-output "regions" {
-  value = local.all_regions
-}
-output "tailscale" {
-  value     = tailscale_tailnet_key.keys
-  sensitive = true
-}
-output "nixos-etag" {
-  value = digitalocean_spaces_bucket_object.nixos-image.etag
 }
 
 output "hosts-colmena" {
@@ -164,12 +95,4 @@ output "hosts-colmena" {
 
 output "hosts-pssh" {
   value = join("", [for node in local.nodes : "root@${node.hostname}\n"])
-}
-
-output "nixos-id" {
-  value = digitalocean_custom_image.nixos-image.image_id
-}
-
-output "nixos-id2" {
-  value = digitalocean_custom_image.nixos-image.id
 }
