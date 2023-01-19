@@ -147,6 +147,6 @@ terraform.rc
 
 deployments/terraform/show.json
 # hosts.json
-hosts.pssh
+# hosts.pssh
 show.json
 logs/

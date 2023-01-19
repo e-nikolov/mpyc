@@ -42,7 +42,7 @@ destroy-all:
 	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
 
 sync:
-	prsync -h hosts.pssh -zarvvvv -p 4 ./ /root/mpyc
+	prsync -h hosts.pssh -zarv -p 4 ./ /root/mpyc
 
 t=$(shell date +%s)
 
@@ -56,4 +56,4 @@ shuffle:
 	shuf hosts.pssh -o hosts.pssh
 
 do-image:
-	nix build .#digitalocean-image -o bin/image
+	nix build .#digitalOceanImage -o bin/image

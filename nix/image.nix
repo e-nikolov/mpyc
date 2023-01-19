@@ -1,6 +1,6 @@
-{ pkgs, extraPackages ? [ ], ... }:
+{ pkgs, extraPackages ? [ ], imports ? [ ], ... }:
 {
-  imports = [ "${pkgs.path}/nixos/modules/virtualisation/digital-ocean-image.nix" ];
+  inherit imports;
   system.stateVersion = "22.11";
 
   environment.systemPackages = with pkgs; [

@@ -26,19 +26,16 @@
             };
             overlays = [ (self: super: { inherit mpyc-demo; }) ];
           };
-          armPkgs = pkgs.pkgsCross.armv7l-hf-multiplatform;
-
-          modulesPath = "${pkgs.path}/nixos/modules/";
-          lib = pkgs.lib;
-
-          mkDockerImage = import ./nix/docker.nix;
 
           mpyc-demo = (import ./nix/mpyc-demo.nix { inherit pkgs; dir = ./.; });
 
           shell = import ./nix/shell.nix { inherit pkgs; };
 
-          digitalOceanImage = import ./nix/digitalocean/image.nix {
+          mkImageConfig = import ./nix/digitalocean/image.nix;
+
+          digitalOceanConfig = mkImageConfig {
             inherit pkgs;
+            imports = [ "${pkgs.path}/nixos/modules/virtualisation/digital-ocean-image.nix" ];
             extraPackages = [ mpyc-demo ];
           };
         in
@@ -68,47 +65,32 @@
             ];
           };
 
-          packages.digitalocean-image = (pkgs.nixos digitalOceanImage).digitalOceanImage;
-
           packages.colmena = {
             meta = {
               nixpkgs = pkgs;
             };
-            defaults = digitalOceanImage;
+            defaults = digitalOceanConfig;
           } // builtins.fromJSON (builtins.readFile ./hosts.json);
 
-          packages.docker = mkDockerImage {
-            inherit self pkgs;
-            name = "enikolov/mpyc-demo";
-            tag = "nix-v0.0.1";
-            dir = ./.;
-          };
-          packages.arm = mkDockerImage {
-            inherit self;
-            pkgs = armPkgs;
-            name = "enikolov/mpyc-demo";
-            tag = "nix-armv7l-v0.0.1";
-            dir = ./.;
-          };
+          packages.digitalOceanImage = (pkgs.nixos (mkImageConfig {
+            inherit pkgs;
+            imports = [ "${pkgs.path}/nixos/modules/virtualisation/digital-ocean-image.nix" ];
+            extraPackages = [ mpyc-demo ];
+          })).digitalOceanImage;
 
-          packages.raspberry-pi2-image = (pkgs.nixos ({ config, lib, pkgs, modulesPath, ... }: {
-            system.stateVersion = "22.11";
-            imports = [
-              (modulesPath + "/installer/sd-card/sd-image-armv7l-multiplatform-installer.nix")
-              {
-                nix.settings = {
-                  substituters = [
-                    "https://cache.armv7l.xyz"
-                  ];
-                  trusted-public-keys = [
-                    "cache.armv7l.xyz-1:kBY/eGnBAYiqYfg0fy0inWhshUo+pGFM3Pj7kIkmlBk="
-                  ];
-                };
-              }
-
-            ];
-            boot.kernelPackages = lib.mkForce config.boot.zfs.package.latestCompatibleLinuxPackages;
-          })).config.system.build.sdImage;
+          packages.raspberryPi2Image = (pkgs.nixos (mkImageConfig
+            {
+              inherit pkgs;
+              imports = [ "${pkgs.path}/nixos/modules/installer/sd-card/sd-image-armv7l-multiplatform-installer.nix" ];
+              extraPackages = [ mpyc-demo ];
+            } // {
+            boot.kernelPackages = pkgs.lib.mkForce config.boot.zfs.package.latestCompatibleLinuxPackages;
+          })).sdImage;
+          packages.raspberryPi4Image = (pkgs.nixos (mkImageConfig {
+            inherit pkgs;
+            imports = [ "${pkgs.path}/nixos/modules/installer/sd-card/sd-image-aarch64-installer.nix" ];
+            extraPackages = [ mpyc-demo ];
+          })).sdImage;
         });
 
 }

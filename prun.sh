@@ -35,15 +35,6 @@ then
     echo Only $i parties are allowed. $HOSTNAME will not participate in this MPC session
 else
 
-# cmd="python ./demos/helloworld.py --log-level debug \
-#     -I ${MY_PID} \
-#     ${args}"
-
-# cmd="python ./demos/secretsanta.py --log-level debug \
-#     -I ${MY_PID} \
-#     ${args}"
-
-
 cmd="python ./demos/secretsanta.py 3 --log-level debug \
     -I ${MY_PID} \
     ${args}"

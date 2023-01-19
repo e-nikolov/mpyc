@@ -1,55 +1,93 @@
 {
+  description = "MPyC flake";
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils/master";
+
+    poetry2nix = {
+      url = "github:nix-community/poetry2nix/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, ... }:
-    let
-      mpyc-demo = (import ./nix/mpyc-demo.nix { inherit pkgs; dir = ./.; });
+  outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
+    { colmena = self.packages.x86_64-linux.colmena; }
+    //
+    flake-utils.lib.eachSystem (flake-utils.lib.defaultSystems ++ [ flake-utils.lib.system.armv7l-linux ])
+      (system:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+          };
 
-      pkgs = import nixpkgs {
-        system = "aarch64-linux";
-      };
+          mpyc-demo = (import ./nix/mpyc-demo.nix { inherit pkgs; dir = ./.; });
 
-      digitalOceanConfig = import ./nix/digitalocean/image.nix {
-        inherit pkgs;
-        extraPackages = [ mpyc-demo ];
-      };
-    in
-    {
-      packages.digitalOceanImage = (pkgs.nixos digitalOceanConfig).digitalOceanImage;
+          shell = import ./nix/shell.nix { inherit pkgs; };
 
-      packages.raspberryPi2Image = (pkgs.nixos ({ config, ... }: {
-        system.stateVersion = "22.11";
-        imports = [
-          ("${pkgs.path}/nixos/modules/installer/sd-card/sd-image-armv7l-multiplatform-installer.nix")
-          # {
-          #   nix.settings = {
-          #     substituters = [
-          #       "https://cache.armv7l.xyz"
-          #     ];
-          #     trusted-public-keys = [
-          #       "cache.armv7l.xyz-1:kBY/eGnBAYiqYfg0fy0inWhshUo+pGFM3Pj7kIkmlBk="
-          #     ];
-          #   };
-          # }
+          mkImageConfig = import ./nix/image.nix;
 
-        ];
-        # boot.kernelPackages = pkgs.lib.mkForce config.boot.zfs.package.latestCompatibleLinuxPackages;
-      })).sdImage;
+          digitalOceanConfig = mkImageConfig {
+            inherit pkgs;
+            imports = [ "${pkgs.path}/nixos/modules/virtualisation/digital-ocean-image.nix" ];
+            extraPackages = [ mpyc-demo ];
+          };
 
-      packages.raspberryPi4Image = (pkgs.nixos ({ config, ... }: {
-        system.stateVersion = "22.11";
-        imports = [
-          ("${pkgs.path}/nixos/modules/installer/sd-card/sd-image-aarch64-installer.nix")
-        ];
-      })).sdImage;
+          raspberryPi2Config = { config, ... }: mkImageConfig
+            {
+              inherit pkgs;
+              imports = [ "${pkgs.path}/nixos/modules/installer/sd-card/sd-image-armv7l-multiplatform-installer.nix" ];
+              extraPackages = [ mpyc-demo ];
+            } // {
+            boot.kernelPackages = pkgs.lib.mkForce config.boot.zfs.package.latestCompatibleLinuxPackages;
+          };
 
-      packages.colmena = {
-        meta = {
-          nixpkgs = pkgs;
-        };
-        defaults = digitalOceanConfig;
-      } // builtins.fromJSON (builtins.readFile ./hosts.json);
-    };
+          raspberryPi4Config = { config, ... }: mkImageConfig
+            {
+              inherit pkgs;
+              imports = [ "${pkgs.path}/nixos/modules/installer/sd-card/sd-image-aarch64-installer.nix" ];
+              extraPackages = [ mpyc-demo ];
+            };
+        in
+        {
+          devShells.default = pkgs.mkShell {
+            shellHook = ''
+              export PYTHONPATH=./
+            '';
+
+            nativeBuildInputs = with pkgs; [
+              mpyc-demo
+              poetry
+              python3Packages.pip
+              curl
+              jq
+              colmena
+              pssh
+
+              (terraform.withPlugins
+                (tp: [
+                  tp.digitalocean
+                  tp.null
+                  tp.external
+                  tp.tailscale
+                  tp.random
+                ]))
+            ];
+          };
+
+          packages.colmena = {
+            meta = {
+              nixpkgs = pkgs;
+            };
+            defaults = digitalOceanConfig;
+          } // builtins.fromJSON (builtins.readFile ./hosts.json);
+
+          packages.digitalOceanImage = (pkgs.nixos (digitalOceanConfig)).digitalOceanImage;
+
+          packages.raspberryPi2Image = (pkgs.nixos (raspberryPi2Config)).sdImage;
+
+          packages.raspberryPi4Image = (pkgs.nixos (raspberryPi4Config)).sdImage;
+        });
+
 }

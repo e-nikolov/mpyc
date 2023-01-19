@@ -1,3 +1,8 @@
+variable "nixos-image-path" {
+  type    = string
+  default = "../../bin/image/nixos.qcow2.gz"
+}
+
 resource "digitalocean_spaces_bucket_object" "nixos-image" {
   region = digitalocean_spaces_bucket.tf-state.region
   bucket = digitalocean_spaces_bucket.tf-state.name
