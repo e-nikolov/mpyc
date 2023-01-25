@@ -37,8 +37,16 @@ else
 
 cd demos
 
-# cmd="python ./np_cnnmnist.py 1.5 --log-level debug \
-cmd="python ./secretsanta.py --log-level debug \
+cmd=$*
+
+if [ -z "$cmd" ]
+then
+    cmd="python ./secretsanta.py"
+    # cmd="python ./np_cnnmnist.py 1.5"
+fi
+
+cmd="$cmd \
+    --log-level debug \
     -I ${MY_PID} \
     ${args}"
 

@@ -53,7 +53,7 @@ run:
 	mkdir -p ./logs/$t
 	rm -rf ./logs/latest
 	ln -rs ./logs/$t ./logs/latest 
-	pssh -t 0 -P -h hosts.pssh -iv -o ./logs/$t "cd /root/mpyc && ./prun.sh"
+	pssh -t 0 -P -h hosts.pssh -iv -o ./logs/$t "cd /root/mpyc && ./prun.sh ${cmd}"
 
 shuffle:
 	shuf hosts.pssh -o hosts.pssh
