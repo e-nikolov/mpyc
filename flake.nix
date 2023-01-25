@@ -71,8 +71,17 @@
               python3Packages.pip
               curl
               jq
+
               colmena
-              pssh
+              (pssh.overrideAttrs (final: old: {
+                version = "2.3.5-pre";
+                src = fetchFromGitHub {
+                  owner = "lilydjwg";
+                  repo = "pssh";
+                  rev = "13995275fb163cbfc4ed42c63de594930ed68678";
+                  hash = "sha256-IWpsIEkxAtSM7vr2pnlHU3SR4A3eAWvsLnULUXrzJTg=";
+                };
+              }))
 
               (terraform.withPlugins
                 (tp: [
@@ -85,12 +94,14 @@
             ];
           };
 
-          packages.colmena = {
-            meta = {
-              nixpkgs = pkgs;
-            };
-            defaults = digitalOceanNodeConfig;
-          } // builtins.mapAttrs (name: value: builtins.fromJSON (builtins.readFile ./hosts.json));
+          packages.colmena =
+            {
+              meta = {
+                nixpkgs = pkgs;
+              };
+              defaults = digitalOceanNodeConfig;
+            } // builtins.mapAttrs
+              (name: value: builtins.fromJSON (builtins.readFile ./hosts.json));
 
           packages.digitalOceanImage = (pkgs.nixos (digitalOceanNodeConfig)).digitalOceanImage;
 
