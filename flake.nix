@@ -28,10 +28,19 @@
 
           mkImageConfig = import ./nix/image.nix;
 
-          digitalOceanConfig = mkImageConfig {
+          digitalOceanNodeConfig = mkImageConfig {
             inherit pkgs;
             imports = [ "${pkgs.path}/nixos/modules/virtualisation/digital-ocean-image.nix" ];
             extraPackages = [ mpyc-demo ];
+          };
+
+          digitalOceanHeadscaleConfig = mkImageConfig {
+            inherit pkgs;
+            imports = [ "${pkgs.path}/nixos/modules/virtualisation/digital-ocean-image.nix" ];
+            extraPackages = [ mpyc-demo ];
+            extraServices = {
+              headscale.enable = true;
+            };
           };
 
           raspberryPi2Config = { config, ... }: mkImageConfig
@@ -56,7 +65,7 @@
               export PYTHONPATH=./
             '';
 
-            nativeBuildInputs = with pkgs; [
+            propagatedNativeBuildInputs = with pkgs; [
               mpyc-demo
               poetry
               python3Packages.pip
@@ -80,10 +89,10 @@
             meta = {
               nixpkgs = pkgs;
             };
-            defaults = digitalOceanConfig;
-          } // builtins.fromJSON (builtins.readFile ./hosts.json);
+            defaults = digitalOceanNodeConfig;
+          } // builtins.mapAttrs (name: value: builtins.fromJSON (builtins.readFile ./hosts.json));
 
-          packages.digitalOceanImage = (pkgs.nixos (digitalOceanConfig)).digitalOceanImage;
+          packages.digitalOceanImage = (pkgs.nixos (digitalOceanNodeConfig)).digitalOceanImage;
 
           packages.raspberryPi2Image = (pkgs.nixos (raspberryPi2Config)).sdImage;
 

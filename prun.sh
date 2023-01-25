@@ -2,7 +2,7 @@
 
 MAX_PARTIES=600
 hosts="./hosts.pssh"
-port=11599
+port=11598
 
 i=0
 MY_PID=-1
@@ -35,7 +35,10 @@ then
     echo Only $i parties are allowed. $HOSTNAME will not participate in this MPC session
 else
 
-cmd="python ./demos/secretsanta.py 3 --log-level debug \
+cd demos
+
+# cmd="python ./np_cnnmnist.py 1.5 --log-level debug \
+cmd="python ./secretsanta.py --log-level debug \
     -I ${MY_PID} \
     ${args}"
 

@@ -46,6 +46,7 @@ def random_permutation(n, sectype):
 @mpc.coroutine
 async def random_derangement(n, sectype):
     """Random permutation of [sectype(i) for i in range(n)] without fixed point."""
+    print("test")
     await mpc.returnType((sectype, True), n)
     p = random_permutation(n, sectype)
     t = mpc.prod([p[i] - i for i in range(n)])
@@ -65,7 +66,7 @@ async def main():
         N = int(sys.argv[1])
     else:
         N = 8
-        print('Setting input to default =', N)
+        print('?????? Setting input to default =', N)
 
     await mpc.start()
 

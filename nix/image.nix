@@ -1,4 +1,4 @@
-{ pkgs, extraPackages ? [ ], imports ? [ ], ... }:
+{ pkgs, extraPackages ? [ ], extraServices ? { }, imports ? [ ], ... }:
 {
   inherit imports;
   system.stateVersion = "22.11";
@@ -7,7 +7,9 @@
     jq
   ] ++ extraPackages;
 
-  services.tailscale.enable = true;
+  services = {
+    tailscale.enable = true;
+  } // extraServices;
 
   networking.firewall = {
     enable = true;

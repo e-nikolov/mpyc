@@ -4,25 +4,30 @@ provider "tailscale" {}
 
 locals {
   node_definitions = var.DESTROY_NODES != "" ? [
-    { region = "ams3", num = 0 },
-    { region = "sfo3", num = 0 },
-    { region = "nyc3", num = 0 },
-    { region = "sgp1", num = 0 },
     ] : [
-    { region = "ams3", num = 3 },
-    { region = "sfo3", num = 1 },
-    { region = "nyc3", num = 1 },
-    { region = "sgp1", num = 1 },
+    { region = "ams3", num = 3, type = "node" },
+    { region = "sfo3", num = 1, type = "node" },
+    { region = "nyc3", num = 1, type = "node" },
+    { region = "sgp1", num = 1, type = "node" },
+    { region = "ams3", num = 1, type = "headscale" },
   ]
 
   nodes_expanded = flatten([
     for node in local.node_definitions : [
       for i in range(node.num) :
       merge(node, {
-        name = "mpyc-demo--${node.region}-${i}"
+        name = "mpyc-demo--${node.type}-${node.region}-${i}"
       })
     ]
   ])
+
+  resource "random_id" "mpyc-node-hostname" {
+    for_each = { for node in local.nodes_expanded : node.name => node }
+    keepers = {
+      hostname = each.key
+    }
+    byte_length = 4
+  }
 
   nodes = {
     for node in local.nodes_expanded :
@@ -31,19 +36,9 @@ locals {
     })
   }
 
-  all_regions = distinct(local.node_definitions[*].region)
+  all_regions = ["ams3", "sfo3", "nyc3", "sgp1"]
 
   generation = 1
-}
-
-resource "random_id" "mpyc-node-hostname" {
-  for_each = { for node in local.nodes_expanded : node.name => node }
-
-  keepers = {
-    hostname = each.key
-  }
-
-  byte_length = 4
 }
 
 resource "digitalocean_droplet" "mpyc-node" {

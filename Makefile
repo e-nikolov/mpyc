@@ -40,17 +40,20 @@ destroy-all:
 	terraform -chdir=./deployments/terraform destroy
 	terraform -chdir=./deployments/terraform output -json hosts-colmena> hosts.json
 	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
-
+ 
 sync:
-	prsync -h hosts.pssh -zarv -p 4 ./ /root/mpyc
+	prsync -p 4 -h hosts.pssh -zarv -p 4 ./ /root/mpyc
 
 t=$(shell date +%s)
+
+ssh-add:
+	ssh-add -l | grep -q "no identities" && ssh-add || true
 
 run:
 	mkdir -p ./logs/$t
 	rm -rf ./logs/latest
 	ln -rs ./logs/$t ./logs/latest 
-	pssh -h hosts.pssh -iv -o ./logs/$t "cd /root/mpyc && ./prun.sh"
+	pssh -t 0 -P -h hosts.pssh -iv -o ./logs/$t "cd /root/mpyc && ./prun.sh"
 
 shuffle:
 	shuf hosts.pssh -o hosts.pssh
