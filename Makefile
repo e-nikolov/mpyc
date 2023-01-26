@@ -26,6 +26,7 @@ run-image:
 deploy:
 	terraform -chdir=./deployments/terraform apply
 	terraform -chdir=./deployments/terraform output -json hosts-colmena> hosts.json
+	terraform -chdir=./deployments/terraform output -json hosts-headscale> hosts-headscale.json
 	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
 	colmena apply
 

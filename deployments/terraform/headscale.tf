@@ -1,0 +1,42 @@
+
+resource "random_id" "mpyc-headscale-hostname" {
+  keepers = {
+    hostname = "headscale"
+  }
+  byte_length = 4
+}
+
+resource "digitalocean_droplet" "mpyc-headscale" {
+  image    = digitalocean_custom_image.nixos-image.id
+  name     = "mpyc-demo--headscale-ams3-${random_id.mpyc-headscale-hostname.hex}"
+  region   = "ams3"
+  size     = "s-1vcpu-1gb"
+  ssh_keys = [for key in digitalocean_ssh_key.ssh-keys : key.fingerprint]
+
+  connection {
+    type = "ssh"
+    user = "root"
+    host = self.ipv4_address
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "mkdir -p /var/keys/",
+      "echo ${tailscale_tailnet_key.keys.key} > /var/keys/tailscale",
+      "tailscale up --auth-key file:/var/keys/tailscale"
+    ]
+  }
+
+  provisioner "remote-exec" {
+    when = destroy
+    inline = [
+      "tailscale logout"
+    ]
+  }
+
+  lifecycle {
+    replace_triggered_by = [
+      tailscale_tailnet_key.keys
+    ]
+  }
+}

@@ -37,7 +37,7 @@
           digitalOceanHeadscaleConfig = mkImageConfig {
             inherit pkgs;
             imports = [ "${pkgs.path}/nixos/modules/virtualisation/digital-ocean-image.nix" ];
-            extraPackages = [ mpyc-demo ];
+            extraPackages = [ mpyc-demo pkgs.cowsay ];
             extraServices = {
               headscale.enable = true;
             };
@@ -100,8 +100,8 @@
                 nixpkgs = pkgs;
               };
               defaults = digitalOceanNodeConfig;
-            } // builtins.mapAttrs
-              (name: value: builtins.fromJSON (builtins.readFile ./hosts.json));
+            } // builtins.fromJSON (builtins.readFile ./hosts.json)
+            // builtins.mapAttrs (name: value: digitalOceanHeadscaleConfig) (builtins.fromJSON (builtins.readFile ./hosts-headscale.json));
 
           packages.digitalOceanImage = (pkgs.nixos (digitalOceanNodeConfig)).digitalOceanImage;
 

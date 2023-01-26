@@ -5,11 +5,11 @@ provider "tailscale" {}
 locals {
   node_definitions = var.DESTROY_NODES != "" ? [
     ] : [
-    { region = "ams3", num = 3, type = "node" },
-    { region = "sfo3", num = 1, type = "node" },
+    { region = "ams3", num = 1, type = "node" },
+    # { region = "sfo3", num = 1, type = "node" },
     { region = "nyc3", num = 1, type = "node" },
     { region = "sgp1", num = 1, type = "node" },
-    { region = "ams3", num = 1, type = "headscale" },
+    # { region = "ams3", num = 1, type = "headscale" },
   ]
 
   nodes_expanded = flatten([
@@ -21,14 +21,6 @@ locals {
     ]
   ])
 
-  resource "random_id" "mpyc-node-hostname" {
-    for_each = { for node in local.nodes_expanded : node.name => node }
-    keepers = {
-      hostname = each.key
-    }
-    byte_length = 4
-  }
-
   nodes = {
     for node in local.nodes_expanded :
     node.name => merge(node, {
@@ -39,6 +31,14 @@ locals {
   all_regions = ["ams3", "sfo3", "nyc3", "sgp1"]
 
   generation = 1
+}
+
+resource "random_id" "mpyc-node-hostname" {
+  for_each = { for node in local.nodes_expanded : node.name => node }
+  keepers = {
+    hostname = each.key
+  }
+  byte_length = 4
 }
 
 resource "digitalocean_droplet" "mpyc-node" {
@@ -86,6 +86,9 @@ resource "tailscale_tailnet_key" "keys" {
 
 output "hosts-colmena" {
   value = { for node in local.nodes : node.hostname => {} }
+}
+output "hosts-headscale" {
+  value = { "${digitalocean_droplet.mpyc-headscale.name}" = {} }
 }
 
 output "hosts-pssh" {
