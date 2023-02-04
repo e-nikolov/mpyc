@@ -17,6 +17,7 @@ resource "digitalocean_custom_image" "nixos-image" {
   url     = "https://${digitalocean_spaces_bucket.tf-state.bucket_domain_name}/${digitalocean_spaces_bucket_object.nixos-image.key}"
   regions = local.all_regions
   tags    = ["nixos"]
+  distribution = "Arch Linux"
 
   lifecycle {
     replace_triggered_by = [

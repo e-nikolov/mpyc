@@ -34,14 +34,22 @@
             extraPackages = [ mpyc-demo ];
           };
 
-          digitalOceanHeadscaleConfig = mkImageConfig {
-            inherit pkgs;
-            imports = [ "${pkgs.path}/nixos/modules/virtualisation/digital-ocean-image.nix" ];
-            extraPackages = [ mpyc-demo pkgs.cowsay ];
-            extraServices = {
-              headscale.enable = true;
+          digitalOceanHeadscaleConfig = mkImageConfig
+            {
+              inherit pkgs;
+              imports = [ "${pkgs.path}/nixos/modules/virtualisation/digital-ocean-image.nix" ];
+              extraPackages = [ mpyc-demo pkgs.cowsay pkgs.headscale pkgs.lsof pkgs.fzf ];
+              extraServices = {
+                headscale.enable = true;
+                headscale.settings = {
+                  metrics_listen_addr = "127.0.0.1:9090";
+                  listen_addr = "0.0.0.0:8080";
+                  log = {
+                    level = "debug";
+                  };
+                };
+              };
             };
-          };
 
           raspberryPi2Config = { config, ... }: mkImageConfig
             {

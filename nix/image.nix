@@ -12,8 +12,13 @@
   } // extraServices;
 
   networking.firewall = {
-    enable = true;
+    enable = false;
     checkReversePath = "loose";
     trustedInterfaces = [ "tailscale0" ];
   };
+
+  virtualisation.docker.enable = false;
+  virtualisation.podman.enable = true;
+  virtualisation.podman.dockerSocket.enable = true;
+  virtualisation.podman.dockerCompat = true;
 }
