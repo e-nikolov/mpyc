@@ -1,15 +1,6 @@
 version: "3"
 services:
-  test:
-    # hostname: ${HOST_HOSTNAME}-docker
-    image: ghcr.io/tailscale/tailscale:v1.32.2
-    command: [ "/bin/sh", "-c", "/root/mpyc/entrypoint.sh" ]
-    volumes:
-      - "/dev/net/tun:/dev/net/tun"
-      - ./:/root/mpyc
-      - /var/keys:/var/keys
   tailscale:
-    # hostname: ${HOSTNAME}-docker
     image: ghcr.io/tailscale/tailscale:v1.32.2
     volumes:
       - "/dev/net/tun:/dev/net/tun"
