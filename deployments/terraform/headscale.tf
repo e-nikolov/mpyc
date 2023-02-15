@@ -7,7 +7,7 @@ resource "random_id" "mpyc-headscale-hostname" {
 }
 
 resource "digitalocean_droplet" "mpyc-headscale" {
-  image    = digitalocean_custom_image.nixos-image.id
+  image    = digitalocean_custom_image.nixos-image-headscale.id
   name     = "mpyc-demo--headscale-ams3-${random_id.mpyc-headscale-hostname.hex}"
   region   = "ams3"
   size     = "s-1vcpu-1gb"
@@ -27,6 +27,13 @@ resource "digitalocean_droplet" "mpyc-headscale" {
     ]
   }
 
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "headscale users create mpyc-demo",
+  #     "headscale --user mpyc-demo preauthkeys create --reusable --expiration 24y | tail",
+  #   ]
+  # }
+
   provisioner "remote-exec" {
     when = destroy
     inline = [
@@ -39,4 +46,21 @@ resource "digitalocean_droplet" "mpyc-headscale" {
       tailscale_tailnet_key.keys
     ]
   }
+}
+
+resource "ssh_resource" "headscale-key" {
+  host  = digitalocean_droplet.mpyc-headscale.ipv4_address
+  user  = "root"
+  agent = true
+
+  when = "create" # Default
+
+  commands = [
+    "headscale users create mpyc-demo",
+    "headscale --user mpyc-demo preauthkeys create --reusable --expiration 24y | tail -1 | tr -d '\n'"
+  ]
+}
+
+output "result" {
+  value = ssh_resource.headscale-key.result
 }

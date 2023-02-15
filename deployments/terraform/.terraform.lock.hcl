@@ -2,10 +2,9 @@
 # Manual edits may be lost in future updates.
 
 provider "registry.terraform.io/digitalocean/digitalocean" {
-  version     = "2.23.0"
-  constraints = "2.23.0"
+  version = "2.28.1"
   hashes = [
-    "h1:B9KI4eB2C0BUvfVSl+mFCmrAJPx6efhh+rtnUl9jICA=",
+    "h1:PoFrDGpruFI+lvRn0NjCCMXkrqKjC5/izOwtagHjG+o=",
   ]
 }
 
@@ -16,9 +15,16 @@ provider "registry.terraform.io/hashicorp/random" {
   ]
 }
 
-provider "registry.terraform.io/tailscale/tailscale" {
-  version = "0.13.5"
+provider "registry.terraform.io/loafoe/ssh" {
+  version = "2.4.0"
   hashes = [
-    "h1:DTMDnt14+H+tLO/DUyTwbhJkV/1npvBPCLh0IgLCsfo=",
+    "h1:Er2Oe7iA7FUGxi7CxURSwvk4xyHXaoujFvWqZdqcAFA=",
+  ]
+}
+
+provider "registry.terraform.io/tailscale/tailscale" {
+  version = "0.13.6"
+  hashes = [
+    "h1:+VR17O0irV5/fmEIYA1fb9Sg8pgnbC58A1B0iu5diE4=",
   ]
 }

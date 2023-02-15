@@ -5,10 +5,10 @@ provider "tailscale" {}
 locals {
   node_definitions = var.DESTROY_NODES != "" ? [
     ] : [
-    { region = "ams3", num = 1, type = "node" },
+    { region = "ams3", num = 3, type = "node" },
     # { region = "sfo3", num = 1, type = "node" },
-    { region = "nyc3", num = 1, type = "node" },
-    { region = "sgp1", num = 1, type = "node" },
+    # { region = "nyc3", num = 1, type = "node" },
+    # { region = "sgp1", num = 1, type = "node" },
     # { region = "ams3", num = 1, type = "headscale" },
   ]
 
@@ -59,7 +59,10 @@ resource "digitalocean_droplet" "mpyc-node" {
   provisioner "remote-exec" {
     inline = [
       "mkdir -p /var/keys/",
-      "echo ${tailscale_tailnet_key.keys.key} > /var/keys/tailscale",
+      "echo '${tailscale_tailnet_key.keys.key}' > /var/keys/tailscale",
+      "echo '${ssh_resource.headscale-key.result}' > /var/keys/headscale",
+      "echo '${digitalocean_droplet.mpyc-headscale.ipv4_address}' > /var/keys/headscale-server",
+      "echo '${self.name}' > /var/keys/hostname",
       "tailscale up --auth-key file:/var/keys/tailscale"
     ]
   }
@@ -73,7 +76,8 @@ resource "digitalocean_droplet" "mpyc-node" {
 
   lifecycle {
     replace_triggered_by = [
-      tailscale_tailnet_key.keys
+      tailscale_tailnet_key.keys,
+      ssh_resource.headscale-key.result
     ]
   }
 }

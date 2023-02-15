@@ -1,0 +1,43 @@
+version: "3"
+services:
+  test:
+    # hostname: ${HOST_HOSTNAME}-docker
+    image: ghcr.io/tailscale/tailscale:v1.32.2
+    command: [ "/bin/sh", "-c", "/root/mpyc/entrypoint.sh" ]
+    volumes:
+      - "/dev/net/tun:/dev/net/tun"
+      - ./:/root/mpyc
+      - /var/keys:/var/keys
+  tailscale:
+    # hostname: ${HOSTNAME}-docker
+    image: ghcr.io/tailscale/tailscale:v1.32.2
+    volumes:
+      - "/dev/net/tun:/dev/net/tun"
+      - ./:/root/mpyc
+      - /var/keys:/var/keys
+    privileged: true
+    cap_add:
+      - net_admin
+      - sys_module
+    restart: unless-stopped
+    command: [ "/bin/sh", "-c", "/root/mpyc/entrypoint.sh" ]
+    environment:
+      - TS_AUTH_KEY=file:/var/keys/headscale
+      - TS_ACCEPT_DNS=true
+      - TS_SOCKET=/var/run/tailscale/tailscaled.sock
+      - TS_USERSPACE=false
+      - TS_TAILSCALED_EXTRA_ARGS=--tun=headscale0
+  demo:
+    image: enikolov/mpyc-demo:nix-v0.0.1
+    network_mode: service:tailscale
+    restart: never
+    privileged: true
+    cap_add:
+      - net_admin
+      - sys_module
+    volumes:
+      - ./:/root/mpyc
+      - /var/keys:/var/keys
+    working_dir: /root/mpyc/demos
+    command:
+      - "/bin/sh"

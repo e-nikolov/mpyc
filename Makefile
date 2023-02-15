@@ -23,18 +23,20 @@ image-docker:
 run-image:
 	docker run enikolov/mpyc-demo:nix-v0.0.1
 
-deploy:
+provision:
 	terraform -chdir=./deployments/terraform apply
 	terraform -chdir=./deployments/terraform output -json hosts-colmena> hosts.json
 	terraform -chdir=./deployments/terraform output -json hosts-headscale> hosts-headscale.json
 	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
+
+deploy:
 	colmena apply
 
 destroy:
 	TF_VAR_DESTROY_NODES=1 terraform -chdir=./deployments/terraform apply
 	terraform -chdir=./deployments/terraform output -json hosts-colmena> hosts.json
 	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
-	./scripts/destroy-tailscale.sh
+	# ./scripts/destroy-tailscale.sh
 
 
 destroy-all:
@@ -56,8 +58,17 @@ run:
 	ln -rs ./logs/$t ./logs/latest 
 	pssh -t 0 -P -h hosts.pssh -iv -o ./logs/$t "cd /root/mpyc && ./prun.sh ${cmd}"
 
+rund:
+	mkdir -p ./logs/$t
+	rm -rf ./logs/latest
+	ln -rs ./logs/$t ./logs/latest 
+	pssh -t 0 -P -h hosts.pssh -iv -o ./logs/$t "cd /root/mpyc && ./prund.sh ${cmd}"
+
 shuffle:
 	shuf hosts.pssh -o hosts.pssh
 
 do-image:
 	nix build .#digitalOceanImage -o bin/image
+
+do-image-headscale:
+	nix build .#digitalOceanHeadscaleImage -o bin/headscale

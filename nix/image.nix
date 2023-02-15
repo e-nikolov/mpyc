@@ -5,6 +5,8 @@
 
   environment.systemPackages = with pkgs; [
     jq
+    docker
+    docker-compose
   ] ++ extraPackages;
 
   services = {
@@ -20,5 +22,5 @@
   virtualisation.docker.enable = false;
   virtualisation.podman.enable = true;
   virtualisation.podman.dockerSocket.enable = true;
-  virtualisation.podman.dockerCompat = true;
+  # virtualisation.podman.dockerCompat = true;
 }
