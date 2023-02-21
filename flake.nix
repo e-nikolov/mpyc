@@ -34,6 +34,7 @@
             };
           }));
 
+          mkDockerImage = import ./nix/docker.nix;
           shell = import ./nix/shell.nix { inherit pkgs; };
 
           mkImageConfig = import ./nix/image.nix;
