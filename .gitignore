@@ -107,7 +107,7 @@ ENV/
 result
 secrets.json
 .direnv
-bin
+# bin
 
 # terraform
 # Local .terraform directories
