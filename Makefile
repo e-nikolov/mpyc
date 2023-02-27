@@ -24,12 +24,18 @@ run-image:
 	docker run enikolov/mpyc-demo:nix-v0.0.1
 
 provision:
+	@echo ===================================================
+	@echo Provisioning with terraform
+	@echo ===================================================
 	terraform -chdir=./deployments/terraform apply
 	terraform -chdir=./deployments/terraform output -json hosts-colmena> hosts.json
 	terraform -chdir=./deployments/terraform output -json hosts-headscale> hosts-headscale.json
 	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
 
 deploy:
+	@echo ===================================================
+	@echo Deploying with colmena
+	@echo ===================================================
 	colmena apply
 
 destroy:

@@ -1,4 +1,4 @@
-{ self, pkgs, name, tag, dir }:
+pkgs: { self, name, tag, dir }:
 let
   nonRootShadowSetup = { user, uid, gid ? uid }: with pkgs; [
     (

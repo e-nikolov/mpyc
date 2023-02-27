@@ -1,4 +1,4 @@
-{ pkgs, dir }:
+pkgs: dir:
 (pkgs.poetry2nix.mkPoetryEnv
   {
     python = pkgs.python3;

@@ -5,6 +5,7 @@ services:
     volumes:
       - "/dev/net/tun:/dev/net/tun"
       - ./:/root/mpyc
+      - tailscale:/data/tailscale
       - /var/keys:/var/keys
     privileged: true
     cap_add:
@@ -15,13 +16,14 @@ services:
     environment:
       - TS_AUTH_KEY=file:/var/keys/headscale
       - TS_ACCEPT_DNS=true
+      - TS_STATE_DIR=/data/tailscale
       - TS_SOCKET=/var/run/tailscale/tailscaled.sock
       - TS_USERSPACE=false
       - TS_TAILSCALED_EXTRA_ARGS=--tun=headscale0
   demo:
     image: enikolov/mpyc-demo:nix-v0.0.1
     network_mode: service:tailscale
-    restart: never
+    # restart: never
     privileged: true
     cap_add:
       - net_admin
@@ -32,3 +34,5 @@ services:
     working_dir: /root/mpyc/demos
     command:
       - "/bin/sh"
+volumes:
+  tailscale:

@@ -1,5 +1,5 @@
 #!/bin/sh
-# docker compose down --remove-orphans
+docker compose down --remove-orphans
 
 MAX_PARTIES=600
 hosts="./hosts.pssh"
@@ -42,6 +42,7 @@ cmd=$*
 
 if [ -z "$cmd" ]
 then
+    # cmd="python ./helloworld.py"
     cmd="python ./secretsanta.py"
     # cmd="python ./np_cnnmnist.py 1.5"
 fi
@@ -52,7 +53,7 @@ cmd="$cmd \
     ${args}"
 
 docker compose up -d tailscale
-sleep 2
+sleep 5
 
 echo docker compose up --rm demo \"$cmd\"
 
