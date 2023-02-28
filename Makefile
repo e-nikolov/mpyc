@@ -78,3 +78,9 @@ do-image:
 
 do-image-headscale:
 	nix build .#digitalOceanHeadscaleImage -o bin/headscale
+
+natpunch-client:
+	sudo natpunch-client wg-demo 164.90.201.6:12345 diRHFtiG11gbHSatcwViALlZbVBImBE5ufBkLOpj1gI= -c
+
+natpunch-server:
+	natpunch-client wg-demo-server 164.90.201.6:12345 diRHFtiG11gbHSatcwViALlZbVBImBE5ufBkLOpj1gI= -c

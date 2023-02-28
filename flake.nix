@@ -30,27 +30,27 @@
                 pwnat = import ./nix/pwnat.nix super;
                 tailscale = import ./nix/tailscale.nix super;
                 headscale = import ./nix/headscale.nix super;
+                natpunch = import ./nix/natpunch.nix super;
                 pssh = import ./nix/pssh.nix super;
+                mkDockerImage = import ./nix/docker.nix;
+                mkImageConfig = import ./nix/image.nix self;
                 lib = super.lib // { recursiveMerge = import ./nix/recursive-merge.nix { lib = super.lib; }; };
               })
             ];
           };
 
-          mkDockerImage = import ./nix/docker.nix;
-          mkImageConfig = import ./nix/image.nix pkgs;
-
-          digitalOceanNodeConfig = mkImageConfig {
+          digitalOceanNodeConfig = pkgs.mkImageConfig {
             imports = [ "${pkgs.path}/nixos/modules/virtualisation/digital-ocean-image.nix" ];
           };
 
-          digitalOceanHeadscaleConfig = mkImageConfig (import ./nix/headscale-config.nix pkgs);
+          digitalOceanHeadscaleConfig = pkgs.mkImageConfig (import ./nix/headscale-config.nix pkgs);
 
-          raspberryPi2Config = { config, ... }: mkImageConfig {
+          raspberryPi2Config = { config, ... }: pkgs.mkImageConfig {
             imports = [ "${pkgs.path}/nixos/modules/installer/sd-card/sd-image-armv7l-multiplatform-installer.nix" ];
             boot.kernelPackages = pkgs.lib.mkForce config.boot.zfs.package.latestCompatibleLinuxPackages;
           };
 
-          raspberryPi4Config = { config, ... }: mkImageConfig {
+          raspberryPi4Config = { config, ... }: pkgs.mkImageConfig {
             imports = [ "${pkgs.path}/nixos/modules/installer/sd-card/sd-image-aarch64-installer.nix" ];
           };
         in
@@ -74,5 +74,4 @@
           packages.raspberryPi2Image = (pkgs.nixos (raspberryPi2Config)).sdImage;
           packages.raspberryPi4Image = (pkgs.nixos (raspberryPi4Config)).sdImage;
         });
-
 }

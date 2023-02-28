@@ -14,6 +14,7 @@ pkgs: pkgs.mkShell {
 
     pkgs.colmena
     pkgs.pssh
+    pkgs.natpunch
 
     (pkgs.terraform.withPlugins
       (tp: [
