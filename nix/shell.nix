@@ -15,6 +15,8 @@ pkgs: pkgs.mkShell {
     pkgs.colmena
     pkgs.pssh
     pkgs.natpunch
+    pkgs.wireguard-tools
+    pkgs.gole
 
     (pkgs.terraform.withPlugins
       (tp: [

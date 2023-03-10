@@ -48,6 +48,16 @@ resource "digitalocean_droplet" "mpyc-headscale" {
   }
 }
 
+resource "digitalocean_domain" "mpyc-headscale" {
+  name       = "headscale.${var.DOMAIN}"
+  ip_address = digitalocean_droplet.mpyc-headscale.ipv4_address
+}
+
+resource "digitalocean_domain" "mpyc-headscale-2" {
+  name       = "${digitalocean_droplet.mpyc-headscale.name}.${var.DOMAIN}"
+  ip_address = digitalocean_droplet.mpyc-headscale.ipv4_address
+}
+
 resource "ssh_resource" "headscale-key" {
   host  = digitalocean_droplet.mpyc-headscale.ipv4_address
   user  = "root"

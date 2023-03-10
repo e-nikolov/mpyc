@@ -40,7 +40,12 @@ resource "random_id" "mpyc-node-hostname" {
   }
   byte_length = 4
 }
+resource "digitalocean_domain" "mpyc-node" {
+  for_each = local.nodes
 
+  name       = "${each.value.hostname}.${var.DOMAIN}"
+  ip_address = digitalocean_droplet.mpyc-node[each.key].ipv4_address
+}
 resource "digitalocean_droplet" "mpyc-node" {
   for_each = local.nodes
 
@@ -91,10 +96,23 @@ resource "tailscale_tailnet_key" "keys" {
 output "hosts-colmena" {
   value = { for node in local.nodes : node.hostname => {} }
 }
+
+output "hosts-colmena-dns" {
+  value = { for node in local.nodes : "${node.hostname}.${var.DOMAIN}" => {} }
+}
+
 output "hosts-headscale" {
   value = { "${digitalocean_droplet.mpyc-headscale.name}" = {} }
 }
 
+output "hosts-headscale-dns" {
+  value = { "${digitalocean_droplet.mpyc-headscale.name}.${var.DOMAIN}" = {} }
+}
+
 output "hosts-pssh" {
-  value = join("", [for node in local.nodes : "root@${node.hostname}\n"])
+  value = join("", [for node in local.nodes : "${node.hostname}\n"])
+}
+
+output "hosts-pssh-dns" {
+  value = join("", [for node in local.nodes : "${node.hostname}.${var.DOMAIN}\n"])
 }

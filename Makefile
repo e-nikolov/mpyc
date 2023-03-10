@@ -1,5 +1,9 @@
 DEFAULT_SHELL = $(shell getent passwd ${USER} | awk -F: '{print $$NF}' )
 
+TIMESTAMP := $(shell date +"%Y%m%d%H%M%S")
+
+PSSH=pssh --user root --hosts=hosts-dns.pssh --timeout 0 --print --inline --verbose --outdir ./logs/${TIMESTAMP}
+
 dev:
 	nix develop --command "${DEFAULT_SHELL}"
 
@@ -28,9 +32,12 @@ provision:
 	@echo Provisioning with terraform
 	@echo ===================================================
 	terraform -chdir=./deployments/terraform apply
-	terraform -chdir=./deployments/terraform output -json hosts-colmena> hosts.json
-	terraform -chdir=./deployments/terraform output -json hosts-headscale> hosts-headscale.json
-	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
+	terraform -chdir=./deployments/terraform output -json hosts-colmena > hosts.json
+	terraform -chdir=./deployments/terraform output -json hosts-colmena-dns > hosts-dns.json
+	terraform -chdir=./deployments/terraform output -json hosts-headscale > hosts-headscale.json
+	terraform -chdir=./deployments/terraform output -json hosts-headscale-dns > hosts-headscale-dns.json
+	terraform -chdir=./deployments/terraform output -raw hosts-pssh > hosts.pssh
+	terraform -chdir=./deployments/terraform output -raw hosts-pssh-dns > hosts-dns.pssh
 
 deploy:
 	@echo ===================================================
@@ -40,38 +47,45 @@ deploy:
 
 destroy:
 	TF_VAR_DESTROY_NODES=1 terraform -chdir=./deployments/terraform apply
-	terraform -chdir=./deployments/terraform output -json hosts-colmena> hosts.json
-	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
+	terraform -chdir=./deployments/terraform output -json hosts-colmena > hosts.json
+	terraform -chdir=./deployments/terraform output -json hosts-colmena-dns > hosts-dns.json
+	terraform -chdir=./deployments/terraform output -raw hosts-pssh > hosts.pssh
+	terraform -chdir=./deployments/terraform output -raw hosts-pssh-dns > hosts-dns.pssh
 	# ./scripts/destroy-tailscale.sh
 
 
 destroy-all:
 	terraform -chdir=./deployments/terraform destroy
-	terraform -chdir=./deployments/terraform output -json hosts-colmena> hosts.json
-	terraform -chdir=./deployments/terraform output -raw hosts-pssh> hosts.pssh
+	terraform -chdir=./deployments/terraform output -json hosts-colmena > hosts.json
+	terraform -chdir=./deployments/terraform output -json hosts-colmena-dns > hosts-dns.json
+	terraform -chdir=./deployments/terraform output -raw hosts-pssh > hosts.pssh
+	terraform -chdir=./deployments/terraform output -raw hosts-pssh-dns > hosts-dns.pssh
  
 sync:
-	prsync -p 4 -h hosts.pssh -zarv -p 4 ./ /root/mpyc
+	prsync --par 4 --user root --hosts hosts-dns.pssh --compress --archive --recursive --verbose --inline ./ /root/mpyc
 
-t=$(shell date +%s)
+reboot-nodes:
+	$(PSSH) "reboot --force"
 
 ssh-add:
 	ssh-add -l | grep -q "no identities" && ssh-add || true
 
-run:
-	mkdir -p ./logs/$t
+logdir:
+	mkdir -p ./logs/${TIMESTAMP}
 	rm -rf ./logs/latest
-	ln -rs ./logs/$t ./logs/latest 
-	pssh -t 0 -P -h hosts.pssh -iv -o ./logs/$t "cd /root/mpyc && ./prun.sh ${cmd}"
+	ln -rs ./logs/${TIMESTAMP} ./logs/latest 
 
-rund:
-	mkdir -p ./logs/$t
-	rm -rf ./logs/latest
-	ln -rs ./logs/$t ./logs/latest 
-	pssh -t 0 -P -h hosts.pssh -iv -o ./logs/$t "cd /root/mpyc && ./prund.sh ${cmd}"
+run: logdir
+	$(PSSH) "cd /root/mpyc && ./prun.sh ${cmd}"
+
+rund: logdir
+	$(PSSH) "cd /root/mpyc && ./prund.sh ${cmd}"
+
+rundns: logdir
+	$(PSSH) "cd /root/mpyc && ./prundns.sh ${cmd}"
 
 shuffle:
-	shuf hosts.pssh -o hosts.pssh
+	shuf hosts-dns.pssh -o hosts-dns.pssh
 
 do-image:
 	nix build .#digitalOceanImage -o bin/image
@@ -80,7 +94,7 @@ do-image-headscale:
 	nix build .#digitalOceanHeadscaleImage -o bin/headscale
 
 natpunch-client:
-	sudo natpunch-client wg-demo 164.90.201.6:12345 diRHFtiG11gbHSatcwViALlZbVBImBE5ufBkLOpj1gI= -c
+	sudo natpunch-client natpunch-client 164.90.201.6:12345 diRHFtiG11gbHSatcwViALlZbVBImBE5ufBkLOpj1gI= -c
 
 natpunch-server:
-	natpunch-client wg-demo-server 164.90.201.6:12345 diRHFtiG11gbHSatcwViALlZbVBImBE5ufBkLOpj1gI= -c
+	sudo natpunch-client wg-demo-server 164.90.201.6:12345 diRHFtiG11gbHSatcwViALlZbVBImBE5ufBkLOpj1gI= -c

@@ -22,6 +22,7 @@ services:
       - TS_TAILSCALED_EXTRA_ARGS=--tun=headscale0
   demo:
     image: enikolov/mpyc-demo:nix-v0.0.1
+    # network_mode: host
     network_mode: service:tailscale
     # restart: never
     privileged: true

@@ -31,6 +31,7 @@
                 tailscale = import ./nix/tailscale.nix super;
                 headscale = import ./nix/headscale.nix super;
                 natpunch = import ./nix/natpunch.nix super;
+                gole = import ./nix/gole.nix super;
                 pssh = import ./nix/pssh.nix super;
                 mkDockerImage = import ./nix/docker.nix;
                 mkImageConfig = import ./nix/image.nix self;
@@ -64,10 +65,10 @@
               };
               defaults = digitalOceanNodeConfig;
             } // builtins.fromJSON
-              (builtins.readFile ./hosts.json)
+              (builtins.readFile ./hosts-dns.json)
             // builtins.mapAttrs
               (name: value: digitalOceanHeadscaleConfig)
-              (builtins.fromJSON (builtins.readFile ./hosts-headscale.json));
+              (builtins.fromJSON (builtins.readFile ./hosts-headscale-dns.json));
 
           packages.digitalOceanImage = (pkgs.nixos (digitalOceanNodeConfig)).digitalOceanImage;
           packages.digitalOceanHeadscaleImage = (pkgs.nixos (digitalOceanHeadscaleConfig)).digitalOceanImage;

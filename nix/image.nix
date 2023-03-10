@@ -18,6 +18,7 @@ pkgs.lib.recursiveMerge [{
     pkgs.zsh-fzf-tab
     pkgs.zsh-z
     pkgs.natpunch
+    pkgs.gole
   ];
   users.defaultUserShell = pkgs.zsh;
 
