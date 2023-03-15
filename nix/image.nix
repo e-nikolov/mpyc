@@ -19,6 +19,8 @@ pkgs.lib.recursiveMerge [{
     pkgs.zsh-z
     pkgs.natpunch
     pkgs.gole
+    pkgs.go-stun
+    pkgs.pion-stun
   ];
   users.defaultUserShell = pkgs.zsh;
 

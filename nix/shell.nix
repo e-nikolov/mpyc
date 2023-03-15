@@ -17,6 +17,8 @@ pkgs: pkgs.mkShell {
     pkgs.natpunch
     pkgs.wireguard-tools
     pkgs.gole
+    pkgs.go-stun
+    pkgs.pion-stun
 
     (pkgs.terraform.withPlugins
       (tp: [

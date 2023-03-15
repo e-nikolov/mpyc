@@ -32,6 +32,8 @@
                 headscale = import ./nix/headscale.nix super;
                 natpunch = import ./nix/natpunch.nix super;
                 gole = import ./nix/gole.nix super;
+                go-stun = import ./nix/go-stun.nix super;
+                pion-stun = import ./nix/pion-stun.nix super;
                 pssh = import ./nix/pssh.nix super;
                 mkDockerImage = import ./nix/docker.nix;
                 mkImageConfig = import ./nix/image.nix self;
