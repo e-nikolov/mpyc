@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>MicroPyScript Hello World</title>
+
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script defer src="./pyscript.js" type=""></script>
+    <!-- <script defer src="./pyscript2.js" type=""></script> -->
+
+</head>
+
+<body>
+    <py-config>
+{
+    "runtime": "micropython"
+}
+    </py-config>
+
+    <section>
+        Hello world! <br />
+        This is the current date and time, as computed by Python:
+
+        <py-script src="demo-numpy.py"></py-script>
+    </section>
+</body>
+
+</html>
+
+<!-- <script src="./pyscript.js" type="module" ></script> -->

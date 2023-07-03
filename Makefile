@@ -14,8 +14,8 @@ demo:
 	cd ./demos && ./run-all.sh
 
 image:
-	docker load < $(shell nix build .#docker --print-out-paths --no-link)
-	docker push enikolov/mpyc-demo:nix-v0.0.1
+	docker load < $(shell nix build .#dockerImage --print-out-paths --no-link)
+	docker push enikolov/mpyc-demo:v0.0.5
 
 image-nix-arm:
 	docker load < $(shell nix build .#arm --print-out-paths --no-link)

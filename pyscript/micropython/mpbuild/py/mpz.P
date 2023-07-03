@@ -1,0 +1,26 @@
+build/py/mpz.o: ../../py/mpz.c \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/compat/string.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/string.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/features.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/alltypes.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/assert.h \
+  ../../py/mpz.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stdint.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/stdint.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/stdint.h \
+  ../../py/mpconfig.h mpconfigport.h ../../py/misc.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stdbool.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stddef.h
+../../py/mpz.c :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/compat/string.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/string.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/features.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/alltypes.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/assert.h :
+  ../../py/mpz.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stdint.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/stdint.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/stdint.h :
+  ../../py/mpconfig.h mpconfigport.h ../../py/misc.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stdbool.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stddef.h :

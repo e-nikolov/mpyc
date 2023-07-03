@@ -1,0 +1,12 @@
+build/extmod/machine_pinbase.o: ../../extmod/machine_pinbase.c \
+  ../../py/mpconfig.h mpconfigport.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stdint.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/stdint.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/alltypes.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/stdint.h
+../../extmod/machine_pinbase.c :
+  ../../py/mpconfig.h mpconfigport.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stdint.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/stdint.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/alltypes.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/stdint.h :

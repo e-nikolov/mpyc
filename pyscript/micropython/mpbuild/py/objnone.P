@@ -1,0 +1,32 @@
+build/py/objnone.o: ../../py/objnone.c \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/compat/stdlib.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/stdlib.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/features.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/alltypes.h \
+  ../../py/obj.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/assert.h \
+  ../../py/mpconfig.h mpconfigport.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stdint.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/stdint.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/stdint.h \
+  ../../py/misc.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stdbool.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stddef.h \
+  ../../py/qstr.h build/genhdr/qstrdefs.generated.h ../../py/mpprint.h \
+  ../../py/runtime0.h
+../../py/objnone.c :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/compat/stdlib.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/stdlib.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/features.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/alltypes.h :
+  ../../py/obj.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/assert.h :
+  ../../py/mpconfig.h mpconfigport.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stdint.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/stdint.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/stdint.h :
+  ../../py/misc.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stdbool.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stddef.h :
+  ../../py/qstr.h build/genhdr/qstrdefs.generated.h ../../py/mpprint.h :
+  ../../py/runtime0.h :

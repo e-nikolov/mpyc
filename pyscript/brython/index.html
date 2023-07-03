@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Brython Hello World</title>
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script src="https://cdn.jsdelivr.net/npm/brython@3/brython.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/brython@3/brython_stdlib.js">
+    </script>
+</head>
+
+<body onload="brython()">
+    <section>
+        Hello world! <br />
+        This is the current date and time, as computed by Python:
+
+        <div id="content"></div>
+        <script type="text/python">
+            from browser import document
+            from datetime import datetime
+            # display(now.strftime("%m/%d/%Y, %H:%M:%S"))
+            document["content"].text = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+        </script>
+    </section>
+</body>
+
+</html>

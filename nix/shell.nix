@@ -19,6 +19,7 @@ pkgs: pkgs.mkShell {
     pkgs.gole
     pkgs.go-stun
     pkgs.pion-stun
+    pkgs.just
 
     (pkgs.terraform.withPlugins
       (tp: [

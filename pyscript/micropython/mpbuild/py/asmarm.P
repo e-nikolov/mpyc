@@ -1,0 +1,26 @@
+build/py/asmarm.o: ../../py/asmarm.c \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/stdio.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/wasi/api.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stddef.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stdint.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/stdint.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/alltypes.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/stdint.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/features.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/assert.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/compat/string.h \
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/string.h \
+  ../../py/mpconfig.h mpconfigport.h
+../../py/asmarm.c :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/stdio.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/wasi/api.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stddef.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/lib/clang/17/include/stdint.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/stdint.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/alltypes.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/bits/stdint.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/features.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/assert.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/compat/string.h :
+  /home/enikolov/dev/MicroPyScript/emsdk/upstream/emscripten/cache/sysroot/include/string.h :
+  ../../py/mpconfig.h mpconfigport.h :

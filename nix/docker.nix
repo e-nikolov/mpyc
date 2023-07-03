@@ -61,6 +61,10 @@ pkgs.dockerTools.buildLayeredImage
         pkgs.unixtools.top
         pkgs.wget
         pkgs.tailscale
+        pkgs.natpunch
+        pkgs.gole
+        pkgs.go-stun
+        pkgs.pion-stun
         (pkgs.buildEnv {
           name = "mpyc-root";
           paths = [ dir ];
