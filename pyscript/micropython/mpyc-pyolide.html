@@ -21,40 +21,43 @@
 
     <h1>MPyC in PyScript</h1>
 
-    <py-script>
-import sys
-import micropip
-
-await micropip.install('regex')
-
-from mpyc.runtime import mpc
-print(f'PyScript {pyscript.__version__=}')
-print(f'Python {sys.version=}')
-print(f'MPyC {mpc.version=}')
-print(f'NB: Pyodide uses its own event loop {mpc._loop=}')
-    </py-script>
-
     Python code can be embedded in HTML using the &lt;py-script&gt; tag.<br />
     We have embedded the following code to load MPyC and display some info:
-    <pre>
-        import sys
-        from mpyc.runtime import mpc
-        print(f'PyScript {pyscript.__version__=}')
-        print(f'Python {sys.version=}')
-        print(f'MPyC {mpc.version=}')
-        print(f'NB: Pyodide uses its own event loop {mpc._loop=}')
-    </pre>
-
-    All output to stdout (and stderr) is displayed on this "terminal":
-    <py-terminal></py-terminal>
 
     The following cells can be edited and run.<br />
     Click the green play button when hovering over the bottom right corner to run each cell.
+    <div style="margin-right: 3rem">
 
-    <py-repl>
-        import secretsanta
-        mpc.run(secretsanta.main())
-    </py-repl>
+        <py-repl id="my-repl" output="replOutput2">
+            import sys
+            import micropip
+            import asyncio
+
+            import secretsanta
+            from mpyc.runtime import mpc
+
+            # await micropip.install('regex')
+
+            print(f'PyScript {pyscript.__version__=}')
+            print(f'Python {sys.version=}')
+            print(f'MPyC {mpc.version=}')
+            print(f'NB: Pyodide uses its own event loop {mpc._loop=}')
+
+            mpc.options.no_async = False
+
+            asyncio.ensure_future(secretsanta.main())
+
+            # mpc.run(secretsanta.main())
+
+        </py-repl>
+        <div id="replOutput2" hidden></div>
+
+    </div>
+
+    All output to stdout (and stderr) is displayed on this "terminal":
+
+    <py-terminal id="replOutput"></py-terminal>
+
 
 </body>
 

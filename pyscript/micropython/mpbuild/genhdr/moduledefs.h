@@ -100,10 +100,6 @@ extern const struct _mp_obj_module_t mp_module_uctypes;
 #undef MODULE_DEF_UCTYPES
 #define MODULE_DEF_UCTYPES { MP_ROM_QSTR(MP_QSTR_uctypes), MP_ROM_PTR(&mp_module_uctypes) },
 
-extern const struct _mp_obj_module_t ulab_user_cmodule;
-#undef MODULE_DEF_ULAB
-#define MODULE_DEF_ULAB { MP_ROM_QSTR(MP_QSTR_ulab), MP_ROM_PTR(&ulab_user_cmodule) },
-
 
 #define MICROPY_REGISTERED_MODULES \
     MODULE_DEF_BUILTINS \
@@ -114,7 +110,6 @@ extern const struct _mp_obj_module_t ulab_user_cmodule;
     MODULE_DEF_MICROPYTHON \
     MODULE_DEF_SYS \
     MODULE_DEF_UCTYPES \
-    MODULE_DEF_ULAB \
     MODULE_DEF__ASYNCIO \
     MODULE_DEF___MAIN__ \
 // MICROPY_REGISTERED_MODULES
