@@ -1,7 +1,7 @@
 pkgs: dir:
 (pkgs.poetry2nix.mkPoetryEnv
   {
-    python = pkgs.python3;
+    python = pkgs.python311;
     projectDir = dir;
 
     extraPackages = (ps: [
@@ -25,7 +25,7 @@ pkgs: dir:
           }
         );
 
-        gmpy2 = pkgs.python3Packages.gmpy2;
+        gmpy2 = pkgs.python311Packages.gmpy2;
       }
     );
   })

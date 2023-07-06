@@ -1,0 +1,69 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MPyC in PyScript</title>
+    <!-- <link rel="icon" href="https://www.win.tue.nl/~berry/mpyc/favicon.ico" /> -->
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script defer src="https://pyscript.net/latest/pyscript.min.js"></script>
+
+</head>
+
+<body>
+
+    <py-config>
+        packages = ['numpy', 'gmpy2', 'ssl']
+        xterm = true
+        # terminal = {xterm = true}
+        [[fetch]]
+        files = ['sort.py', 'aes.py', 'np_aes.py', 'secretsanta.py']
+        [[fetch]]
+        from = '../../mpyc'
+        to_folder = 'mpyc'
+        files = ['__main__.py', 'fingroups.py', 'thresha.py', 'mpctools.py', '__pycache__', 'README.md', 'gfpx.py', 'runtime.py', 'asyncoro.py', 'numpy.py', 'seclists.py', 'sectypes.py', 'random.py', 'gmpy.py', 'secgroups.py', 'finfields.py', 'statistics.py', '__init__.py']     
+    </py-config> 
+    <h1>MPyC in PyScript</h1>
+
+    Python code can be embedded in HTML using the &lt;py-script&gt; tag.<br />
+    We have embedded the following code to load MPyC and display some info:
+
+    The following cells can be edited and run.<br />
+    Click the green play button when hovering over the bottom right corner to run each cell.
+    <div style="margin-right: 3rem">
+
+        <py-repl id="my-repl" output="replOutput2">
+            import sys
+            import micropip
+            import asyncio
+
+            import secretsanta
+            from mpyc.runtime import mpc
+
+            # await micropip.install('regex')
+
+            print(f'PyScript {pyscript.__version__=}')
+            print(f'Python {sys.version=}')
+            print(f'MPyC {mpc.version=}')
+            print(f'NB: Pyodide uses its own event loop {mpc._loop=}')
+
+            mpc.options.no_async = False
+
+            #asyncio.ensure_future(secretsanta.main())
+
+            mpc.run(secretsanta.main())
+
+        </py-repl>
+        <div id="replOutput2" hidden></div>
+
+    </div>
+
+    All output to stdout (and stderr) is displayed on this "terminal":
+
+    <py-terminal xterm="true" id="replOutput"></py-terminal>
+
+
+</body>
+
+</html>

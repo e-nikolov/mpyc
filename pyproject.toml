@@ -13,6 +13,7 @@ peerdid = "0.4.0"
 qrcode = "^7.3.1"
 numpy = "^1.23.4"
 gmpy2 = "^2.1.2"
+uvloop = "^0.17.0"
 # pyodide-pack = "^2.1.2"
 
 [build-system]
