@@ -5,7 +5,7 @@ pkgs: dir:
     projectDir = dir;
 
     extraPackages = (ps: [
-      (pkgs.python3Packages.buildPythonPackage
+      (pkgs.python311Packages.buildPythonPackage
         {
           name = "mpyc";
           src = dir;

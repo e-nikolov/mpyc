@@ -7,23 +7,14 @@
     <title>MPyC in PyScript</title>
     <!-- <link rel="icon" href="https://www.win.tue.nl/~berry/mpyc/favicon.ico" /> -->
     <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
-    <script defer src="https://pyscript.net/latest/pyscript.min.js"></script>
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <!-- <script type="module" src="https://pyscript.net/tech-preview/pyscript.core/core.js"></script> -->
+    <!-- <script type="module" src="https://esm.run/@pyscript/core"> -->
+    </script>
 
 </head>
 
 <body>
-
-    <py-config>
-        packages = ['numpy', 'gmpy2', 'ssl']
-        xterm = true
-        # terminal = {xterm = true}
-        [[fetch]]
-        files = ['sort.py', 'aes.py', 'np_aes.py', 'secretsanta.py']
-        [[fetch]]
-        from = '../../mpyc'
-        to_folder = 'mpyc'
-        files = ['__main__.py', 'fingroups.py', 'thresha.py', 'mpctools.py', '__pycache__', 'README.md', 'gfpx.py', 'runtime.py', 'asyncoro.py', 'numpy.py', 'seclists.py', 'sectypes.py', 'random.py', 'gmpy.py', 'secgroups.py', 'finfields.py', 'statistics.py', '__init__.py']     
-    </py-config> 
     <h1>MPyC in PyScript</h1>
 
     Python code can be embedded in HTML using the &lt;py-script&gt; tag.<br />
@@ -33,27 +24,11 @@
     Click the green play button when hovering over the bottom right corner to run each cell.
     <div style="margin-right: 3rem">
 
+        <py-config type="toml" src="config.toml"></py-config>
+
+        <py-script output="replOutput2" config="config.json" src="secretsanta.py"></py-script>
+
         <py-repl id="my-repl" output="replOutput2">
-            import sys
-            import micropip
-            import asyncio
-
-            import secretsanta
-            from mpyc.runtime import mpc
-
-            # await micropip.install('regex')
-
-            print(f'PyScript {pyscript.__version__=}')
-            print(f'Python {sys.version=}')
-            print(f'MPyC {mpc.version=}')
-            print(f'NB: Pyodide uses its own event loop {mpc._loop=}')
-
-            mpc.options.no_async = False
-
-            #asyncio.ensure_future(secretsanta.main())
-
-            mpc.run(secretsanta.main())
-
         </py-repl>
         <div id="replOutput2" hidden></div>
 
@@ -61,7 +36,7 @@
 
     All output to stdout (and stderr) is displayed on this "terminal":
 
-    <py-terminal xterm="true" id="replOutput"></py-terminal>
+    <py-terminal xterm="true" id="output"></py-terminal>
 
 
 </body>

@@ -1,0 +1,45 @@
+{
+    "packages": [
+        "numpy",
+        "gmpy2",
+        "ssl"
+    ],
+    "plugins": [
+        "./plugin.py"
+    ],
+    "xterm": true,
+    "fetch": [
+        {
+            "files": [
+                "sort.py",
+                "aes.py",
+                "np_aes.py",
+                "secretsanta.py"
+            ]
+        },
+        {
+            "from": "../../mpyc",
+            "to_folder": "./mpyc",
+            "files": [
+                "__main__.py",
+                "fingroups.py",
+                "thresha.py",
+                "mpctools.py",
+                "__pycache__",
+                "README.md",
+                "gfpx.py",
+                "runtime.py",
+                "asyncoro.py",
+                "numpy.py",
+                "seclists.py",
+                "sectypes.py",
+                "random.py",
+                "gmpy.py",
+                "secgroups.py",
+                "finfields.py",
+                "statistics.py",
+                "__init__.py"
+            ]
+        }
+    ]
+}

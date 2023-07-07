@@ -8,8 +8,6 @@ fixed points are also called 'derangements'.
 
 import sys
 from mpyc.runtime import mpc
-import asyncio
-import uvloop
 
 
 @mpc.coroutine
@@ -59,7 +57,33 @@ async def random_derangement(n, sectype):
 async def xprint(N, text, sectype):
     print(f"Using secure {text}: {sectype.__name__}")
     for n in range(2, N + 1):
-        print(n, await mpc.output(random_derangement(n, sectype)))
+        print("===========")
+        print(await mpc.output(11))
+        print("===========")
+        print("===========")
+        print(await mpc.output(22))
+        print("===========")
+        print("===========")
+        print(await mpc.output(33))
+        print("===========")
+        print("===========")
+        print(await mpc.output(44))
+        print("===========")
+        a = random_derangement(n, sectype)
+        print("===========")
+        b = mpc.output(a)
+
+        print("-----------")
+        print(b)
+        print("-----------")
+        print(b.__class__)
+        print("-----------")
+        print(b.__str__)
+        print("-----------")
+
+        c = await b
+
+        print(n, c)
 
 
 async def main():
@@ -68,11 +92,15 @@ async def main():
     else:
         N = 8
         print("Setting input to default =", N)
-        print("test----------------------------")
+    print("1")
+    x = await mpc.start()
+    print("2")
+    print(x)
 
-    await mpc.start()
+    z = await xprint(N, "integers", mpc.SecInt())
+    print("3")
+    print(z)
 
-    await xprint(N, "integers", mpc.SecInt())
     await xprint(N, "fixed-point numbers", mpc.SecFxp())
     bound = max(len(mpc.parties) + 1, N)
     await xprint(N, "prime fields", mpc.SecFld(min_order=bound))
@@ -84,41 +112,20 @@ async def main():
     await mpc.shutdown()
 
 
-async def tt():
-    print("asyncio.get_event_loop().is_running()")
-    print(asyncio.get_event_loop().is_running())
-    print(asyncio.get_event_loop().is_running())
+async def zz():
+    return 3
+
+
+async def foo():
+    z = await zz()
+    print(z)
+    z = await zz()
+    print(z)
+    z = await zz()
+    print(z)
 
 
 if __name__ == "__main__":
-    # mpc.run(main())
-    # asyncio.run(main())
-    # print(asyncio.get_event_loop().is_running())
-    # print(asyncio.get_event_loop().is_running())
-    # print(asyncio.get_event_loop().stop())
-    # print(loop := asyncio.new_event_loop())
-    # print(loop2 := asyncio.new_event_loop())
-    # print(loop.is_running())
-    # print("-------------------1")
-    # print(loop.run_until_complete(tt()))
-    # print("-------------------2")
-    # print(loop.is_running())
-    # print("-------------------3")
-    # print(loop2.is_running())
-    # print("-------------------4")
-    # print(loop2.run_until_complete(asyncio.sleep(1)))
-    # print(loop2.is_running())
-    # print("-------------------")
-    # print(loop.is_running())
-    # print(loop.is_running())
-    # print(loop.is_running())
-    # print(loop.is_running())
-    # print(loop.is_running())
-    # asyncio.sleep(2)
-    # print(loop.is_running())
+    # mpc.run(foo())
 
-    mpc.options.no_async = False
     mpc.run(main())
-    # with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:
-    # runner.run(main())
-    # asyncio.run_until_complete(main())

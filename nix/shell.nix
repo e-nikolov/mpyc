@@ -7,7 +7,7 @@ pkgs: pkgs.mkShell {
     pkgs.mpyc-demo
     pkgs.pwnat
     pkgs.poetry
-    pkgs.python3Packages.pip
+    pkgs.python311Packages.pip
     pkgs.curl
     pkgs.jq
     pkgs.tailscale

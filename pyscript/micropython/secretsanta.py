@@ -8,6 +8,46 @@ fixed points are also called 'derangements'.
 
 import sys
 from mpyc.runtime import mpc
+import asyncio
+
+from pathlib import Path
+import io
+
+
+from js import document
+
+# js.document.querySelector("py-terminal").xtermReady
+
+
+# def sprint(*args, **kwargs):
+#     output = io.StringIO()
+#     print(*args, file=output, **kwargs)
+#     contents = output.getvalue()
+#     output.close()
+#     return contents
+
+
+# def display(s):
+#     # document.currentScript.target.textContent += sprint(args, kwargs)
+#     document.term.writeln(s)
+#     print(s)
+
+
+def display(*values):
+    document.term.write(values[0])
+    if len(values) > 1:
+        document.term.write(values[1])
+    document.term.writeln("")
+
+
+def print_tree(path, prefix="", str=""):
+    for item in path.iterdir():
+        display(f"{prefix}├── {item.name}")
+        if item.is_dir():
+            print_tree(item, prefix + "│   ")
+
+
+# import uvloop
 
 
 @mpc.coroutine
@@ -55,52 +95,24 @@ async def random_derangement(n, sectype):
 
 
 async def xprint(N, text, sectype):
-    print(f"Using secure {text}: {sectype.__name__}")
+    display(f"Using secure {text}: {sectype.__name__}")
     for n in range(2, N + 1):
-        print("===========")
-        print(await mpc.output(11))
-        print("===========")
-        print("===========")
-        print(await mpc.output(22))
-        print("===========")
-        print("===========")
-        print(await mpc.output(33))
-        print("===========")
-        print("===========")
-        print(await mpc.output(44))
-        print("===========")
-        a = random_derangement(n, sectype)
-        print("===========")
-        b = mpc.output(a)
-
-        print("-----------")
-        print(b)
-        print("-----------")
-        print(b.__class__)
-        print("-----------")
-        print(b.__str__)
-        print("-----------")
-
-        c = await b
-
-        print(n, c)
+        display(f"{n} {await mpc.output(random_derangement(n, sectype))}")
 
 
 async def main():
+    print_tree(Path("../"))
+
     if sys.argv[1:]:
         N = int(sys.argv[1])
     else:
         N = 8
-        print("Setting input to default =", N)
-    print("1")
-    x = await mpc.start()
-    print("2")
-    print(x)
+        display("Setting input to default =", N)
+        display("test----------------------------")
 
-    z = await xprint(N, "integers", mpc.SecInt())
-    print("3")
-    print(z)
+    await mpc.start()
 
+    await xprint(N, "integers", mpc.SecInt())
     await xprint(N, "fixed-point numbers", mpc.SecFxp())
     bound = max(len(mpc.parties) + 1, N)
     await xprint(N, "prime fields", mpc.SecFld(min_order=bound))
@@ -112,20 +124,45 @@ async def main():
     await mpc.shutdown()
 
 
-async def zz():
-    return 3
+async def tt():
+    display("asyncio.get_event_loop().is_running()")
+    display(asyncio.get_event_loop().is_running())
+    display(asyncio.get_event_loop().is_running())
 
 
-async def foo():
-    z = await zz()
-    print(z)
-    z = await zz()
-    print(z)
-    z = await zz()
-    print(z)
+mpc.options.no_async = False
+print("asyncio.get_event_loop().is_running()", asyncio.get_event_loop().is_running())
+
+# mpc.run(main())
+asyncio.ensure_future(main())
 
 
-if __name__ == "__main__":
-    # mpc.run(foo())
+# if __name__ == "__main__":
+# mpc.run(main())
+# print(asyncio.get_event_loop().stop())
+# print(loop := asyncio.new_event_loop())
+# print(loop2 := asyncio.new_event_loop())
+# print(loop.is_running())
+# print("-------------------1")
+# print(loop.run_until_complete(tt()))
+# print("-------------------2")
+# print(loop.is_running())
+# print("-------------------3")
+# print(loop2.is_running())
+# print("-------------------4")
+# print(loop2.run_until_complete(asyncio.sleep(1)))
+# print(loop2.is_running())
+# print("-------------------")
+# print(loop.is_running())
+# print(loop.is_running())
+# print(loop.is_running())
+# print(loop.is_running())
+# print(loop.is_running())
+# asyncio.sleep(2)
+# print(loop.is_running())
+# mpc.run(main())
 
-    mpc.run(main())
+# mpc.run(main())
+# with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:
+# runner.run(main())
+# asyncio.run_until_complete(main())

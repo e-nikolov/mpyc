@@ -18,7 +18,7 @@ import numpy as np
 from mpyc.runtime import mpc
 
 secfld = mpc.SecFld(2**8)  # Secure AES field GF(2^8) for secret values.
-f256 = secfld.field        # Plain AES field GF(2^8) for public values.
+f256 = secfld.field  # Plain AES field GF(2^8) for public values.
 
 
 def circulant(r):
@@ -27,11 +27,11 @@ def circulant(r):
     return f256.array(r)
 
 
-A = circulant([1, 0, 0, 0, 1, 1, 1, 1])   # 8x8 matrix A over GF(2)
-A1 = np.linalg.inv(A)                     # inverse of A
+A = circulant([1, 0, 0, 0, 1, 1, 1, 1])  # 8x8 matrix A over GF(2)
+A1 = np.linalg.inv(A)  # inverse of A
 B = f256.array([1, 1, 0, 0, 0, 1, 1, 0])  # vector B over GF(2)
-C = circulant([2, 3, 1, 1])               # 4x4 matrix C over GF(2^8)
-C1 = np.linalg.inv(C)                     # inverse of C
+C = circulant([2, 3, 1, 1])  # 4x4 matrix C over GF(2^8)
+C1 = np.linalg.inv(C)  # inverse of C
 
 
 def sbox(x):
@@ -48,7 +48,7 @@ def sbox1(x):
     x = mpc.np_to_bits(x)
     x += B
     x = (A1 @ x[..., np.newaxis]).reshape(*x.shape)
-    x = mpc.np_from_bits(x)**254
+    x = mpc.np_from_bits(x) ** 254
     return x
 
 
@@ -57,7 +57,7 @@ def key_expansion(k):
     w = k
     Nk = k.shape[1]  # Nk is 4 or 8
     Nr = 10 if Nk == 4 else 14
-    for i in range(Nk, 4*(Nr+1)):
+    for i in range(Nk, 4 * (Nr + 1)):
         t = w[:, -1]
         if i % Nk in (0, 4):
             t = sbox(t)
@@ -67,7 +67,7 @@ def key_expansion(k):
         t += w[:, -Nk]
         t = t.reshape(4, 1)
         w = np.append(w, t, axis=1)
-    K = np.hsplit(w, Nr+1)
+    K = np.hsplit(w, Nr + 1)
     return K
 
 
@@ -75,7 +75,7 @@ def encrypt(K, s):
     """AES encryption of s given key schedule K."""
     Nr = len(K) - 1  # Nr is 10 or 14
     s += K[0]
-    for i in range(1, Nr+1):
+    for i in range(1, Nr + 1):
         s = sbox(s)
         s = np.stack([np.roll(s[j], -j, axis=0) for j in range(4)])
         if i < Nr:
@@ -101,43 +101,54 @@ async def xprint(text, s):
     """Print matrix s transposed and flattened as hex string."""
     s = await mpc.output(s)
     s = s.T.flatten()
-    print(f'{text} {bytes(map(int, s)).hex()}')
+    print(f"{text} {bytes(map(int, s)).hex()}")
 
 
 async def main():
     if sys.argv[1:]:
         full = False
-        print('AES-128 encryption only.')
+        print("AES-128 encryption only.")
     else:
         full = True
-        print('AES-128 en/decryption and AES-256 en/decryption.')
+        print("AES-128 en/decryption and AES-256 en/decryption.")
 
-    print('AES polynomial:', f256.modulus)  # x^8 + x^4 + x^3 + x + 1
+    print("AES polynomial:", f256.modulus)  # x^8 + x^4 + x^3 + x + 1
 
     await mpc.start()
 
-    p = secfld.array(f256.array([[17 * (4*j + i) for j in range(4)] for i in range(4)]))
-    await xprint('Plaintext:  ', p)
+    p = secfld.array(
+        f256.array([[17 * (4 * j + i) for j in range(4)] for i in range(4)])
+    )
+    await xprint("Plaintext:  ", p)
 
-    k128 = secfld.array(f256.array([[4*j + i for j in range(4)] for i in range(4)]))
-    await xprint('AES-128 key:', k128)
+    k128 = secfld.array(f256.array([[4 * j + i for j in range(4)] for i in range(4)]))
+    await xprint("AES-128 key:", k128)
     K = key_expansion(k128)
     c = encrypt(K, p)
-    await xprint('Ciphertext: ', c)
+    await xprint("Ciphertext: ", c)
     if full:
         p = decrypt(K, c)
-        await xprint('Plaintext:  ', p)
+        await xprint("Plaintext:  ", p)
 
-        k256 = secfld.array(f256.array([[4*j + i for j in range(8)] for i in range(4)]))
-        await xprint('AES-256 key:', k256)
+        k256 = secfld.array(
+            f256.array([[4 * j + i for j in range(8)] for i in range(4)])
+        )
+        await xprint("AES-256 key:", k256)
         K = key_expansion(k256)
         c = encrypt(K, p)
 
-        await xprint('Ciphertext: ', c)
+        await xprint("Ciphertext: ", c)
         p = decrypt(K, c)
-        await xprint('Plaintext:  ', p)
+        await xprint("Plaintext:  ", p)
 
     await mpc.shutdown()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     mpc.run(main())
+
+from pathlib import Path
+import os
+
+Path.home().parent
+os.move("../web_user", "./mpyc")

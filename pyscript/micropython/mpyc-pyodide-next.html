@@ -1,0 +1,53 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MPyC in PyScript Core</title>
+    <!-- <link rel="icon" href="https://www.win.tue.nl/~berry/mpyc/favicon.ico" /> -->
+    <!-- <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" /> -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
+    <!-- <script defer src="https://pyscript.net/latest/pyscript.min.js"></script> -->
+    <!-- <script type="module" src="https://pyscript.net/tech-preview/pyscript.core/core.js"></script> -->
+    <!--script type="module" src="https://esm.run/@pyscript/core"-->
+    <script type="module" src="./core.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.js"></script>
+    <!-- <script type="module" src="https://cdn.jsdelivr.net/npm/@pyscript/core@0.0.7/pyscript.js"></script> -->
+    <!--<script type="module" src="https://esm.run/@pyscript/element"></script>-->
+
+</head>
+
+<body>
+    <h1>MPyC in PyScript Core</h1>
+
+    Python code can be embedded in HTML using the &lt;py-script&gt; tag.<br />
+    We have embedded the following code to load MPyC and display some info:
+
+    The following cells can be edited and run.<br />
+    Click the green play button when hovering over the bottom right corner to run each cell.
+
+    <div>
+        All output to stdout (and stderr) is displayed on this "terminal":
+        <div id="terminal"></div>
+
+        <script>
+            var term = new Terminal();
+            term.open(document.getElementById('terminal'));
+            //term.resize(100, 50);
+            //term.open(document.querySelector("py-terminal"));
+            document.term = term;
+        </script>
+
+
+        <script type="pyodide" async="true" config="config.toml" src="secretsanta.py"></script>
+
+
+        <!-- <div id="output" class="xterm"></div> -->
+        <!-- <pre id="output"></pre> -->
+        <!-- <div id="terminal"></div> -->
+
+    </div>
+</body>
+
+</html>
