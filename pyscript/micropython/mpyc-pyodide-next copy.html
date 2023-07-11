@@ -1,0 +1,128 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MPyC in PyScript Core</title>
+    <!-- <link rel="icon" href="https://www.win.tue.nl/~berry/mpyc/favicon.ico" /> -->
+    <!-- <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" /> -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"
+        integrity="sha512-8RnEqURPUc5aqFEN04aQEiPlSAdE0jlFS/9iGgUyNtwFnSKCXhmB6ZTNl7LnDtDWKabJIASzXrzD0K+LYexU9g=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css"
+        integrity="sha512-uf06llspW44/LZpHzHT6qBOIVODjWtv4MxCricRxkzvopAlSWnTf6hpZTFxuuZcuNE9CBQhqE0Seu1CoRk84nQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- <script defer src="https://pyscript.net/latest/pyscript.min.js"></script> -->
+    <!-- <script type="module" src="https://pyscript.net/tech-preview/pyscript.core/core.js"></script> -->
+    <!--script type="module" src="https://esm.run/@pyscript/core"-->
+    <script type="module" src="./core.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="css/super-main.css">
+    <link rel="stylesheet" href="css/main.css" />
+
+
+    <script async type="module">
+        import { define, whenDefined } from './core.js';
+        await define('py-repl', {
+            interpreter: 'pyodide',
+            async onInterpreterReady(pyodide, element) {
+                console.log(pyodide);
+                // Somehow this doesn't work in pyodide
+                pyodide.io.stdout = (message) => {
+                    console.log("🐍", pyodide.type, message);
+                };
+                pyodide.run(element.textContent);
+                element.replaceChildren("See console ->");
+                element.style.display = "block";
+
+                const button = document.createElement("button");
+                button.textContent = "click";
+                button.setAttribute("py-repl-click", "test_click(event)");
+                document.body.append(button);
+            },
+        });
+
+        await whenDefined("py-repl").then(interpreterWrapper => {
+            // define or perform any task via the wrapper
+        })
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.js"></script>
+    <script src="./js/webrtc.js" async></script>
+    <!-- <script type="module" src="https://cdn.jsdelivr.net/npm/@pyscript/core@0.0.7/pyscript.js"></script> -->
+    <!-- <script type="module" src="https://esm.run/@pyscript/element"></script> -->
+
+</head>
+
+<body>
+    <h1>MPyC in PyScript Core</h1>
+
+    Python code can be embedded in HTML using the &lt;py-script&gt; tag.<br />
+    We have embedded the following code to load MPyC and display some info:
+
+    The following cells can be edited and run.<br />
+    Click the green play button when hovering over the bottom right corner to run each cell.
+
+    <textarea id="codeArea"></textarea>
+
+    <div id="sendReceive">
+        <div id="send">
+            <h2>Send</h2>
+            <textarea id="dataChannelSend" disabled
+                placeholder="Press Start, enter some text, then press Send."></textarea>
+        </div>
+        <div id="receive">
+            <h2>Receive</h2>
+            <textarea id="dataChannelReceive" disabled></textarea>
+        </div>
+    </div>
+    <div id="buttons">
+        <button id="startButton">Start</button>
+        <button id="sendButton" disabled>Send</button>
+        <button id="closeButton" disabled>Stop</button>
+    </div>
+    <!-- 
+    <script>
+        var editor = CodeMirror.fromTextArea(document.getElementById("codeArea"), {
+          lineNumbers: true,
+          mode: "python"
+        });
+        console.log(editor)
+        
+        //let localConnection;
+        //const servers = null;
+        //window.localConnection = localConnection = new RTCPeerConnection(servers);
+        //console.log('Created local peer connection object localConnection');
+      </script> -->
+
+    <div>
+        All output to stdout (and stderr) is displayed on this "terminal":
+        <div id="terminal"></div>
+
+        <script async>
+            var term = new Terminal();
+            term.open(document.getElementById('terminal'));
+            //term.resize(100, 50);
+            //term.open(document.querySelector("py-terminal"));
+            document.term = term;
+        </script>
+        <!-- <script type="py-repl" py-repl-click="test_click(event)">
+            def test_click(event):
+                print(event.type)
+
+            print('Hello Console!')
+        </script> -->
+
+        <script type="pyodide" async config="config.toml" src="secretsanta.py"></script>
+        <!-- <script target="terminal" type="pyodide" async config="config.toml" src="secretsanta.py"></script> -->
+
+
+        <!-- <div id="output" class="xterm"></div> -->
+        <!-- <pre id="output"></pre> -->
+        <!-- <div id="terminal"></div> -->
+
+    </div>
+</body>
+
+</html>

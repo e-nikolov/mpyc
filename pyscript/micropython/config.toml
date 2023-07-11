@@ -1,4 +1,4 @@
-packages = ["numpy", "gmpy2", "ssl", "micropip"]
+packages = ["numpy", "gmpy2", "ssl"]
 # xterm = true
 
 # plugins = ["py-terminal.py"]

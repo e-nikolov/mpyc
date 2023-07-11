@@ -14,7 +14,7 @@ from pathlib import Path
 import io
 
 
-from js import document
+# from js import document
 
 # js.document.querySelector("py-terminal").xtermReady
 
@@ -33,11 +33,15 @@ from js import document
 #     print(s)
 
 
+# def display(*values):
+#     document.term.write(values[0])
+#     if len(values) > 1:
+#         document.term.write(values[1])
+#     document.term.writeln("")
+
+
 def display(*values):
-    document.term.write(values[0])
-    if len(values) > 1:
-        document.term.write(values[1])
-    document.term.writeln("")
+    print(values)
 
 
 def print_tree(path, prefix="", str=""):
@@ -130,11 +134,12 @@ async def tt():
     display(asyncio.get_event_loop().is_running())
 
 
-mpc.options.no_async = False
-print("asyncio.get_event_loop().is_running()", asyncio.get_event_loop().is_running())
+# mpc.options.no_async = False
+# mpc.options.no_async = False
 
-# mpc.run(main())
-asyncio.ensure_future(main())
+
+def print_type(event):
+    print(event.type)
 
 
 # if __name__ == "__main__":
