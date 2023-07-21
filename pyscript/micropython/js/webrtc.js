@@ -10,193 +10,234 @@
 
 // console.log("pyscript.interpreter", PyScript.interpreter)
 
-let localConnection;
-let remoteConnection;
-let sendChannel;
-let receiveChannel;
-const dataChannelSend = document.querySelector('textarea#dataChannelSend');
-const dataChannelReceive = document.querySelector('textarea#dataChannelReceive');
-const startButton = document.querySelector('button#startButton');
-const sendButton = document.querySelector('button#sendButton');
-const closeButton = document.querySelector('button#closeButton');
-
-var term = new Terminal();
-term.open(document.getElementById('terminal'));
-document.term = term;
-
-var peer = new Peer();
-
-window.peer = peer;
-
-peer.on('open', function (id) {
-    console.log('My peer ID is: ' + id);
-});
-
-peer.on('connection', function (conn) {
-    console.log("receiving??")
-
-    conn.on('data', function (data) {
-        console.log("Received", data);
-    })
-});
-
 import { XWorker } from "./../core.js";
 
-const w = new XWorker("./worker.py", { type: "pyodide", config: "config.toml" });
-//const w = new XWorker("./worker.py", { async: true, type: "pyodide", config: "config.toml" });
-window.ww = w;
-w.onmessage = (event) => {
-    document.term.writeln(event.data);
-};
+const hostPeerIDInput = document.querySelector('input#hostPeerID');
 
-startButton.onclick = createConnection;
-sendButton.onclick = sendData;
-closeButton.onclick = closeDataChannels;
+const myPeerIDDiv = document.querySelector('div#myPeerID');
+const knownPeersDiv = document.querySelector('div#knownPeers');
+const statusDiv = document.querySelector('div#status');
 
-function enableStartButton() {
-    startButton.disabled = false;
+var peer;
+var conns = {};
+var worker;
+var workerNext;
+var term;
+
+initTermJS();
+initPeerJS()
+initPyScript();
+initUI();
+initConsoleShortcuts();
+
+function initConsoleShortcuts() {
+    window.rr = initPyScript;
+    window.cc = runMPyCDemo(true);
+    window.ccna = runMPyCDemo();
+    window.ww = worker;
+    window.peer = peer;
 }
 
-function disableSendButton() {
-    sendButton.disabled = true;
+function initTermJS() {
+    term = new Terminal();
+    term.open(document.getElementById('terminal'));
+    document.term = term;
 }
 
-function createConnection() {
-
-    dataChannelSend.placeholder = '';
-    const servers = null;
-    window.localConnection = localConnection = new RTCPeerConnection(servers);
-    console.log('Created local peer connection object localConnection');
-
-    sendChannel = localConnection.createDataChannel('sendDataChannel');
-    console.log('Created send data channel');
-
-    localConnection.onicecandidate = e => {
-        onIceCandidate(localConnection, e);
+function initUI() {
+    document.querySelector('button#resetPeerID').onclick = () => { localStorage.removeItem("myPeerID"); peer.destroy(); initPeerJS() };
+    document.querySelector('button#startButton').onclick = runMPyCDemo();
+    document.querySelector('button#startAsyncButton').onclick = runMPyCDemo(true);
+    document.querySelector('button#stopButton').onclick = initPyScript;
+    document.querySelector('button#connect').onclick = () => { localStorage.setItem("hostPeerID", hostPeerIDInput.value); connectToPeer(hostPeerIDInput.value) };
+    document.querySelector('button#copyPeerID').onclick = function () {
+        var copyText = myPeerIDDiv.innerText;
+        navigator.clipboard.writeText(copyText).then(function () {
+            console.log('Async: Copying to clipboard was successful!');
+        }, function (err) {
+            console.error('Async: Could not copy text: ', err);
+        });
     };
-    sendChannel.onopen = onSendChannelStateChange;
-    sendChannel.onclose = onSendChannelStateChange;
-
-    window.remoteConnection = remoteConnection = new RTCPeerConnection(servers);
-    console.log('Created remote peer connection object remoteConnection');
-
-    remoteConnection.onicecandidate = e => {
-        onIceCandidate(remoteConnection, e);
+    document.querySelector('button#sendMessage').onclick = () => {
+        sendMessage(conns);
     };
-    remoteConnection.ondatachannel = receiveChannelCallback;
-
-    localConnection.createOffer().then(
-        gotDescription1,
-        onCreateSessionDescriptionError
-    );
-    startButton.disabled = true;
-    closeButton.disabled = false;
-
-    w.postMessage("JavaScript: Hello Pyodidezz 👋");
 }
 
-function onCreateSessionDescriptionError(error) {
-    console.log('Failed to create session description: ' + error.toString());
+function sendMessage(conns) {
+    let message = document.querySelector('textarea#chatInput').value;
+    document.querySelector('textarea#chatInput').value = "";
+    term.writeln(`Me: ${safe(message)}`);
+
+    Object.values(conns).forEach(conn => {
+        conn.send({
+            chatMessage: message
+        })
+    });
 }
 
-function sendData() {
-    const data = dataChannelSend.value;
-    sendChannel.send(data);
-    console.log('Sent Data: ' + data);
-}
-
-function closeDataChannels() {
-    console.log('Closing data channels');
-    sendChannel.close();
-    console.log('Closed data channel with label: ' + sendChannel.label);
-    receiveChannel.close();
-    console.log('Closed data channel with label: ' + receiveChannel.label);
-    localConnection.close();
-    remoteConnection.close();
-    localConnection = null;
-    remoteConnection = null;
-    console.log('Closed peer connections');
-    startButton.disabled = false;
-    sendButton.disabled = true;
-    closeButton.disabled = true;
-    dataChannelSend.value = '';
-    dataChannelReceive.value = '';
-    dataChannelSend.disabled = true;
-    disableSendButton();
-    enableStartButton();
-}
-
-function gotDescription1(desc) {
-    localConnection.setLocalDescription(desc);
-    console.log(`Offer from localConnection\n${desc.sdp}`);
-    remoteConnection.setRemoteDescription(desc);
-    remoteConnection.createAnswer().then(
-        gotDescription2,
-        onCreateSessionDescriptionError
-    );
-}
-
-function gotDescription2(desc) {
-    remoteConnection.setLocalDescription(desc);
-    console.log(`Answer from remoteConnection\n${desc.sdp}`);
-    localConnection.setRemoteDescription(desc);
-}
-
-function getOtherPc(pc) {
-    return (pc === localConnection) ? remoteConnection : localConnection;
-}
-
-function getName(pc) {
-    return (pc === localConnection) ? 'localPeerConnection' : 'remotePeerConnection';
-}
-
-function onIceCandidate(pc, event) {
-    getOtherPc(pc)
-        .addIceCandidate(event.candidate)
-        .then(
-            onAddIceCandidateSuccess,
-            onAddIceCandidateError
-        );
-    console.log(`${getName(pc)} ICE candidate: ${event.candidate ? event.candidate.candidate : '(null)'}`);
-}
-
-function onAddIceCandidateSuccess() {
-    console.log('AddIceCandidate success.');
-}
-
-function onAddIceCandidateError(error) {
-    console.log(`Failed to add Ice Candidate: ${error.toString()}`);
-}
-
-function receiveChannelCallback(event) {
-    console.log('Receive Channel Callback');
-    receiveChannel = event.channel;
-    receiveChannel.onmessage = onReceiveMessageCallback;
-    receiveChannel.onopen = onReceiveChannelStateChange;
-    receiveChannel.onclose = onReceiveChannelStateChange;
-}
-
-function onReceiveMessageCallback(event) {
-    console.log('Received Message');
-    dataChannelReceive.value = event.data;
-}
-
-function onSendChannelStateChange() {
-    const readyState = sendChannel.readyState;
-    console.log('Send channel state is: ' + readyState);
-    if (readyState === 'open') {
-        dataChannelSend.disabled = false;
-        dataChannelSend.focus();
-        sendButton.disabled = false;
-        closeButton.disabled = false;
+function initPeerJS() {
+    var myPeerID = localStorage.getItem("myPeerID");
+    if (myPeerID) {
+        peer = new Peer(myPeerID)
     } else {
-        dataChannelSend.disabled = true;
-        sendButton.disabled = true;
-        closeButton.disabled = true;
+        peer = new Peer()
     }
+
+    var hostPeerID = localStorage.getItem("hostPeerID");
+    if (hostPeerID) {
+        hostPeerIDInput.value = hostPeerID;
+    }
+
+    peer.on('open', function (id) {
+        myPeerIDDiv.innerHTML = safe(id);
+        localStorage.setItem("myPeerID", id);
+        console.log('My peer ID is: ' + id);
+    });
+
+    // new incoming peer connection
+    // data received works here
+    peer.on('connection', function (conn) {
+        conn.on('open', function () {
+            sendKnownPeers(conn);
+        });
+        // data sending doesn't work?
+        addPeer(conn);
+        ready(conn);
+    });
 }
 
-function onReceiveChannelStateChange() {
-    const readyState = receiveChannel.readyState;
-    console.log(`Receive channel state is: ${readyState}`);
+
+function sendKnownPeers(conn) {
+    conn.send({
+        knownPeers: Object.values(conns).map(conn => conn.peer)
+    })
+}
+
+function ready(conn) {
+    conn.on('data', function (data) {
+        console.log("Data recieved");
+        console.log(data);
+        processNewPeers(data?.knownPeers);
+        processChatMessage(conn.peer, data?.chatMessage);
+    });
+    conn.on('close', function () {
+        removePeer(conn);
+    });
+}
+
+function processNewPeers(newPeers) {
+    if (!newPeers) {
+        return;
+    }
+    newPeers.forEach(peerID => {
+        if (!conns[peerID] && peerID != peer.id) {
+            connectToPeer(peerID);
+        }
+    });
+}
+
+function processChatMessage(peerID, chatMessage) {
+    term.writeln(`${safe(peerID)}: ${safe(chatMessage)}`);
+}
+
+function safeWriteTerm(text) {
+    term.write(safe(text));
+}
+
+function safe(text) {
+    return DOMPurify.sanitize(text);
+}
+
+function connectToPeer(peerID) {
+    // data received does not work here
+    let conn = peer.connect(peerID, {
+        reliable: true
+    });
+
+    conn.on('open', function () {
+        sendKnownPeers(conn);
+        addPeer(conn);
+    });
+    conn.on('connection', function () {
+        sendKnownPeers(conn);
+        addPeer(conn);
+    });
+    ready(conn);
+}
+
+function addPeer(conn) {
+    console.log("Connected to: ")
+    console.log(conn.peer)
+    term.writeln("Connected to: " + conn.peer);
+    conns[conn.peer] = conn;
+    updateKnownPeersDiv(conns);
+}
+
+function removePeer(conn) {
+    term.writeln("Disconnected from: " + conn.peer);
+    delete conns[conn.peer];
+    updateKnownPeersDiv(conns);
+}
+
+function updateKnownPeersDiv(conns) {
+    knownPeersDiv.innerHTML = "";
+    Object.values(conns).forEach(conn => {
+        knownPeersDiv.innerHTML += `<li>${safe(conn.peer)}</li>`;
+    });
+}
+
+
+
+
+// peer.on('connection', function (c) {
+//     // Allow only a single connection
+//     c.on('open', function () {
+//         c.send("Already connected to another client");
+//         setTimeout(function () { c.close(); }, 500);
+//     });
+//     return;
+
+
+//     conn = c;
+//     console.log("Connected to: " + conn.peer);
+//     status.innerHTML = "Connected";
+//     ready();
+// });
+
+
+export function runMPyCDemo(is_async = false) {
+    return function () {
+        initPyScript()
+        document.term.clear();
+
+        worker.postMessage({
+            is_async: is_async,
+            no_async: !is_async,
+            async: is_async
+        });
+    };
+}
+
+
+
+function initPyScript() {
+    if (worker) {
+        worker.terminate();
+    }
+
+    if (workerNext) {
+        worker = workerNext;
+    } else {
+        worker = new newWorker();
+    }
+
+    workerNext = newWorker();
+}
+
+function newWorker() {
+    let www = new XWorker("./worker.py", { async: true, type: "pyodide", config: "config.toml" });
+    www.onmessage = (event) => {
+        document.term.writeln(event.data);
+    };
+    return www;
 }

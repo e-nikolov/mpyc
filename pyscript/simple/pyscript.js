@@ -3314,8 +3314,8 @@ var pyscript = (() => {
       type: "app",
       interpreters: [
         {
-          src: "https://cdn.jsdelivr.net/pyodide/v0.23.2/full/pyodide.js",
-          name: "pyodide-0.23.2",
+          src: "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js",
+          name: "pyodide-0.23.4",
           lang: "python"
         }
       ],
@@ -28723,7 +28723,7 @@ var pyscript = (() => {
     // src/remote_interpreter.ts
     var logger10 = getLogger("pyscript/pyodide");
     var RemoteInterpreter = class extends Object {
-      constructor(src = "https://cdn.jsdelivr.net/pyodide/v0.23.2/full/pyodide.js") {
+      constructor(src = "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js") {
         super();
         this.src = src;
       }

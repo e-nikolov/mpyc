@@ -226,14 +226,7 @@ class Runtime:
                 f = asyncoro._wrap_in_coro(f)
             i = 1
 
-            while True:
-                try:
-                    print(f"iter #{i}")
-                    print("sending None")
-                    f.send(None)
-                    i += 1
-                except StopIteration as exc:
-                    return exc.value
+            return self._loop.run_until_complete(f)
 
         return self._loop.run_until_complete(f)
 

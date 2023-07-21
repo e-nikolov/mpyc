@@ -23,7 +23,7 @@ async def xprint(N, text, sectype):
 
 
 async def main():
-    print_tree(Path("../"))
+    # print_tree(Path("../"))
 
     if sys.argv[1:]:
         N = int(sys.argv[1])
@@ -47,9 +47,10 @@ async def main():
 
 
 def on_message(event):
-    # display(event)
-    print(event.data)
+    mpc.options.no_async = event.data.no_async
+    # asyncio.get_event_loop().close()
     mpc.run(main())
+
     # asyncio.ensure_future(main())
 
     # xworker.postMessage("Python: Hello " + event.data + " 👋")

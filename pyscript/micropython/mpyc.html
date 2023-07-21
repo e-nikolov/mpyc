@@ -1,0 +1,92 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>MPyC in PyScript Core</title>
+    <link rel="icon" href="favicon.ico" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css" />
+    <script type="module" src="./core.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <!-- <link rel="stylesheet" href="css/tailwind.css" /> -->
+    <link rel="stylesheet" href="css/super-main.css">
+    <link rel="stylesheet" href="css/main.css" />
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"
+        async></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chalk@5.3.0/source/vendor/ansi-styles/index.min.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/ansi-colors@4.1.3/index.min.js"></script> -->
+
+    <!-- <script src="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/lib/index.min.js"></script> -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/src/css/preflight.min.css" rel="stylesheet">
+     -->
+    <script type="module" src="./js/webrtc.js" async></script>
+
+
+    <!-- <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script> -->
+    <!-- <script>
+        tailwind.config = {
+          theme: {
+            extend: {
+              colors: {
+                clifford: '#da373d',
+              }
+            }
+          }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+          .content-auto {
+            content-visibility: auto;
+          }
+        }
+      </style> -->
+
+
+</head>
+
+<body>
+    <h1>MPyC in PyScript Core</h1>
+    <div>
+        <div id="myPeerIDLabel" style="display: inline-block;">My Peer ID: </div>
+        <div id="myPeerID" style="display: inline-block;" onClick="window.getSelection().selectAllChildren(this);">
+        </div>
+        <button id="copyPeerID">Copy</button>
+        <button id="resetPeerID">Reset ID</button>
+    </div>
+    <input type="text" id="hostPeerID" />
+    <button id="connect">Connect</button>
+    <div id="knownPeers"></div>
+    <div id="sendReceive">
+        <div id="send">
+            <h2>Send Message</h2>
+            <textarea id="chatInput" placeholder="Connect to a peer and send a message."></textarea>
+        </div>
+    </div>
+    <div id="buttons">
+        <button id="sendMessage" style="width:120px">Send Message</button>
+        <button id="startButton">Run MPyC</button>
+        <button id="startAsyncButton" style="width:120px">Run MPyC Async</button>
+        <button id="stopButton">Stop</button>
+        <!-- <button class="btn btn-primary" id="stopButton" disabled>Stop</button> -->
+    </div>
+
+    <div>
+        <h2>Terminal</h2>
+        <div id="terminal"></div>
+
+        <!-- <script type="pyodide" async config="config.toml" src="secretsanta.py"></script> -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+            crossorigin="anonymous"></script>
+    </div>
+</body>
+
+</html>

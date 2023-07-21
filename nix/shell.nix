@@ -1,8 +1,10 @@
-pkgs: pkgs.mkShell {
+pkgs:
+let
+in
+pkgs.mkShell {
   shellHook = ''
     export PYTHONPATH=./
   '';
-
   propagatedNativeBuildInputs = [
     pkgs.mpyc-demo
     pkgs.pwnat
@@ -20,6 +22,7 @@ pkgs: pkgs.mkShell {
     pkgs.go-stun
     pkgs.pion-stun
     pkgs.just
+    # pkgs.tailwindcss
 
     (pkgs.terraform.withPlugins
       (tp: [
