@@ -140,7 +140,7 @@ class PeerJSTransport(asyncio.Transport):
         while not self.peer_ready_to_start:
             ## send ready messages to this connection's peer to check if the user has clicked "run mpyc demo"
             send_peerjs_message(self.peerjs_id, new_ready_message("ready?"))
-            asyncio.sleep(1)
+            await asyncio.sleep(1)
 
         try:
             self._loop.call_soon(self._protocol.connection_made, self)
