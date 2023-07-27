@@ -140,7 +140,7 @@ class PeerJSTransport(asyncio.Transport):
         while not self.peer_ready_to_start:
             ## send ready messages to this connection's peer to check if the user has clicked "run mpyc demo"
             send_peerjs_message(self.peerjs_id, new_ready_message("ready?"))
-            await asyncio.sleep(1)
+            await asyncio.sleep(3)
 
         try:
             self._loop.call_soon(self._protocol.connection_made, self)
@@ -231,13 +231,17 @@ def on_message(event):
         print("$$$$$$$$$$$$$$ Done Running mpc.run(main())")
 
     if getattr(event.data, "peerJS", None):
-        print("peerJS: ", event.data.peerJS)
-        pid = peerjsIDToPID[event.data.peerJS.peerID]
+        print("peerJS: ", event.data.peerJS.peerID)
+        print("peerJS: ", json.dumps(event.data.peerJS.message))
+
+        if not getattr(peerjsIDToPID, event.data.peerJS.peerID, None):
+            return
 
         if getattr(event.data.peerJS.message, "ready_message", None):
             print("ready message: ", event.data.peerJS.message.ready_message)
             # if we are ready to start, send "ready_ack"
             if event.data.peerJS.message.ready_message == "ready?":
+                print("we are asked if we are ready!!!!!!!!!!!!!!!")
                 if (
                     mpc.parties[pid].protocol
                     and mpc.parties[pid].protocol.transport
