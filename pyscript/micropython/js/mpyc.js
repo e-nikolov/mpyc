@@ -10,7 +10,7 @@
 
 // console.log("pyscript.interpreter", PyScript.interpreter)
 
-import { XWorker } from "./../core.js";
+import { XWorker } from "../core.js";
 
 const hostPeerIDInput = document.querySelector('input#hostPeerID');
 
@@ -29,14 +29,6 @@ initPeerJS()
 initPyScript();
 initUI();
 initConsoleShortcuts();
-
-function initConsoleShortcuts() {
-    window.rr = initPyScript;
-    window.cc = runMPyCDemo(true);
-    window.ccna = runMPyCDemo();
-    window.ww = worker;
-    window.peer = peer;
-}
 
 function initTermJS() {
     term = new Terminal();
@@ -59,11 +51,11 @@ function initUI() {
         });
     };
     document.querySelector('button#sendMessage').onclick = () => {
-        sendMessage(conns);
+        sendChatMessage(conns);
     };
 }
 
-function sendMessage(conns) {
+function sendChatMessage(conns) {
     let message = document.querySelector('textarea#chatInput').value;
     document.querySelector('textarea#chatInput').value = "";
     term.writeln(`Me: ${safe(message)}`);
@@ -107,18 +99,41 @@ function initPeerJS() {
 }
 
 
+function initConsoleShortcuts() {
+    window.rr = initPyScript;
+    window.cc = runMPyCDemo(true);
+    window.ccna = runMPyCDemo();
+    window.ww = worker;
+    window.peer = peer;
+}
+
+function knownPeers(includeSelf = false) {
+    let peers = Object.values(conns).map(conn => conn.peer);
+
+    if (includeSelf) {
+        peers.push(peer.id);
+    }
+
+    return peers.sort();
+}
+
 function sendKnownPeers(conn) {
     conn.send({
-        knownPeers: Object.values(conns).map(conn => conn.peer)
+        knownPeers: knownPeers()
     })
 }
 
 function ready(conn) {
+
+    // Process messages from other peers received via peerJS
     conn.on('data', function (data) {
-        console.log("Data recieved");
+        console.log("Data received");
         console.log(data);
         processNewPeers(data?.knownPeers);
         processChatMessage(conn.peer, data?.chatMessage);
+
+        // Need to somehow store those messages if we receive them before our user has clicked the start button
+        processMPyCMessage(conn.peer, data?.mpycMessage);
     });
     conn.on('close', function () {
         removePeer(conn);
@@ -136,8 +151,12 @@ function processNewPeers(newPeers) {
     });
 }
 
-function processChatMessage(peerID, chatMessage) {
-    term.writeln(`${safe(peerID)}: ${safe(chatMessage)}`);
+function processChatMessage(peerID, message) {
+    if (!message) {
+        return;
+    }
+
+    term.writeln(`${safe(peerID)}: ${safe(message)}`);
 }
 
 function safeWriteTerm(text) {
@@ -181,8 +200,8 @@ function removePeer(conn) {
 
 function updateKnownPeersDiv(conns) {
     knownPeersDiv.innerHTML = "";
-    Object.values(conns).forEach(conn => {
-        knownPeersDiv.innerHTML += `<li>${safe(conn.peer)}</li>`;
+    knownPeers(true).forEach((p, pid) => {
+        knownPeersDiv.innerHTML += `<li>${pid}: ${safe(p)} ${p == peer.id ? '<--' : ''}</li>`;
     });
 }
 
@@ -210,10 +229,20 @@ export function runMPyCDemo(is_async = false) {
         initPyScript()
         document.term.clear();
 
+        let peers = knownPeers(true)
+
+        console.log("peers:", peers)
+        console.log("my id:", peer.id)
+        let pid = peers.findIndex((p) => p === peer.id)
+
         worker.postMessage({
-            is_async: is_async,
-            no_async: !is_async,
-            async: is_async
+            init: {
+                pid: pid,
+                parties: peers,
+                is_async: is_async,
+                no_async: !is_async,
+                async: is_async
+            }
         });
     };
 }
@@ -234,10 +263,39 @@ function initPyScript() {
     workerNext = newWorker();
 }
 
+function processMPyCMessage(peerID, message) {
+    if (!message) {
+        return;
+    }
+
+    worker.postMessage({
+        peerJS: {
+            peerID,
+            message,
+        }
+    });
+}
+
 function newWorker() {
     let www = new XWorker("./worker.py", { async: true, type: "pyodide", config: "config.toml" });
+    www.sync.myFunc = function (x) {
+        console.log("myFunc", x);
+    }
+
+    // Process messages from worker.py
     www.onmessage = (event) => {
-        document.term.writeln(event.data);
+        console.log("(mpyc.js:worker:onmessage): --------------- data", event.data);
+        let msg = JSON.parse(event.data);
+
+        if (msg.display) {
+            document.term.writeln(msg.display);
+        }
+        if (msg.peerJS) {
+            console.log("++++++++++++++ peerJS data")
+            conns[msg.peerJS.peerID].send({
+                mpycMessage: msg.peerJS.message,
+            })
+        }
     };
     return www;
 }

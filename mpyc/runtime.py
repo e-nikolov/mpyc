@@ -47,6 +47,25 @@ class Awaitable:
         return 42
 
 
+class TCPTransportManager:
+    def __init__(self, runtime):
+        self.runtime = runtime
+
+    def send(self, peer_pid, data):
+        print("sending", data)
+        self.runtime.parties[peer_pid].protocol.send(
+            self.runtime._program_counter[0], data
+        )
+
+    def receive(self, peer_pid):
+        return self.runtime.parties[peer_pid].protocol.receive(
+            self.runtime._program_counter[0]
+        )
+
+    def close_connection(self, peer_pid):
+        pass
+
+
 class Runtime:
     """MPyC runtime secure against passive attacks.
 
@@ -90,8 +109,11 @@ class Runtime:
 
     def __init__(self, pid, parties, options):
         """Initialize runtime."""
+        print("--------------runtime--------", pid, parties, options)
         self.pid = pid
+        # self.transport_manager = TCPTransportManager(self)
         self.parties = tuple(parties)
+        print(self.parties)
         self.options = options
         self.threshold = options.threshold
         self._logging_enabled = not options.no_log
@@ -103,6 +125,10 @@ class Runtime:
         )  # exceptions re MPyC coroutine
         self.start_time = None
         self.aggregate_load = 0.0 * 10000  # unit: basis point 0.0001 = 0.01%
+        self.stats_send = 0
+        self.stats_receive = 0
+        self.stats_send_to = {}
+        self.stats_receive_from = {}
 
     @property
     def threshold(self):
@@ -144,10 +170,21 @@ class Runtime:
 
     def _send_message(self, peer_pid, data):
         """Send data to given peer, labeled by current program counter."""
+        # print(f"sending {data} to peer {peer_pid}")
+        self.stats_send += 1
+        if peer_pid not in self.stats_send_to:
+            self.stats_send_to[peer_pid] = 0
+        self.stats_send_to[peer_pid] += 1
+        # print("AAAA")
         self.parties[peer_pid].protocol.send(self._program_counter[0], data)
+        # print("BBBB")
 
     def _receive_message(self, peer_pid):
         """Receive data from given peer, labeled by current program counter."""
+        self.stats_receive += 1
+        if peer_pid not in self.stats_receive_from:
+            self.stats_receive_from[peer_pid] = 0
+        self.stats_receive_from[peer_pid] += 1
         return self.parties[peer_pid].protocol.receive(self._program_counter[0])
 
     def _exchange_shares(self, in_shares):
@@ -219,6 +256,7 @@ class Runtime:
 
     def run(self, f):
         """Run the given coroutine or future until it is done."""
+        print("+++++++run+++++++++", self.parties)
         print(self._loop.is_running())
         print(asyncio.iscoroutine(f))
         if self._loop.is_running():
@@ -281,11 +319,11 @@ class Runtime:
             logging.disable(logging.INFO)
 
     async def start(self):
-        """Start the MPyC runtime.
+        """Start the MPyC runtime with a TCP/IP Transport.
 
         Open connections with other parties, if any.
         """
-        logging.info(f"Start MPyC runtime v{self.version}")
+        logging.info(f"Start MPyC runtime v{self.version} with a TCP/IP transport")
         self.start_time = time.time()
         m = len(self.parties)
         if m == 1:
@@ -301,6 +339,7 @@ class Runtime:
             cafile = os.path.join(".config", "mpyc_ca.crt")
 
         # Listen for all parties < self.pid.
+
         if self.pid:
             listen_port = self.parties[self.pid].port
             if self.options.ssl:
@@ -311,7 +350,11 @@ class Runtime:
             else:
                 context = None
             factory = lambda: asyncoro.MessageExchanger(self)
+            print("@@@@@@@@@@@@@@@@@@@ - creating listener")
+
+            # This will use the factory to create a new asyncoro.MessageExchanger with no peer_pid for each incoming connection
             server = await loop.create_server(factory, port=listen_port, ssl=context)
+            print("@@@@@@@@@@@@@@@@@@@ - done creating listener")
             logging.debug(f"Listening on port {listen_port}")
 
         # Connect to all parties > self.pid.
@@ -343,12 +386,16 @@ class Runtime:
                     logging.debug(exc)
                 time.sleep(0.1)
 
+        logging.info("Waiting for all parties to connect")
         await self.parties[self.pid].protocol
+        logging.info(f"All parties connected, {'not zero' if self.pid else 'zero'}")
         if self.options.ssl:
             logging.info(f"All {m} parties connected via SSL.")
         else:
             logging.info(f"All {m} parties connected.")
+
         if self.pid:
+            logging.info(f"Closing server for party {self.pid}")
             server.close()
 
     async def shutdown(self):
@@ -377,6 +424,15 @@ class Runtime:
         for peer in self.parties[self.pid + 1 :]:
             peer.protocol.close_connection()
         await self.parties[self.pid].protocol
+
+        print("stats_send", self.stats_send)
+        print("stats_receive", self.stats_receive)
+
+        for peer_pid in self.stats_send_to:
+            print("stats_send_to", peer_pid, self.stats_send_to[peer_pid])
+
+        for peer_pid in self.stats_receive_from:
+            print("stats_receive_from", peer_pid, self.stats_receive_from[peer_pid])
 
     async def __aenter__(self):
         """Start MPyC runtime when entering async with context."""
@@ -560,7 +616,7 @@ class Runtime:
         outputs secure floating-point numbers as Python floats.
         The flag raw is ignored for these types.
         """
-        logging.debug("!!!!!!!OUTPUT!!!!!", x, receivers, threshold, raw)
+        # logging.debug("!!!!!!!OUTPUT!!!!!", x, receivers, threshold, raw)
 
         # return Future()
 
@@ -3229,6 +3285,7 @@ def setup():
     parser = mpyc.get_arg_parser()
     argv = sys.argv  # keep raw args
     options, args = parser.parse_known_args()
+    print("---------Options", options)
     if options.HELP:
         parser.print_help()
         sys.exit()
