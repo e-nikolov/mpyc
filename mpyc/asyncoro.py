@@ -19,158 +19,6 @@ from asyncio import streams, transports, get_event_loop
 import time
 
 
-class PeerJSTransportBase(transports.Transport):
-    def __init__(self, loop, protocol, *args, **kwargs):
-        self._loop = loop
-        self._protocol = protocol
-
-    ## BASE
-
-    def is_closing(self):
-        """Return True if the transport is closing or closed."""
-        raise NotImplementedError
-
-    def close(self):
-        """Close the transport.
-
-        Buffered data will be flushed asynchronously.  No more data
-        will be received.  After all buffered data is flushed, the
-        protocol's connection_lost() method will (eventually) be
-        called with None as its argument.
-        """
-        raise NotImplementedError
-
-    def get_protocol(self):
-        return self._protocol
-
-    def set_protocol(self, protocol):
-        return self._protocol
-
-    # Implement read/write methods
-
-    __slots__ = ()
-
-    ## READ
-
-    def is_reading(self):
-        """Return True if the transport is receiving."""
-        raise NotImplementedError
-
-    def pause_reading(self):
-        """Pause the receiving end.
-
-        No data will be passed to the protocol's data_received()
-        method until resume_reading() is called.
-        """
-        raise NotImplementedError
-
-    def resume_reading(self):
-        """Resume the receiving end.
-
-        Data received will once again be passed to the protocol's
-        data_received() method.
-        """
-        raise NotImplementedError
-
-    ## WRITE
-
-    def set_write_buffer_limits(self, high=None, low=None):
-        """Set the high- and low-water limits for write flow control.
-
-        These two values control when to call the protocol's
-        pause_writing() and resume_writing() methods.  If specified,
-        the low-water limit must be less than or equal to the
-        high-water limit.  Neither value can be negative.
-
-        The defaults are implementation-specific.  If only the
-        high-water limit is given, the low-water limit defaults to an
-        implementation-specific value less than or equal to the
-        high-water limit.  Setting high to zero forces low to zero as
-        well, and causes pause_writing() to be called whenever the
-        buffer becomes non-empty.  Setting low to zero causes
-        resume_writing() to be called only once the buffer is empty.
-        Use of zero for either limit is generally sub-optimal as it
-        reduces opportunities for doing I/O and computation
-        concurrently.
-        """
-        raise NotImplementedError
-
-    def get_write_buffer_size(self):
-        """Return the current size of the write buffer."""
-        raise NotImplementedError
-
-    def get_write_buffer_limits(self):
-        """Get the high and low watermarks for write flow control.
-        Return a tuple (low, high) where low and high are
-        positive number of bytes."""
-        raise NotImplementedError
-
-    def write(self, data):
-        """Write some data bytes to the transport.
-
-        This does not block; it buffers the data and arranges for it
-        to be sent out asynchronously.
-        """
-        raise NotImplementedError
-
-    def write_eof(self):
-        """Close the write end after flushing buffered data.
-
-        (This is like typing ^D into a UNIX program reading from stdin.)
-
-        Data may still be received.
-        """
-        raise NotImplementedError
-
-    def can_write_eof(self):
-        """Return True if this transport supports write_eof(), False if not."""
-        raise NotImplementedError
-
-    def abort(self):
-        """Close the transport immediately.
-
-        Buffered data will be lost.  No more data will be received.
-        The protocol's connection_lost() method will (eventually) be
-        called with None as its argument.
-        """
-        raise NotImplementedError
-
-
-class FileTransport(transports.ReadTransport):
-    def __init__(self, path, loop):
-        super().__init__()
-        self._path = path
-        self._loop = loop
-        self._closing = False
-
-    def is_closing(self):
-        return self._closing
-
-    def close(self):
-        self._closing = True
-
-    def set_protocol(self, protocol):
-        self._protocol = protocol
-        self._loop.create_task(self._do_read())
-
-    def get_protocol(self):
-        return self._protocol
-
-    async def _do_read(self):
-        try:
-            async with aiofiles.open(self._path) as f:
-                self._loop.call_soon(self._protocol.connection_made, self)
-                async for line in f:
-                    self._loop.call_soon(self._protocol.data_received, line)
-                    if self._closing:
-                        break
-                self._loop.call_soon(self._protocol.eof_received)
-        except Exception as ex:
-            self._loop.call_soon(self._protocol.connection_lost, ex)
-        else:
-            self._loop.call_soon(self._protocol.connection_lost, None)
-
-
 class MessageExchanger(Protocol):
     """Send and receive messages.
 
@@ -208,7 +56,7 @@ class MessageExchanger(Protocol):
         If this party is a client for this connection, it sends its identity
         to the peer as well as any PRSS keys.
         """
-        print("^^^^^^^^^^^^^^^^^^^^^ Connection made???")
+        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made???")
         self.transport = transport
         # This is a client connection to a server peer
         # peer_pid is the PID of the associated server peer
@@ -216,31 +64,31 @@ class MessageExchanger(Protocol):
             rt = self.runtime
             m = len(rt.parties)
             t = rt.threshold
-            print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 2")
+            logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 2")
             pid_keys = [rt.pid.to_bytes(2, "little")]  # send pid
-            print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 3")
+            logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 3")
             if not rt.options.no_prss:
-                print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 4")
+                logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 4")
                 for subset in itertools.combinations(range(m), m - t):
-                    print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 5")
+                    logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 5")
                     if subset[0] == rt.pid and self.peer_pid in subset:
-                        print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6")
+                        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6")
                         x = rt._prss_keys
-                        print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.0.1")
-                        print(x)
-                        print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.0.2")
-                        print(subset)
-                        print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.0.3")
+                        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.0.1")
+                        logging.debug(x)
+                        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.0.2")
+                        logging.debug(subset)
+                        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.0.3")
                         x = x[subset]
-                        print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.1")
-                        print(pid_keys)
-                        print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.2")
+                        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.1")
+                        logging.debug(pid_keys)
+                        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.2")
                         pid_keys.append(x)  # send PRSS keys
-                    print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 7")
+                    logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 7")
             transport.writelines(pid_keys)
-            print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 8")
+            logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 8")
             self._key_transport_done()
-            print("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 9")
+            logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 9")
 
     def send(self, pc, payload):
         """Send payload labeled with pc to the peer.
@@ -561,7 +409,7 @@ def _mpc_coro_no_pc(func):
 
 
 def printt(str):
-    # print(str)
+    # logging.debug(str)
     logging.debug(str)
     #
 
@@ -591,7 +439,7 @@ def mpc_coro(func, pc=True):
             try:
                 decl = coro.send(None)
             except StopIteration as exc:
-                # print("??????????????? 6", exc.value, exc.__class__)
+                # logging.debug("??????????????? 6", exc.value, exc.__class__)
                 runtime._pc_level -= 1
                 return exc.value
 

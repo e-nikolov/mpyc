@@ -7,6 +7,7 @@ from numeric types to more advanced types, for which the corresponding operation
 are made available through Python's mechanism for operator overloading.
 """
 
+import json
 import os
 import sys
 import time
@@ -30,6 +31,9 @@ import mpyc.secgroups
 import mpyc.random
 import mpyc.statistics
 import mpyc.seclists
+from pprint import pprint, pformat
+
+logging = logging.getLogger(__name__)
 
 Future = asyncio.Future
 mpc_coro = asyncoro.mpc_coro
@@ -39,11 +43,11 @@ mpc_coro_no_pc = asyncoro._mpc_coro_no_pc
 class Awaitable:
     def __await__(self):
         value = yield 7
-        print("Awaitable received:", value)
+        logging.debug("Awaitable received:", value)
         value = yield 2
-        print("Awaitable received:", value)
+        logging.debug("Awaitable received:", value)
         value = yield 3
-        print("Awaitable received:", value)
+        logging.debug("Awaitable received:", value)
         return 42
 
 
@@ -52,15 +56,11 @@ class TCPTransportManager:
         self.runtime = runtime
 
     def send(self, peer_pid, data):
-        print("sending", data)
-        self.runtime.parties[peer_pid].protocol.send(
-            self.runtime._program_counter[0], data
-        )
+        logging.debug("sending", data)
+        self.runtime.parties[peer_pid].protocol.send(self.runtime._program_counter[0], data)
 
     def receive(self, peer_pid):
-        return self.runtime.parties[peer_pid].protocol.receive(
-            self.runtime._program_counter[0]
-        )
+        return self.runtime.parties[peer_pid].protocol.receive(self.runtime._program_counter[0])
 
     def close_connection(self, peer_pid):
         pass
@@ -109,20 +109,17 @@ class Runtime:
 
     def __init__(self, pid, parties, options):
         """Initialize runtime."""
-        print("--------------runtime--------", pid, parties, options)
+        logging.debug(f"--------\npid: {pid},\nparties: {sdump(parties)},\noptions: {sdump(options)}\n--------")
         self.pid = pid
         # self.transport_manager = TCPTransportManager(self)
         self.parties = tuple(parties)
-        print(self.parties)
         self.options = options
         self.threshold = options.threshold
         self._logging_enabled = not options.no_log
         self._program_counter = [0, 0]  # [hopping-counter, program-depth]
         self._pc_level = 0  # used for implementation of barriers
         self._loop = asyncio.get_event_loop()  # cache event loop
-        self._loop.set_exception_handler(
-            asyncoro.exception_handler
-        )  # exceptions re MPyC coroutine
+        self._loop.set_exception_handler(asyncoro.exception_handler)  # exceptions re MPyC coroutine
         self.start_time = None
         self.aggregate_load = 0.0 * 10000  # unit: basis point 0.0001 = 0.01%
         self.stats_send = 0
@@ -159,9 +156,7 @@ class Runtime:
         Return a mapping from sets of parties to PRFs.
         """
         if self.options.no_prss:
-            raise NotImplementedError(
-                "Functionality not (yet) supported when PRSS is disabled."
-            )
+            raise NotImplementedError("Functionality not (yet) supported when PRSS is disabled.")
 
         f = {}
         for subset, key in self._prss_keys.items():
@@ -170,14 +165,14 @@ class Runtime:
 
     def _send_message(self, peer_pid, data):
         """Send data to given peer, labeled by current program counter."""
-        # print(f"sending {data} to peer {peer_pid}")
+        # logging.debug(f"sending {data} to peer {peer_pid}")
         self.stats_send += 1
         if peer_pid not in self.stats_send_to:
             self.stats_send_to[peer_pid] = 0
         self.stats_send_to[peer_pid] += 1
-        # print("AAAA")
+        # logging.debug("AAAA")
         self.parties[peer_pid].protocol.send(self._program_counter[0], data)
-        # print("BBBB")
+        # logging.debug("BBBB")
 
     def _receive_message(self, peer_pid):
         """Receive data from given peer, labeled by current program counter."""
@@ -214,9 +209,7 @@ class Runtime:
 
     async def throttler(self, load_percentage=1.0, name=None):
         """Throttle runtime by given percentage (default 1.0), using optional name for barrier."""
-        assert (
-            0.0 <= load_percentage <= 1.0
-        ), "percentage as decimal fraction between 0.0 and 1.0"
+        assert 0.0 <= load_percentage <= 1.0, "percentage as decimal fraction between 0.0 and 1.0"
         self.aggregate_load += load_percentage * 10000
         if self.aggregate_load < 10000:
             return
@@ -238,17 +231,17 @@ class Runtime:
         return Future()
 
     async def foo(self):
-        print("foo start")
+        logging.debug("foo start")
         result = Awaitable()
         await result
-        print("foo received result:", result)
-        print("foo end")
+        logging.debug("foo received result:", result)
+        logging.debug("foo end")
 
     async def xprint(self):
-        print(await self.out("0"))
-        print(await self.out(11))
-        print(await self.out(22))
-        print(await self.out(33))
+        logging.debug(await self.out("0"))
+        logging.debug(await self.out(11))
+        logging.debug(await self.out(22))
+        logging.debug(await self.out(33))
 
     def run2(self, f):
         f.send(None)
@@ -256,9 +249,10 @@ class Runtime:
 
     def run(self, f):
         """Run the given coroutine or future until it is done."""
-        print("+++++++run+++++++++", self.parties)
-        print(self._loop.is_running())
-        print(asyncio.iscoroutine(f))
+        logging.debug("+++++++run+++++++++")
+        logging.debug(self.parties)
+        logging.debug(self._loop.is_running())
+        logging.debug(asyncio.iscoroutine(f))
         if self._loop.is_running():
             if not asyncio.iscoroutine(f):
                 f = asyncoro._wrap_in_coro(f)
@@ -281,8 +275,8 @@ class Runtime:
 
     def run3(self, f):
         """Run the given coroutine or future until it is done."""
-        print(self._loop.is_running())
-        print(asyncio.iscoroutine(f))
+        logging.debug(self._loop.is_running())
+        logging.debug(asyncio.iscoroutine(f))
         if self._loop.is_running():
             if not asyncio.iscoroutine(f):
                 f = asyncoro._wrap_in_coro(f)
@@ -290,16 +284,16 @@ class Runtime:
 
             while True:
                 try:
-                    print(f"iter #{i}")
-                    print(f.__name__)
-                    print(f.__class__)
-                    print("sending None")
+                    logging.debug(f"iter #{i}")
+                    logging.debug(f.__name__)
+                    logging.debug(f.__class__)
+                    logging.debug("sending None")
                     f.send(None)
-                    print("sending 1")
+                    logging.debug("sending 1")
                     f.send([1, 0])
-                    print("sending 2")
+                    logging.debug("sending 2")
                     f.send([2, 0])
-                    print("sending 3")
+                    logging.debug("sending 3")
                     f.send([3, 0])
                     i += 1
                 except StopIteration as exc:
@@ -350,11 +344,11 @@ class Runtime:
             else:
                 context = None
             factory = lambda: asyncoro.MessageExchanger(self)
-            print("@@@@@@@@@@@@@@@@@@@ - creating listener")
+            logging.debug("@@@@@@@@@@@@@@@@@@@ - creating listener")
 
             # This will use the factory to create a new asyncoro.MessageExchanger with no peer_pid for each incoming connection
             server = await loop.create_server(factory, port=listen_port, ssl=context)
-            print("@@@@@@@@@@@@@@@@@@@ - done creating listener")
+            logging.debug("@@@@@@@@@@@@@@@@@@@ - done creating listener")
             logging.debug(f"Listening on port {listen_port}")
 
         # Connect to all parties > self.pid.
@@ -407,9 +401,7 @@ class Runtime:
         while self._pc_level > self._program_counter[1]:
             await asyncio.sleep(0)
         elapsed = time.time() - self.start_time
-        logging.info(
-            f"Stop MPyC runtime -- elapsed time: {datetime.timedelta(seconds=elapsed)}"
-        )
+        logging.info(f"Stop MPyC runtime -- elapsed time: {datetime.timedelta(seconds=elapsed)}")
         m = len(self.parties)
         if m == 1:
             return
@@ -425,14 +417,14 @@ class Runtime:
             peer.protocol.close_connection()
         await self.parties[self.pid].protocol
 
-        print("stats_send", self.stats_send)
-        print("stats_receive", self.stats_receive)
+        logging.debug("stats_send", self.stats_send)
+        logging.debug("stats_receive", self.stats_receive)
 
         for peer_pid in self.stats_send_to:
-            print("stats_send_to", peer_pid, self.stats_send_to[peer_pid])
+            logging.debug("stats_send_to", peer_pid, self.stats_send_to[peer_pid])
 
         for peer_pid in self.stats_receive_from:
-            print("stats_receive_from", peer_pid, self.stats_receive_from[peer_pid])
+            logging.debug("stats_receive_from", peer_pid, self.stats_receive_from[peer_pid])
 
     async def __aenter__(self):
         """Start MPyC runtime when entering async with context."""
@@ -451,9 +443,7 @@ class Runtime:
         await self.shutdown()
 
     @mpc_coro
-    async def transfer(
-        self, obj, senders=None, receivers=None, sender_receivers=None
-    ) -> Future:
+    async def transfer(self, obj, senders=None, receivers=None, sender_receivers=None) -> Future:
         """Transfer pickable Python objects between specified parties.
 
         The senders are the parties that provide input.
@@ -590,12 +580,7 @@ class Runtime:
         if shape is None:
             y = [[field(a) for a in field.from_bytes(r)] for r in shares]
         else:
-            y = [
-                [
-                    field.array(field.from_bytes(r), check=False).reshape(shape)
-                    for r in shares
-                ]
-            ]
+            y = [[field.array(field.from_bytes(r), check=False).reshape(shape) for r in shares]]
         return y
 
     @mpc_coro
@@ -667,10 +652,7 @@ class Runtime:
         if self.pid in receivers:
             shares = [self._receive_message((self.pid - t + j) % m) for j in range(t)]
             shares = await self.gather(shares)
-            points = [
-                ((self.pid - t + j) % m + 1, field.from_bytes(shares[j]))
-                for j in range(t)
-            ]
+            points = [((self.pid - t + j) % m + 1, field.from_bytes(shares[j])) for j in range(t)]
             points.append((self.pid + 1, x))
             y = thresha.recombine(field, points)
             if shape is None:
@@ -727,9 +709,7 @@ class Runtime:
             shape = None
         else:
             field = x[0].field
-            x = x[
-                0
-            ].value  # TODO: consider multiple arrays, see e.g., np_prod(), np_all()
+            x = x[0].value  # TODO: consider multiple arrays, see e.g., np_prod(), np_all()
             shape = x.shape
             x = x.flat  # indexable iterator
 
@@ -762,9 +742,7 @@ class Runtime:
         if x == []:
             return []
 
-        if isinstance(x[0], self.SecureFiniteField) and issubclass(
-            ttype, self.SecureFiniteField
-        ):
+        if isinstance(x[0], self.SecureFiniteField) and issubclass(ttype, self.SecureFiniteField):
             # conversion via secure integers
             stype = type(x[0])
             size = max(stype.field.order, ttype.field.order)
@@ -796,9 +774,7 @@ class Runtime:
         x = await self.gather(x)
         d = ttype.frac_length - stype.frac_length  # TODO: use integral attribute fxp
         if d < 0:
-            x = await self.trunc(
-                x, f=-d, l=stype.bit_length
-            )  # TODO: take minimum with ttype or so
+            x = await self.trunc(x, f=-d, l=stype.bit_length)  # TODO: take minimum with ttype or so
         if stype.field.is_signed:
             if issubclass(stype, self.SecureFiniteField):
                 offset = stype.field.modulus // 2
@@ -858,12 +834,7 @@ class Runtime:
         r_divf = self._randoms(Zp, n, 1 << k + l)
         if issubclass(sftype, self.SecureObject):
             x = await self.gather(x)
-        c = await self.output(
-            [
-                a + ((1 << l - 1 + f) + (q.value << f) + r.value)
-                for a, q, r in zip(x, r_divf, r_modf)
-            ]
-        )
+        c = await self.output([a + ((1 << l - 1 + f) + (q.value << f) + r.value) for a, q, r in zip(x, r_divf, r_modf)])
         c = [c.value % (1 << f) for c in c]
         y = [(a - c + r.value) >> f for a, c, r in zip(x, c, r_modf)]
         if not x_is_list:
@@ -896,9 +867,7 @@ class Runtime:
         r_divf = r_divf.reshape(a.shape)
         if issubclass(sftype, self.SecureObject):
             a = await self.gather(a)
-        c = await self.output(
-            Zp.array(a.value + (1 << l - 1 + f) + (r_divf << f) + r_modf)
-        )
+        c = await self.output(Zp.array(a.value + (1 << l - 1 + f) + (r_divf << f) + r_modf))
         c = c.value & ((1 << f) - 1)
         y = Zp.array(a.value + r_modf - c) >> f
         return y
@@ -921,15 +890,11 @@ class Runtime:
 
         m = len(self.parties)
         t = self.threshold
-        if (
-            field.order.bit_length() <= 60
-        ):  # TODO: introduce MPyC parameter for failure probability
+        if field.order.bit_length() <= 60:  # TODO: introduce MPyC parameter for failure probability
             prfs = self.prfs(field.order)
             while True:
                 r, s = self._randoms(field, 2)
-                z = thresha.pseudorandom_share_zero(
-                    field, m, self.pid, prfs, self._prss_uci(), 1
-                )
+                z = thresha.pseudorandom_share_zero(field, m, self.pid, prfs, self._prss_uci(), 1)
                 if await self.output(r * s + z[0], threshold=2 * t):
                     break
         else:
@@ -938,9 +903,7 @@ class Runtime:
         if issubclass(sftype, self.SecureObject):
             a = await self.gather(a)
         if field.order.bit_length() <= 60:
-            z = thresha.pseudorandom_share_zero(
-                field, m, self.pid, prfs, self._prss_uci(), 1
-            )
+            z = thresha.pseudorandom_share_zero(field, m, self.pid, prfs, self._prss_uci(), 1)
             b = a * r + z[0]
         else:
             b = a * r
@@ -960,31 +923,23 @@ class Runtime:
         n = a.size
         m = len(self.parties)
         t = self.threshold
-        if (
-            field.order.bit_length() <= 60
-        ):  # TODO: introduce MPyC parameter for failure probability
+        if field.order.bit_length() <= 60:  # TODO: introduce MPyC parameter for failure probability
             prfs = self.prfs(field.order)
             while True:
                 r = self._np_randoms(field, n)
                 s = self._np_randoms(field, n)
-                z = thresha.np_pseudorandom_share_0(
-                    field, m, self.pid, prfs, self._prss_uci(), n
-                )
+                z = thresha.np_pseudorandom_share_0(field, m, self.pid, prfs, self._prss_uci(), n)
                 if np.all(await self.output(r * s + z, threshold=2 * t)):
                     # TODO: handle failures for cases of small sec. param k (like 8),
                     # small bit_length l (like 2) and large n (like 200); filter the 0s.
                     break
         else:
-            r = self._np_randoms(
-                field, n
-            )  # NB: failure r=0 with probability less than 2**-60
+            r = self._np_randoms(field, n)  # NB: failure r=0 with probability less than 2**-60
 
         if issubclass(sftype, self.SecureObject):
             a = await self.gather(a)
         if field.order.bit_length() <= 60:
-            z = thresha.np_pseudorandom_share_0(
-                field, m, self.pid, prfs, self._prss_uci(), n
-            )
+            z = thresha.np_pseudorandom_share_0(field, m, self.pid, prfs, self._prss_uci(), n)
             b = a * r + z
         else:
             b = a * r
@@ -1122,9 +1077,7 @@ class Runtime:
                         # Scale to Python int entries (by setting otypes='O', prevents overflow):
                         b = np.vectorize(round, otypes="O")(b * 2**f)
                     # TODO: handle b.dtype=object, checking if all elts are int
-            await self.returnType(
-                (stype, a_integral and (b_integral or b_is_int), shape)
-            )
+            await self.returnType((stype, a_integral and (b_integral or b_is_int), shape))
 
         if not shb:
             a = await self.gather(a)
@@ -1190,9 +1143,7 @@ class Runtime:
                 c = b.reciprocal() << f
         else:
             if not isinstance(b, field.array):
-                b = field.array(
-                    b
-                )  # TODO: see if this can be used for case f != 0 as well
+                b = field.array(b)  # TODO: see if this can be used for case f != 0 as well
             c = b.reciprocal()
         return self.np_multiply(a, c)
 
@@ -1314,9 +1265,7 @@ class Runtime:
         a, u2, z = await self.gather(a, u2, z)
         a = a.value
         r = self._randoms(Zp, k)
-        c = [
-            Zp(a * r[i].value + (1 - (z[i].value << 1)) * u2[i].value) for i in range(k)
-        ]
+        c = [Zp(a * r[i].value + (1 - (z[i].value << 1)) * u2[i].value) for i in range(k)]
         # -1 is nonsquare for Blum p, u_i !=0 w.v.h.p.
         # If a == 0, c_i is square mod p iff z[i] == 0.
         # If a != 0, c_i is square mod p independent of z[i].
@@ -1485,9 +1434,7 @@ class Runtime:
         i1 += n // 2
         c = key(min0) < key(min1)
         a = self.if_else(c, i0, i1)
-        m = self.if_else(
-            c, min0, min1
-        )  # TODO: merge if_else's once integral attr per list element
+        m = self.if_else(c, min0, min1)  # TODO: merge if_else's once integral attr per list element
         return a, m
 
     def argmax(self, *x, key=None):
@@ -1522,9 +1469,7 @@ class Runtime:
         i1 += n // 2
         c = key(max0) < key(max1)
         a = self.if_else(c, i1, i0)
-        m = self.if_else(
-            c, max1, max0
-        )  # TODO: merge if_else's once integral attr per list element
+        m = self.if_else(c, max1, max0)  # TODO: merge if_else's once integral attr per list element
         return a, m
 
     def sorted(self, x, key=None, reverse=False):
@@ -1561,9 +1506,7 @@ class Runtime:
         while p:
             d, q, r = p, 1 << t - 1, 0
             while d:
-                for i in range(
-                    n - d
-                ):  # NB: all n-d comparisons can be done in parallel
+                for i in range(n - d):  # NB: all n-d comparisons can be done in parallel
                     if i & p == r:
                         a, b = x[i], x[i + d]
                         x[i], x[i + d] = self.if_swap(key(a) >= key(b), a, b)
@@ -1675,9 +1618,7 @@ class Runtime:
         x = self.trailing_zeros(a, l=l)
         y = self.trailing_zeros(b, l=l)
         z = self.vector_sub(self.vector_add(x, y), self.schur_prod(x, y))  # bitwise or
-        _, f_i = self.find(
-            z, 1, e=None, cs_f=lambda b, i: (b + 1) << i
-        )  # 2**"index of first 1 in z"
+        _, f_i = self.find(z, 1, e=None, cs_f=lambda b, i: (b + 1) << i)  # 2**"index of first 1 in z"
         # TODO: consider keeping f_i in number range if z contains no 1, e.g., setting e='len(x)-1'
         return f_i
 
@@ -1699,9 +1640,7 @@ class Runtime:
         # f is odd (or f=g=0), use stripped version of _divsteps(f, g, l) below
         delta = secint(1)
         for i in range(self._iterations(l)):
-            delta_gt0 = 1 - self.sgn(
-                (delta - 1 - (i % 2)) / 2, l=min(i, l).bit_length(), LT=True
-            )
+            delta_gt0 = 1 - self.sgn((delta - 1 - (i % 2)) / 2, l=min(i, l).bit_length(), LT=True)
             # delta_gt0 <=> delta > 0, using |delta-1|<=min(i,l) and delta-1=i (mod 2) (for g!=0)
             g_0 = g % 2
             delta, f, g = (delta_gt0 * g_0).if_else([-delta, g, -f], [delta, f, g])
@@ -1740,14 +1679,10 @@ class Runtime:
             l = secint.bit_length
         delta, f, v, g, r = secint(1), a, secint(0), b, secint(1)
         for i in range(self._iterations(l)):
-            delta_gt0 = 1 - self.sgn(
-                (delta - 1 - (i % 2)) / 2, l=min(i, l).bit_length(), LT=True
-            )
+            delta_gt0 = 1 - self.sgn((delta - 1 - (i % 2)) / 2, l=min(i, l).bit_length(), LT=True)
             # delta_gt0 <=> delta > 0, using |delta-1|<=min(i,l) and delta-1=i (mod 2) (for g!=0)
             g_0 = g % 2
-            delta, f, v, g, r = (delta_gt0 * g_0).if_else(
-                [-delta, g, r, -f, -v], [delta, f, v, g, r]
-            )
+            delta, f, v, g, r = (delta_gt0 * g_0).if_else([-delta, g, r, -f, -v], [delta, f, v, g, r])
             g, r = g_0.if_else([g + f, r + v], [g, r])  # ensure g is even
             r = (r % 2).if_else(r + a, r)  # ensure r is even
             delta, g, r = delta + 1, g / 2, r / 2
@@ -1898,9 +1833,7 @@ class Runtime:
                         j = (n % 2 + i) // 2
                         if not integral[i] and not integral[i + 1]:
                             x[j] = z.pop()
-                integral[n % 2 :] = [
-                    integral[i] and integral[i + 1] for i in range(n % 2, n, 2)
-                ]
+                integral[n % 2 :] = [integral[i] and integral[i + 1] for i in range(n % 2, n, 2)]
             n = len(x)
         return x[0]
 
@@ -1952,9 +1885,7 @@ class Runtime:
                         j = (n % 2 + i) // 2
                         if not integral[i] and not integral[i + 1]:
                             x[j] = z.pop()
-                integral[n % 2 :] = [
-                    integral[i] and integral[i + 1] for i in range(n % 2, n, 2)
-                ]
+                integral[n % 2 :] = [integral[i] and integral[i + 1] for i in range(n % 2, n, 2)]
             n = len(x)
         return x[0]
 
@@ -2060,11 +1991,7 @@ class Runtime:
         if not stype.frac_length:
             await self.returnType(stype, n)
         else:
-            y0_integral = (
-                isinstance(y[0], int)
-                or isinstance(y[0], self.SecureObject)
-                and y[0].integral
-            )
+            y0_integral = isinstance(y[0], int) or isinstance(y[0], self.SecureObject) and y[0].integral
             await self.returnType((stype, x[0].integral and y0_integral), n)
 
         x, y = await self.gather(x, y)
@@ -2084,11 +2011,7 @@ class Runtime:
         if not stype.frac_length:
             await self.returnType(stype, n)
         else:
-            y0_integral = (
-                isinstance(y[0], int)
-                or isinstance(y[0], self.SecureObject)
-                and y[0].integral
-            )
+            y0_integral = isinstance(y[0], int) or isinstance(y[0], self.SecureObject) and y[0].integral
             await self.returnType((stype, x[0].integral and y0_integral), n)
 
         x, y = await self.gather(x, y)
@@ -2305,13 +2228,7 @@ class Runtime:
             C = self.trunc(C, f=f, l=stype.bit_length)
             C = await self.gather(C)
         if C_symmetric:
-            C = [
-                [
-                    C[i * (i + 1) // 2 + j if j < i else j * (j + 1) // 2 + i]
-                    for j in range(n1)
-                ]
-                for i in range(n1)
-            ]
+            C = [[C[i * (i + 1) // 2 + j if j < i else j * (j + 1) // 2 + i] for j in range(n1)] for i in range(n1)]
         else:
             C = [C[ni : ni + n2] for ni in range(0, n1 * n2, n2)]
         return C
@@ -2416,9 +2333,7 @@ class Runtime:
         if isinstance(shape, int):
             shape = (shape,)  # ensure shape is a tuple
         if -1 in shape:
-            raise ValueError(
-                "reshape with unknown dimension not allowed for secure arrays"
-            )
+            raise ValueError("reshape with unknown dimension not allowed for secure arrays")
 
         if issubclass(stype, self.SecureFixedPointArray):
             await self.returnType((stype, a.integral, shape))
@@ -2510,9 +2425,7 @@ class Runtime:
         def _block_shape(a, ndm):
             if not isinstance(a, list):
                 shape = getattr(a, "shape", ())
-                shape = [1] * (ndm - len(shape)) + list(
-                    shape
-                )  # pad all shapes with leading 1s
+                shape = [1] * (ndm - len(shape)) + list(shape)  # pad all shapes with leading 1s
                 height = 1
             else:
                 # Same shape (except for axis -h) and height for all blocks in a:
@@ -2523,9 +2436,7 @@ class Runtime:
             return shape, height
 
         def block_shape(a):
-            return tuple(
-                _block_shape(a, block_ndim(a))[0]
-            )  # TODO: move this to mpyc.numpy module
+            return tuple(_block_shape(a, block_ndim(a))[0])  # TODO: move this to mpyc.numpy module
 
         await self.returnType((sectype, block_shape(arrays)))
         arrays = await self.gather(arrays)
@@ -2631,15 +2542,11 @@ class Runtime:
         return c * (a - b) + b
 
     def np_amax(self, a, axis=None):
-        assert (
-            axis is None
-        )  # TODO: handle other axis (axes) and other kwargs like keepdims
+        assert axis is None  # TODO: handle other axis (axes) and other kwargs like keepdims
         return self.max(a.flatten().tolist())
 
     def np_amin(self, a, axis=None):
-        assert (
-            axis is None
-        )  # TODO: handle other axis (axes) and other kwargs like keepdims
+        assert axis is None  # TODO: handle other axis (axes) and other kwargs like keepdims
         return self.min(a.flatten().tolist())
 
     @mpc_coro_no_pc
@@ -2814,14 +2721,10 @@ class Runtime:
         if bound is None:
             bound = field.order
         else:
-            bound = 1 << max(
-                0, (bound // self._bincoef).bit_length() - 1
-            )  # NB: rounded power of 2
+            bound = 1 << max(0, (bound // self._bincoef).bit_length() - 1)  # NB: rounded power of 2
         m = len(self.parties)
         prfs = self.prfs(bound)
-        shares = thresha.pseudorandom_share(
-            field, m, self.pid, prfs, self._prss_uci(), n
-        )
+        shares = thresha.pseudorandom_share(field, m, self.pid, prfs, self._prss_uci(), n)
         if issubclass(sftype, self.SecureObject):
             shares = [sftype(s) for s in shares]
         return shares
@@ -2837,14 +2740,10 @@ class Runtime:
         if bound is None:
             bound = field.order
         else:
-            bound = 1 << max(
-                0, (bound // self._bincoef).bit_length() - 1
-            )  # NB: rounded power of 2
+            bound = 1 << max(0, (bound // self._bincoef).bit_length() - 1)  # NB: rounded power of 2
         m = len(self.parties)
         prfs = self.prfs(bound)
-        shares = thresha.np_pseudorandom_share(
-            field, m, self.pid, prfs, self._prss_uci(), n
-        )
+        shares = thresha.np_pseudorandom_share(field, m, self.pid, prfs, self._prss_uci(), n)
         if issubclass(sftype, self.SecureObject):
             shares = sftype(shares)
         return shares
@@ -2871,9 +2770,7 @@ class Runtime:
         m = len(self.parties)
         if field.characteristic == 2:
             prfs = self.prfs(2)
-            bits = thresha.pseudorandom_share(
-                field, m, self.pid, prfs, self._prss_uci(), n
-            )
+            bits = thresha.pseudorandom_share(field, m, self.pid, prfs, self._prss_uci(), n)
             return bits
 
         bits = [None] * n
@@ -2885,15 +2782,11 @@ class Runtime:
         t = self.threshold
         h = n
         while h > 0:
-            rs = thresha.pseudorandom_share(
-                field, m, self.pid, prfs, self._prss_uci(), h
-            )
+            rs = thresha.pseudorandom_share(field, m, self.pid, prfs, self._prss_uci(), h)
             # Compute and open the squares and compute square roots.
             r2s = [r * r for r in rs]
             if prss0:
-                z = thresha.pseudorandom_share_zero(
-                    field, m, self.pid, prfs, self._prss_uci(), h
-                )
+                z = thresha.pseudorandom_share_zero(field, m, self.pid, prfs, self._prss_uci(), h)
                 for i in range(h):
                     r2s[i] += z[i]
             r2s = await self.output(r2s, threshold=2 * t)
@@ -2927,9 +2820,7 @@ class Runtime:
         m = len(self.parties)
         if field.characteristic == 2:
             prfs = self.prfs(2)
-            bits = thresha.np_pseudorandom_share(
-                field, m, self.pid, prfs, self._prss_uci(), n
-            )
+            bits = thresha.np_pseudorandom_share(field, m, self.pid, prfs, self._prss_uci(), n)
             return bits
 
         if not signed:
@@ -2940,15 +2831,11 @@ class Runtime:
         t = self.threshold
         h = n
         while h > 0:
-            r = thresha.np_pseudorandom_share(
-                field, m, self.pid, prfs, self._prss_uci(), h
-            )
+            r = thresha.np_pseudorandom_share(field, m, self.pid, prfs, self._prss_uci(), h)
             # Compute and open the squares and compute square roots.
             r2 = r * r
             if prss0:
-                z = thresha.np_pseudorandom_share_0(
-                    field, m, self.pid, prfs, self._prss_uci(), h
-                )
+                z = thresha.np_pseudorandom_share_0(field, m, self.pid, prfs, self._prss_uci(), h)
                 r2 += z
             r2 = await self.output(r2, threshold=2 * t)
             h = 0  # TODO: handle case that r2 constains 0s, e.g.. using np.any(r2.value == 0)
@@ -3033,9 +2920,7 @@ class Runtime:
         c = await self.output(a + ((1 << stype.bit_length) + (r_divl << l) - r_modl))
         c = c.value % (1 << l)
         c_bits = [(c >> i) & 1 for i in range(l)]
-        r_bits = [
-            stype(r.value) for r in r_bits
-        ]  # TODO: drop .value, fix secfxp(r) if r field elt
+        r_bits = [stype(r.value) for r in r_bits]  # TODO: drop .value, fix secfxp(r) if r field elt
         a_bits = self.add_bits(r_bits, c_bits)
         if rshift_f:
             a_bits = [field(0) for _ in range(f)] + a_bits
@@ -3129,9 +3014,7 @@ class Runtime:
                 if issubclass(type_f, int):
                     _f = f
                     f = lambda i: [_f(i)]
-                cs_f = lambda b, i: [
-                    b * (f_i1 - f_i) + f_i for f_i, f_i1 in zip(f(i), f(i + 1))
-                ]
+                cs_f = lambda b, i: [b * (f_i1 - f_i) + f_i for f_i, f_i1 in zip(f(i), f(i + 1))]
         else:
             if f is None:
                 type_f = type(cs_f(0, 0))
@@ -3280,12 +3163,38 @@ def generate_configs(m, addresses):
     return configs
 
 
+def sdump(obj):
+    s = ""
+    try:
+        s = pformat(vars(obj), indent=4)
+    except TypeError:
+        pass
+
+    if s == "":
+        try:
+            s = pformat(obj, indent=4)
+        except TypeError:
+            pass
+
+    if s == "":
+        try:
+            s = pformat(dict(obj), indent=4)
+        except TypeError:
+            pass
+
+    return f"{type(obj)}: {s}"
+
+
+def dump(obj):
+    logging.debug(sdump(obj))
+
+
 def setup():
     """Setup a runtime."""
     parser = mpyc.get_arg_parser()
     argv = sys.argv  # keep raw args
     options, args = parser.parse_known_args()
-    print("---------Options", options)
+    # logging.debug("---------Options\n%s", sdump(options))
     if options.HELP:
         parser.print_help()
         sys.exit()
@@ -3296,9 +3205,7 @@ def setup():
         print()
     sys.argv = [sys.argv[0]] + args
 
-    env_mix32_64bit = (
-        os.getenv("MPYC_MIX32_64BIT") == "1"
-    )  # check if MPYC_MIX32_64BIT is set
+    env_mix32_64bit = os.getenv("MPYC_MIX32_64BIT") == "1"  # check if MPYC_MIX32_64BIT is set
     if options.mix32_64bit or env_mix32_64bit:
         logging.info("Mix of parties on 32-bit and 64-bit platforms enabled.")
         from hashlib import sha1
@@ -3311,9 +3218,7 @@ def setup():
             Useful when working with standard 64-bit installations on Linux/MacOS/Windows and
             32-bit installations on Raspberry Pi OS, for instance.
             """
-            return int.from_bytes(
-                sha1(str(a).encode()).digest()[:8], "little", signed=True
-            )
+            return int.from_bytes(sha1(str(a).encode()).digest()[:8], "little", signed=True)
 
         asyncoro._hop = hop
 
@@ -3381,10 +3286,7 @@ def setup():
             flg = lambda a: getattr(sys.flags, a, 0)
             flags = ["-" + flg(a) * c for a, c in flgmap.items() if flg(a)]
             # convert sys._xoptions into command line arguments
-            xopts = [
-                "-X" + a + ("" if c is True else "=" + c)
-                for a, c in sys._xoptions.items()
-            ]
+            xopts = ["-X" + a + ("" if c is True else "=" + c) for a, c in sys._xoptions.items()]
             for i in range(m - 1, 0, -1):
                 cmd_line = [sys.executable] + flags + xopts + argv + ["-I", str(i)]
                 if options.output_windows and platform.platform().startswith("Windows"):
@@ -3395,9 +3297,7 @@ def setup():
                         f.write(f'$> {" ".join(cmd_line)}\n')
                         subprocess.Popen(cmd_line, stdout=f, stderr=subprocess.STDOUT)
                 else:
-                    subprocess.Popen(
-                        cmd_line, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT
-                    )
+                    subprocess.Popen(cmd_line, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
         options.no_async = m == 1 and (options.no_async or not options.M)
         pid = options.index or 0
         base_port = options.base_port or 11365
@@ -3405,9 +3305,7 @@ def setup():
 
     if options.threshold is None:
         options.threshold = (m - 1) // 2
-    assert (
-        2 * options.threshold < m
-    ), f"threshold {options.threshold} too large for {m} parties"
+    assert 2 * options.threshold < m, f"threshold {options.threshold} too large for {m} parties"
 
     rt = Runtime(pid, parties, options)
     sectypes.runtime = rt

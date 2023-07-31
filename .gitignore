@@ -150,3 +150,14 @@ deployments/terraform/show.json
 # hosts.pssh
 show.json
 logs/
+
+# Devenv
+.devenv*
+devenv.local.nix
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+

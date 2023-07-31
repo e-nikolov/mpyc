@@ -13,10 +13,12 @@
 import { XWorker } from "../core.js";
 
 const hostPeerIDInput = document.querySelector('input#hostPeerID');
+const chatInput = document.querySelector('#chatInput');
 
-const myPeerIDDiv = document.querySelector('div#myPeerID');
-const knownPeersDiv = document.querySelector('div#knownPeers');
-const statusDiv = document.querySelector('div#status');
+const myPeerIDEl = document.querySelector('#myPeerID');
+const knownPeersEl = document.querySelector('#knownPeers');
+const statusDiv = document.querySelector('#status');
+const copyPeerIDButton = $('button#copyPeerID')
 
 var peer;
 var conns = {};
@@ -42,22 +44,42 @@ function initUI() {
     document.querySelector('button#startAsyncButton').onclick = runMPyCDemo(true);
     document.querySelector('button#stopButton').onclick = initPyScript;
     document.querySelector('button#connect').onclick = () => { localStorage.setItem("hostPeerID", hostPeerIDInput.value); connectToPeer(hostPeerIDInput.value) };
-    document.querySelector('button#copyPeerID').onclick = function () {
-        var copyText = myPeerIDDiv.innerText;
-        navigator.clipboard.writeText(copyText).then(function () {
+    $('button#copyPeerID').on("click", function () {
+        let $this = $(this);
+
+        navigator.clipboard.writeText(myPeerIDEl.value).then(function () {
+            $this.find("i").switchClass("bi-clipboard", "bi-check2");
+            $this.switchClass("btn-primary", "btn-success");
+            bootstrap.Tooltip.getInstance('button#copyPeerID').setContent({ '.tooltip-inner': "Copied!" })
+
+            setTimeout(() => {
+                $this.switchClass("btn-success", "btn-primary");
+                $this.find("i").switchClass("bi-check2", "bi-clipboard");
+                bootstrap.Tooltip.getInstance('button#copyPeerID').setContent({ '.tooltip-inner': "Copy to clipboard" })
+                $this.attr("data-bs-title", "Copy to clipboard")
+            }, 3000);
+
             console.log('Async: Copying to clipboard was successful!');
         }, function (err) {
             console.error('Async: Could not copy text: ', err);
         });
-    };
-    document.querySelector('button#sendMessage').onclick = () => {
+    });
+    document.querySelector('#sendMessageButton').onclick = () => {
         sendChatMessage(conns);
     };
+
+    chatInput.addEventListener("keyup", function (e) {
+        if (e.which === 13 && !e.shiftKey) {
+            return sendChatMessage(conns);
+        }
+    });
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 }
 
 function sendChatMessage(conns) {
-    let message = document.querySelector('textarea#chatInput').value;
-    document.querySelector('textarea#chatInput').value = "";
+    let message = chatInput.value;
+    chatInput.value = "";
     term.writeln(`Me: ${safe(message)}`);
 
     Object.values(conns).forEach(conn => {
@@ -81,7 +103,7 @@ function initPeerJS() {
     }
 
     peer.on('open', function (id) {
-        myPeerIDDiv.innerHTML = safe(id);
+        myPeerIDEl.value = safe(id);
         localStorage.setItem("myPeerID", id);
         console.log('My peer ID is: ' + id);
     });
@@ -199,9 +221,9 @@ function removePeer(conn) {
 }
 
 function updateKnownPeersDiv(conns) {
-    knownPeersDiv.innerHTML = "";
+    knownPeersEl.innerHTML = "";
     knownPeers(true).forEach((p, pid) => {
-        knownPeersDiv.innerHTML += `<li>${pid}: ${safe(p)} ${p == peer.id ? '<--' : ''}</li>`;
+        knownPeersEl.innerHTML += `<li class="list-group-item ${p == peer.id ? 'list-group-item-light' : ''}"> <span style="user-select:none">${pid}: </span><span>${safe(p)} </span></li>`;
     });
 }
 
@@ -226,7 +248,7 @@ function updateKnownPeersDiv(conns) {
 
 export function runMPyCDemo(is_async = false) {
     return function () {
-        initPyScript()
+        // initPyScript()
         document.term.clear();
 
         let peers = knownPeers(true)
@@ -235,7 +257,7 @@ export function runMPyCDemo(is_async = false) {
         console.log("my id:", peer.id)
         let pid = peers.findIndex((p) => p === peer.id)
 
-        worker.postMessage({
+        postWorkerMessage(worker, {
             init: {
                 pid: pid,
                 parties: peers,
@@ -247,33 +269,53 @@ export function runMPyCDemo(is_async = false) {
     };
 }
 
+function workMessage(obj) {
+    obj = { ...{ init: null, peerJS: null }, ...obj };
+
+    if (obj.peerJS) {
+        obj.peerJS.message = { ...{ runtime_message: null, ready_message: null }, ...obj.peerJS.message };
+    }
+
+    return obj;
+}
 
 
 function initPyScript() {
     if (worker) {
         worker.terminate();
     }
-
-    if (workerNext) {
-        worker = workerNext;
-    } else {
-        worker = new newWorker();
-    }
-
-    workerNext = newWorker();
+    worker = newWorker();
 }
+
+// function initPyScript() {
+//     if (worker) {
+//         worker.terminate();
+//     }
+
+//     if (workerNext) {
+//         worker = workerNext;
+//     } else {
+//         worker = new newWorker();
+//     }
+
+//     workerNext = newWorker();
+// }
 
 function processMPyCMessage(peerID, message) {
     if (!message) {
         return;
     }
 
-    worker.postMessage({
+    postWorkerMessage(worker, {
         peerJS: {
             peerID,
             message,
         }
     });
+}
+
+function postWorkerMessage(w, message) {
+    w.postMessage(workMessage(message));
 }
 
 function newWorker() {

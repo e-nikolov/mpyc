@@ -11,14 +11,17 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
+    devenv.url = "github:cachix/devenv";
   };
 
-  nixConfig.extra-trusted-substituters = [ "https://cache.armv7l.xyz" ];
-  nixConfig.extra-trusted-public-keys = [ "cache.armv7l.xyz-1:kBY/eGnBAYiqYfg0fy0inWhshUo+pGFM3Pj7kIkmlBk=" ];
+  nixConfig = {
+    extra-trusted-public-keys = [ "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=" "cache.armv7l.xyz-1:kBY/eGnBAYiqYfg0fy0inWhshUo+pGFM3Pj7kIkmlBk=" ];
+    extra-substituters = [ "https://devenv.cachix.org" "https://cache.armv7l.xyz" ];
+  };
   # nixConfig.extra-substituters = [ "https://cache.armv7l.xyz" ];
-  nixConfig.substituters = [ "https://cache.nixos.org" "https://cache.armv7l.xyz" ];
+  # nixConfig.substituters = [ "https://cache.nixos.org" "https://cache.armv7l.xyz" ];
 
-  outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
+  outputs = inputs@{ self, nixpkgs, flake-utils, devenv, ... }:
     { colmena = self.packages.x86_64-linux.colmena; }
     //
     flake-utils.lib.eachSystem (flake-utils.lib.defaultSystems ++ [ flake-utils.lib.system.armv7l-linux ])
@@ -62,8 +65,13 @@
           };
         in
         {
-          devShells.default = import ./nix/shell.nix pkgs;
-
+          # devShells.default = import ./nix/shell.nix pkgs;
+          devShells.default = devenv.lib.mkShell {
+            inherit inputs pkgs;
+            modules = [
+              (import ./devenv.nix)
+            ];
+          };
           packages.colmena =
             {
               meta = {
