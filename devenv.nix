@@ -23,6 +23,7 @@
     pkgs.go-stun
     pkgs.pion-stun
     pkgs.just
+    pkgs.yarn
     # pkgs.tailwindcss
 
     (pkgs.terraform.withPlugins

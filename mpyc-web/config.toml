@@ -1,0 +1,31 @@
+packages = ["numpy", "gmpy2", "ssl"]
+# packages = ["numpy", "gmpy2", "ssl", "aiortc"]
+# xterm = true
+
+# plugins = ["py-terminal.py"]
+# plugins = ["py-term.js"]
+# plugins = ["py-term.py"]
+[[fetch]]
+files = ["sort.py", "aes.py", "np_aes.py", "secretsanta.py"]
+[[fetch]]
+from = "../../mpyc"
+to_folder = "./mpyc"
+files = [
+    "__main__.py",
+    "fingroups.py",
+    "thresha.py",
+    "mpctools.py",
+    "README.md",
+    "gfpx.py",
+    "runtime.py",
+    "asyncoro.py",
+    "numpy.py",
+    "seclists.py",
+    "sectypes.py",
+    "random.py",
+    "gmpy.py",
+    "secgroups.py",
+    "finfields.py",
+    "statistics.py",
+    "__init__.py"
+]
