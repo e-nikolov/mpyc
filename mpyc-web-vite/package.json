@@ -7,15 +7,15 @@
     "dev": "cp -f node_modules/coi-serviceworker/coi-serviceworker.js public/coi-serviceworker.js && vite",
     "build": "cp -f node_modules/coi-serviceworker/coi-serviceworker.min.js public/coi-serviceworker.js && tsc && vite build",
     "preview": "vite preview",
-    "gh-pages": "gh-pages -d dist"
+    "gh-pages": "gh-pages -d dist -t true"
   },
   "devDependencies": {
+    "coi-serviceworker": "^0.1.7",
     "cross-env": "^7.0.3",
     "gh-pages": "^5.0.0",
     "sass": "^1.64.2",
     "typescript": "^5.1.6",
-    "vite": "^4.4.5",
-    "coi-serviceworker": "^0.1.7"
+    "vite": "^4.4.5"
   },
   "dependencies": {
     "@popperjs/core": "^2.11.8",
@@ -24,6 +24,7 @@
     "@types/jquery": "^3.5.16",
     "@types/jqueryui": "^1.12.17",
     "@types/node": "^20.4.6",
+    "bootstrap": "^5.3.1",
     "coi-serviceworker": "^0.1.7",
     "dompurify": "^3.0.5",
     "jquery": "^3.7.0",
