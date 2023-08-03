@@ -23,12 +23,12 @@ def print_tree(path, prefix="", str=""):
             print_tree(item, prefix + "│   ")
 
 
-# print_tree(Path("."))
+print_tree(Path("."))
 
 
 import json
+import secretsanta as secretsanta
 from mpyc import asyncoro
-import py.secretsanta as secretsanta
 from mpyc.runtime import mpc, Party
 
 from polyscript import xworker

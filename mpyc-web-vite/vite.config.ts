@@ -4,6 +4,12 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   // root: "../",
   base: "/mpyc/",
+  build: {
+    assetsInlineLimit: 0,
+    rollupOptions: {
+      // external: ["src/ts/coi-serviceworker.min.js"],
+    }
+  },
   server: {
     headers: {
       "Cross-Origin-Embedder-Policy": "require-corp",

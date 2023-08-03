@@ -9,7 +9,6 @@
 'use strict';
 
 import '../scss/style.scss';
-// import workerURL from "../py/worker.py"
 
 import { MPyCManager } from './mpyc/mpyc';
 import { Terminal } from 'xterm';
@@ -53,7 +52,7 @@ function initMPyC() {
         mpyc.close();
     }
 
-    mpyc = new MPyCManager(localStorage.getItem("myPeerID"), "../config.toml");
+    mpyc = new MPyCManager(localStorage.getItem("myPeerID"), "config.toml");
     mpyc.onPeerConnectedHook = onPeerConnectedHook;
     mpyc.onPeerDisconnectedHook = onPeerDisconnectedHook;
     mpyc.onPeerJSUserDataReceivedHook = processChatMessage;

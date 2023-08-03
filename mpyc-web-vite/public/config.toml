@@ -6,9 +6,11 @@ packages = ["numpy", "gmpy2", "ssl"]
 # plugins = ["py-term.js"]
 # plugins = ["py-term.py"]
 [[fetch]]
-files = ["sort.py", "aes.py", "np_aes.py", "py/secretsanta.py"]
+from = "./py/"
+to_folder = "./"
+files = ["secretsanta.py"]
 [[fetch]]
-from = "../mpyc"
+from = "./py/mpyc"
 to_folder = "./mpyc"
 files = [
     "__main__.py",
