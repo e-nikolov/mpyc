@@ -8,7 +8,7 @@ packages = ["numpy", "gmpy2", "ssl"]
 [[fetch]]
 files = ["sort.py", "aes.py", "np_aes.py", "py/secretsanta.py"]
 [[fetch]]
-from = "../mpyc"
+from = "./mpyc"
 to_folder = "./mpyc"
 files = [
     "__main__.py",
