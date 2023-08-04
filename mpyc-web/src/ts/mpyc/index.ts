@@ -1,30 +1,26 @@
 import { Peer, DataConnection } from "peerjs";
-import { XWorker } from "polyscript";
+import * as polyscript from "polyscript";
 
-// interface ConnMap {
-//     [key: string]: DataConnection;
-// }
-
-// interface ConnMap extends Map<string, DataConnection> { };
 
 type ConnMap = Map<string, DataConnection>;
 
 export class MPyCManager {
     peer: Peer;
     conns: ConnMap = new Map<string, DataConnection>();
-    worker: typeof XWorker;
+    worker: Worker;
 
 
     constructor(peerID: string | null, configFilePath: string) {
         this.peer = this.newPeerJS(peerID);
-        this.worker = newWorker(this.conns, configFilePath)
+        this.worker = this.newWorker(this.conns, configFilePath)
     }
 
-    public onPeerConnectedHook: (conn: string, conns: string[]) => void = () => { };
-    public onPeerDisconnectedHook: (conn: string, conns: string[]) => void = () => { };
-    public onUserDataReceivedHook: (conn: string, data: any) => void = () => { };
-    public onPeerIDReadyHook: (peerID: string) => void = () => { };
-    public onRuntimeReadyHook: () => void = () => { };
+    public onPeerConnectedHook: (peerID: string, mpyc: MPyCManager) => void = () => { };
+    public onPeerDisconnectedHook: (peerID: string, mpyc: MPyCManager) => void = () => { };
+    public onPeerJSUserDataReceivedHook: (peerID: string, data: any, mpyc: MPyCManager) => void = () => { };
+    public onPeerIDReadyHook: (peerID: string, mpyc: MPyCManager) => void = () => { };
+    public onPyScriptDisplayHook: (message: string, mpyc: MPyCManager) => void = () => { };
+    public onRuntimeReadyHook: (mpyc: MPyCManager) => void = () => { };
 
     getPeers(includeSelf = false) {
         let peers = Array.from(this.conns, ([_, conn]) => conn.peer);
@@ -51,7 +47,7 @@ export class MPyCManager {
         conn.on('open', () => {
             this.sendKnownPeers(conn);
             this.conns.set(conn.peer, conn);
-            this.onPeerConnectedHook(conn.peer, this.getPeers(true));
+            this.onPeerConnectedHook(conn.peer, this);
         });
         // conn.on('connection', function (e:DataConnectionEvent) {
         //     sendKnownPeers(conn);
@@ -97,9 +93,38 @@ export class MPyCManager {
         return peer;
     }
 
+    newWorker(conns: ConnMap, configFilePath: string) {
+        let worker = polyscript.XWorker("./py/worker.py", { async: true, type: "pyodide", config: configFilePath });
+        worker.sync.myFunc = function (x: any) {
+            console.log("myFunc", x);
+        }
+
+        // Hook(pyodide);
+
+
+
+        // Process messages from worker.py
+        worker.onmessage = (event: any) => {
+            console.log("(mpyc.js:worker:onmessage): --------------- data", event.data);
+            let msg = JSON.parse(event.data);
+
+            if (msg.display) {
+                this.onPyScriptDisplayHook(msg.display, this);
+            }
+            if (msg.peerJS) {
+                console.log("++++++++++++++ peerJS data")
+                conns.get(msg.peerJS.peerID)?.send({
+                    mpycMessage: msg.peerJS.message,
+                })
+            }
+        };
+
+        return worker;
+    }
+
     private addPeerEvents(peer: Peer) {
         peer.on('open', (peerID) => {
-            this.onPeerIDReadyHook(peerID);
+            this.onPeerIDReadyHook(peerID, this);
         });
 
         // new incoming peer connection
@@ -110,7 +135,7 @@ export class MPyCManager {
             });
             // data sending doesn't work?
             this.conns.set(conn.peer, conn);
-            this.onPeerConnectedHook(conn.peer, this.getPeers(true));
+            this.onPeerConnectedHook(conn.peer, this);
 
             this.ready(conn);
         });
@@ -138,12 +163,12 @@ export class MPyCManager {
 
 
 
-            this.onUserDataReceivedHook(conn.peer, data);
+            this.onPeerJSUserDataReceivedHook(conn.peer, data, this);
         });
 
         conn.on('close', () => {
             this.conns.delete(conn.peer);
-            this.onPeerDisconnectedHook(conn.peer, this.getPeers(true));
+            this.onPeerDisconnectedHook(conn.peer, this);
         });
     }
 
@@ -185,28 +210,4 @@ export class MPyCManager {
         return obj;
     }
 
-}
-
-function newWorker(conns: ConnMap, configFilePath: string) {
-    let worker = new XWorker("./worker.py", { async: true, type: "pyodide", config: configFilePath });
-    worker.sync.myFunc = function (x: any) {
-        console.log("myFunc", x);
-    }
-
-    // Process messages from worker.py
-    worker.onmessage = (event: any) => {
-        console.log("(mpyc.js:worker:onmessage): --------------- data", event.data);
-        let msg = JSON.parse(event.data);
-
-        if (msg.display) {
-            document.term.writeln(msg.display);
-        }
-        if (msg.peerJS) {
-            console.log("++++++++++++++ peerJS data")
-            conns.get(msg.peerJS.peerID)?.send({
-                mpycMessage: msg.peerJS.message,
-            })
-        }
-    };
-    return worker;
 }

@@ -1,68 +1,34 @@
 {
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    ".git",
-    "node_modules"
-  ],
   "compilerOptions": {
+    // "declaration": true,
     "allowJs": true,
-    "checkJs": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "sourceMap": true,
-    "strict": true,
-    "isolatedModules": true,
+    "checkJs": false,
+    "baseUrl": "./types",
+    // "declarationDir": "types",
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ES2022",
     "lib": [
-      "esnext",
+      "ES2022",
       "DOM",
-      "DOM.Iterable"
+      "DOM.Iterable",
+      "WebWorker"
     ],
-    "moduleResolution": "node",
-    "module": "esnext",
-    "target": "esnext",
-  }
-  // Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias
-  //
-  // If you want to overwrite includes/excludes, make sure to copy over the relevant includes/excludes
-  // from the referenced tsconfig.json - TypeScript does not merge them in
+    // "skipLibCheck": true, 
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": [
+    "src",
+  ]
 }
-// {
-//   "compilerOptions": {
-//     // "module": "commonjs",
-//     // "moduleResolution": "node",
-//     "newLine": "LF",
-//     "outDir": "./lib/",
-//     // "target": "es5",
-//     "sourceMap": true,
-//     "declaration": true,
-//     "jsx": "preserve",
-//     "lib": [
-//       "es2017",
-//       "dom"
-//     ],
-//     "strict": true,
-//     "noUnusedLocals": true,
-//     "noUnusedParameters": true,
-//     "noImplicitReturns": true,
-//     "noFallthroughCasesInSwitch": true,
-//     //
-//     // "module": "ES2022",
-//     // "target": "ES2022",
-//     // "moduleResolution": "nodenext",
-//     // "allowJs": true,
-//     // "checkJs": false,
-//     // "emitDeclarationOnly": true,
-//     // "declarationDir": "types"
-//   },
-//   "include": [
-//     "src/**/*"
-//   ],
-//   "exclude": [
-//     ".git",
-//     "node_modules"
-//   ]
-// }
