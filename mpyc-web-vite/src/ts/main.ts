@@ -12,9 +12,13 @@ import '../scss/style.scss';
 
 import { MPyCManager } from './mpyc/mpyc';
 import { Terminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import { SearchAddon } from 'xterm-addon-search';
 
 import { Tooltip } from 'bootstrap';
 import DOMPurify from 'dompurify';
+
+import $ from 'jquery';
 
 declare global {
     interface Document {
@@ -25,7 +29,6 @@ declare global {
         mpyc: MPyCManager;
     }
 }
-
 
 
 const hostPeerIDInput = document.querySelector<HTMLInputElement>('input#hostPeerID')!;
@@ -42,7 +45,39 @@ initUI();
 
 function initTermJS(sel: string): Terminal {
     let term = new Terminal();
+    const fitAddon = new FitAddon();
+    const searchAddon = new SearchAddon();
+    term.loadAddon(fitAddon);
+    term.loadAddon(searchAddon);
     term.open(document.querySelector(sel)!);
+    term.options.fontFamily = "MesloLGS NF";
+    term.options.fontSize = 16;
+    term.options.fontWeight = 500;
+    term.options.theme = {
+        "black": "#000000",
+        "red": "#c13900",
+        "green": "#a4a900",
+        "yellow": "#caaf00",
+        "blue": "#bd6d00",
+        "magenta": "#fc5e00",
+        "cyan": "#f79500",
+        "white": "#ffc88a",
+        "brightBlack": "#6a4f2a",
+        "brightRed": "#ff8c68",
+        "brightGreen": "#f6ff40",
+        "brightYellow": "#ffe36e",
+        "brightBlue": "#ffbe55",
+        "brightMagenta": "#fc874f",
+        "brightCyan": "#c69752",
+        "brightWhite": "#fafaff",
+        "background": "#3a2f29",
+        "foreground": "#ffcb83",
+        "selectionBackground": "#c14020",
+        "cursor": "#fc531d"
+    }
+
+    term.resize(100, 18);
+    fitAddon.fit();
     document.term = term;
     return term
 }
@@ -68,7 +103,14 @@ function initMPyC() {
     mpyc.onPyScriptDisplayHook = (message: string) => {
         term.writeln(message);
     };
-
+    term.onKey(({ key }) => {
+        console.log(key)
+        // put the keycode you copied from the console
+        if (term.hasSelection() && key === "") {
+            document.execCommand('copy')
+        } else {
+        }
+    })
     document.mpyc = mpyc;
     document.r = initMPyC;
     document.run = () => mpyc.runMPyCDemo(false);
@@ -87,22 +129,23 @@ function initUI() {
         hostPeerIDInput.value = hostPeerID;
     }
 
+    var t: NodeJS.Timeout;
     $('button#copyPeerID').on("click", function () {
-        let $this = $(this as HTMLButtonElement);
-
-        navigator.clipboard.writeText(myPeerIDEl.value).then(function () {
-            $this.find("i").switchClass("bi-clipboard", "bi-check2");
-            $this.switchClass("btn-primary", "btn-success");
+        navigator.clipboard.writeText(myPeerIDEl.value).then(() => {
             Tooltip.getInstance('button#copyPeerID')!.setContent({ '.tooltip-inner': "Copied!" })
+            $('button#copyPeerID.btn-primary').hide();
+            $('button#copyPeerID.btn-success').show();
 
-            setTimeout(() => {
-                $this.switchClass("btn-success", "btn-primary");
-                $this.find("i").switchClass("bi-check2", "bi-clipboard");
+            if (t) {
+                clearTimeout(t);
+            }
+
+            t = setTimeout(() => {
+                $('button#copyPeerID.btn-primary').show();
+                $('button#copyPeerID.btn-success').hide();
+
                 Tooltip.getInstance('button#copyPeerID')!.setContent({ '.tooltip-inner': "Copy to clipboard" })
-                $this.attr("data-bs-title", "Copy to clipboard")
-            }, 3000);
-
-            console.log('Async: Copying to clipboard was successful!');
+            }, 2000);
         }, function (err) {
             console.error('Async: Could not copy text: ', err);
         });
@@ -115,11 +158,12 @@ function initUI() {
         let ev = e as KeyboardEvent;
 
         if (ev.key === 'Enter' && !ev.shiftKey) {
+            ev.preventDefault();
             return sendChatMessage(mpyc);
         }
     });
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    tooltipTriggerList.forEach(tooltipTriggerEl => new Tooltip(tooltipTriggerEl))
+    tooltipTriggerList.forEach(tooltipTriggerEl => new Tooltip(tooltipTriggerEl));
 }
 
 function sendChatMessage(mpyc: MPyCManager) {

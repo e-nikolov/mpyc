@@ -1,19 +1,13 @@
 import { Peer, DataConnection } from "peerjs";
-import { XWorker } from "polyscript";
+import * as polyscript from "polyscript";
 
-
-// interface ConnMap {
-//     [key: string]: DataConnection;
-// }
-
-// interface ConnMap extends Map<string, DataConnection> { };
 
 type ConnMap = Map<string, DataConnection>;
 
 export class MPyCManager {
     peer: Peer;
     conns: ConnMap = new Map<string, DataConnection>();
-    worker: typeof XWorker;
+    worker: Worker;
 
 
     constructor(peerID: string | null, configFilePath: string) {
@@ -100,10 +94,14 @@ export class MPyCManager {
     }
 
     newWorker(conns: ConnMap, configFilePath: string) {
-        let worker = new XWorker("./py/worker.py", { async: true, type: "pyodide", config: configFilePath });
+        let worker = polyscript.XWorker("./py/worker.py", { async: true, type: "pyodide", config: configFilePath });
         worker.sync.myFunc = function (x: any) {
             console.log("myFunc", x);
         }
+
+        // Hook(pyodide);
+
+
 
         // Process messages from worker.py
         worker.onmessage = (event: any) => {
@@ -120,6 +118,7 @@ export class MPyCManager {
                 })
             }
         };
+
         return worker;
     }
 

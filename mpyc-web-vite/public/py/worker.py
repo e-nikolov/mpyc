@@ -23,7 +23,7 @@ def print_tree(path, prefix="", str=""):
             print_tree(item, prefix + "│   ")
 
 
-print_tree(Path("."))
+# print_tree(Path("."))
 
 
 import json
@@ -104,10 +104,22 @@ def dump(obj):
         pprint(dir(obj))
 
 
+class bcolors:
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKCYAN = "\033[96m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+
+
 async def xprint(N, text, sectype):
-    display(f"Using secure {text}: {sectype.__name__}")
+    display(f"{bcolors.UNDERLINE}{bcolors.WARNING}Using secure {text}: {sectype.__name__}{bcolors.ENDC}{bcolors.ENDC}")
     for n in range(2, N + 1):
-        display(f"{n} {await mpc.output(secretsanta.random_derangement(n, sectype))}")
+        display(f"{bcolors.OKBLUE}{n} {await mpc.output(secretsanta.random_derangement(n, sectype))}{bcolors.ENDC}")
 
 
 async def main():

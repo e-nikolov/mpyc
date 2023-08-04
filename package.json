@@ -1,9 +1,0 @@
-{
-  "dependencies": {
-    "bootstrap": "^5.3.0",
-    "pyodide": "^0.23.3"
-  },
-  "devDependencies": {
-    "tailwindcss": "^3.3.3"
-  }
-}

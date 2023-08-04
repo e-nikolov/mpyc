@@ -25,12 +25,14 @@
     "@types/jqueryui": "^1.12.17",
     "@types/node": "^20.4.6",
     "bootstrap": "^5.3.1",
+    "bootstrap-icons": "^1.10.5",
     "coi-serviceworker": "^0.1.7",
     "dompurify": "^3.0.5",
     "jquery": "^3.7.0",
-    "jquery-ui": "^1.13.2",
     "peerjs": "^1.4.7",
     "polyscript": "^0.1.5",
-    "xterm": "^5.2.1"
+    "xterm": "^5.2.1",
+    "xterm-addon-fit": "^0.7.0",
+    "xterm-addon-search": "^0.12.0"
   }
 }
