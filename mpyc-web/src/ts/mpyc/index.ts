@@ -15,7 +15,7 @@ export class MPyCManager {
         this.worker = this.newWorker(this.conns, configFilePath)
     }
 
-    public onPeerConnectedHook: (peerID: string, mpyc: MPyCManager) => void = () => { };
+    public onPeerConnectedHook: (peerID: string, success: boolean, mpyc: MPyCManager) => void = () => { };
     public onPeerDisconnectedHook: (peerID: string, mpyc: MPyCManager) => void = () => { };
     public onPeerJSUserDataReceivedHook: (peerID: string, data: any, mpyc: MPyCManager) => void = () => { };
     public onPeerIDReadyHook: (peerID: string, mpyc: MPyCManager) => void = () => { };
@@ -47,7 +47,12 @@ export class MPyCManager {
         conn.on('open', () => {
             this.sendKnownPeers(conn);
             this.conns.set(conn.peer, conn);
-            this.onPeerConnectedHook(conn.peer, this);
+            this.onPeerConnectedHook(conn.peer, true, this);
+        });
+
+        conn.on('error', (err) => {
+            this.onPeerConnectedHook(conn.peer, false, this);
+            console.log(err)
         });
         // conn.on('connection', function (e:DataConnectionEvent) {
         //     sendKnownPeers(conn);
@@ -135,7 +140,7 @@ export class MPyCManager {
             });
             // data sending doesn't work?
             this.conns.set(conn.peer, conn);
-            this.onPeerConnectedHook(conn.peer, this);
+            this.onPeerConnectedHook(conn.peer, true, this);
 
             this.ready(conn);
         });

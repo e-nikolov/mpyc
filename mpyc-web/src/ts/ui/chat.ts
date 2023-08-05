@@ -24,9 +24,14 @@ export function safe(text: string) {
     return DOMPurify.sanitize(text);
 }
 
-export function onPeerConnectedHook(newPeerID: string, mpyc: MPyCManager) {
-    console.log(`Connected to: ${newPeerID}`)
-    term.writeln(`Connected to: ${newPeerID}`);
+export function onPeerConnectedHook(newPeerID: string, success: boolean, mpyc: MPyCManager) {
+    if (success) {
+        console.log(`Connected to: ${newPeerID}`)
+        term.writeln(`Connected to: ${newPeerID}`);
+    } else {
+        console.log(`Failed to connect to: ${newPeerID}`)
+        term.writeln(`Failed to connect to: ${newPeerID}`);
+    }
     updateKnownPeersDiv(mpyc);
 }
 

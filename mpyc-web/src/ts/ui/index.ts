@@ -6,6 +6,7 @@ export * from './copy-btn';
 export * from './term';
 export * from './elements';
 export * from './chat';
+export * from './qr';
 
 export function initUI(mpyc: MPyCManager, initMPyC: () => void) {
     ui.resetPeerIDButton.addEventListener('click', () => { localStorage.removeItem("myPeerID"); mpyc.close(); initMPyC() });
@@ -15,9 +16,12 @@ export function initUI(mpyc: MPyCManager, initMPyC: () => void) {
     ui.connectToPeerButton.addEventListener('click', () => { localStorage.setItem("hostPeerID", ui.hostPeerIDInput.value); mpyc.connectToPeer(ui.hostPeerIDInput.value) });
     ui.sendMessageButton.addEventListener('click', () => { ui.sendChatMessage(mpyc); });
 
-    var hostPeerID = localStorage.getItem("hostPeerID");
+    const urlParams = new URLSearchParams(window.location.search);
+    const peer = urlParams.get('peer');
+    var hostPeerID = peer || localStorage.getItem("hostPeerID");
     if (hostPeerID) {
         ui.hostPeerIDInput.value = hostPeerID;
+        localStorage.setItem("hostPeerID", hostPeerID);
     }
 
     ui.makeCopyButton("#myPeerID", "button#copyPeerID");
@@ -31,6 +35,14 @@ export function initUI(mpyc: MPyCManager, initMPyC: () => void) {
             return ui.sendChatMessage(mpyc);
         }
     });
+
+    var myDefaultAllowList = Tooltip.Default.allowList;
+    myDefaultAllowList.span = ['style'];
+    myDefaultAllowList.canvas = [];
+
+
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    tooltipTriggerList.forEach(tooltipTriggerEl => new Tooltip(tooltipTriggerEl));
+    tooltipTriggerList.forEach(tooltipTriggerEl => new Tooltip(tooltipTriggerEl,));
+
+    ui.initQRCodeUI();
 }

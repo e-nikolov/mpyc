@@ -8,6 +8,7 @@
 
 'use strict';
 
+import { Terminal } from 'xterm';
 import '../scss/style.scss';
 
 import { MPyCManager } from './mpyc';
@@ -52,5 +53,6 @@ declare global {
         run: any;
         runa: any;
         mpyc: MPyCManager;
+        term: Terminal;
     }
 }

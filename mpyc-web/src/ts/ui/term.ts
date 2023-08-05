@@ -4,12 +4,6 @@ import { SearchAddon } from 'xterm-addon-search';
 
 import { Terminal } from 'xterm';
 
-declare global {
-    interface Document {
-        term: Terminal;
-    }
-}
-
 export function makeTerminal(sel: string): Terminal {
     let term = new Terminal();
     const fitAddon = new FitAddon();
