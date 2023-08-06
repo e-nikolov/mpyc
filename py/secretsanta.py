@@ -51,9 +51,6 @@ def print_tree(path, prefix="", str=""):
             print_tree(item, prefix + "│   ")
 
 
-# import uvloop
-
-
 @mpc.coroutine
 async def random_unit_vector(n, sectype):
     """Random permutation of [sectype(1)] + [sectype(0) for i in range(n-1)]."""
@@ -105,14 +102,11 @@ async def xprint(N, text, sectype):
 
 
 async def main():
-    print_tree(Path("../"))
-
     if sys.argv[1:]:
         N = int(sys.argv[1])
     else:
         N = 8
         display("Setting input to default =", N)
-        display("test----------------------------")
 
     await mpc.start()
 
