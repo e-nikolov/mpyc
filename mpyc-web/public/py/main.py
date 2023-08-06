@@ -38,7 +38,6 @@ demos.secretsanta.xprint = xprint
 m = len(mpc.parties)
 l = m.bit_length()
 
-print("??????????????????????????")
 mpc.run(mpc.start())
 print("m    =", mpc.run(mpc.output(mpc.sum(mpc.input(mpc.SecInt(l + 1)(1))))))
 print("m**2 =", mpc.run(mpc.output(mpc.sum(mpc.input(mpc.SecInt(2 * l + 1)(2 * mpc.pid + 1))))))

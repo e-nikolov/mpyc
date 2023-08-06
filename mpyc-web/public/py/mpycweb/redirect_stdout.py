@@ -11,10 +11,6 @@ class MyWriter(io.StringIO):
     def write(self, text):
         displayRaw(text)
 
-    def writelines(self, __lines: Iterable[str]) -> None:
-        for line in __lines:
-            display(line)
-
 
 out = MyWriter()
 err = MyWriter()

@@ -11,6 +11,7 @@ export const runMPyCAsyncButton = document.querySelector<HTMLButtonElement>('but
 export const stopMPyCButton = document.querySelector<HTMLButtonElement>('button#stopButton')!;
 export const connectToPeerButton = document.querySelector<HTMLButtonElement>('button#connect')!;
 export const sendMessageButton = document.querySelector<HTMLButtonElement>('#sendMessageButton')!;
+export const clearTerminalButton = document.querySelector<HTMLButtonElement>('button#clearTerminal')!;
 export const showQRCodeButton = document.querySelector<HTMLButtonElement>('#show-qr')!;
 export const scanQRInput = document.querySelector<HTMLInputElement>('#scan-qr')!;
 export const qrCanvas = document.querySelector<HTMLCanvasElement>('#qrr')!;

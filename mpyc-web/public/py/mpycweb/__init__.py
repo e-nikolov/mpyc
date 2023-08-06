@@ -91,7 +91,7 @@ def clone_coro(coro: Coroutine):
     return func(*args)
 
 
-def on_run_mpc_message(data):
+def run_mpc(data):
     logging.debug("starting mpyc execution...")
     mpc.options.no_async = data.no_async
     parties = []
@@ -102,24 +102,14 @@ def on_run_mpc_message(data):
     # reinitialize the mpyc runtime with the new parties
     mpc.__init__(data.pid, parties, mpc.options)
 
-    logging.debug(f"$$$$$$$$$$$$$$ Running mpc.run(main())")
+    exec(data.exec)
 
     for coro in state.mpc_coros:
         asyncio.ensure_future(clone_coro(coro))
     # mpc.run(main())
-    logging.debug(f"$$$$$$$$$$$$$$ Done Running mpc.run(main())")
 
 
-xworker.sync.on_run_mpc_message = on_run_mpc_message
-
-
-def inside_worker(msg):
-    logging.debug(f"inside worker {msg}")
-
-
-xworker.sync.inside_worker = inside_worker
-
-xworker.sync.eval = lambda code: eval(code)
+xworker.sync.run_mpc = run_mpc
 
 
 display("PyScript runtime started.")

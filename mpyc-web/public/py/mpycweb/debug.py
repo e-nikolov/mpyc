@@ -90,7 +90,7 @@ def displayRaw(msg):
 
 async def ping():
     while True:
-        xworker.sync.log("Ping")
+        xworker.sync.log("Python Worker Ping")
         await asyncio.sleep(5)
 
 

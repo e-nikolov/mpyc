@@ -13,6 +13,32 @@ export class MPyCManager extends EventTarget {
     peerIDToPID: Map<string, number> = new Map<string, number>();
     pidToPeerID: Map<number, string> = new Map<number, string>();
     worker: Worker & { sync: any };
+    mainFilePath: string;
+    configFilePath: string;
+
+
+    constructor(peerID: string | null, mainFilePath: string, configFilePath: string) {
+        super();
+        this.peer = this.newPeerJS(peerID);
+        this.worker = this.newWorker(mainFilePath, configFilePath)
+        this.mainFilePath = mainFilePath;
+        this.configFilePath = configFilePath;
+
+        this.on('peerjs:conn:data:peers', this.processNewPeers);
+        this.on('peerjs:conn:data:mpyc', this.processMPyCMessage);
+    }
+
+    public init(peerID: string | null, mainFilePath: string, configFilePath: string): [Peer, Worker & { sync: any }] {
+        this.peer = this.newPeerJS(peerID);
+        this.worker = this.newWorker(mainFilePath, configFilePath)
+        this.mainFilePath = mainFilePath;
+        this.configFilePath = configFilePath;
+
+        this.on('peerjs:conn:data:peers', this.processNewPeers);
+        this.on('peerjs:conn:data:mpyc', this.processMPyCMessage);
+
+        return [this.peer, this.worker];
+    }
 
     on(type: string, handler: (...args: any[]) => void) {
         this.addEventListener(type, (e: Event) => {
@@ -23,26 +49,6 @@ export class MPyCManager extends EventTarget {
 
     async emit(type: string, ...args: any[]) {
         this.dispatchEvent(new Ev(type, { detail: { args } }));
-    }
-
-    constructor(peerID: string | null, mainFilePath: string, configFilePath: string) {
-        super();
-        this.peer = this.newPeerJS(peerID);
-        this.worker = this.newWorker(mainFilePath, configFilePath)
-
-        this.on('peerjs:conn:data:peers', this.processNewPeers);
-        this.on('peerjs:conn:data:mpyc', this.processMPyCMessage);
-
-    }
-
-    public init(peerID: string | null, mainFilePath: string, configFilePath: string): [Peer, Worker & { sync: any }] {
-        this.peer = this.newPeerJS(peerID);
-        this.worker = this.newWorker(mainFilePath, configFilePath)
-
-        this.on('peerjs:conn:data:peers', this.processNewPeers);
-        this.on('peerjs:conn:data:mpyc', this.processMPyCMessage);
-
-        return [this.peer, this.worker];
     }
 
     getPeers(includeSelf = false) {
@@ -72,7 +78,7 @@ export class MPyCManager extends EventTarget {
         this.addConnEventHandlers(conn); //?????
     }
 
-    runMPyCDemo(is_async = false) {
+    async runMPyCDemo(is_async = false) {
         let peers = this.getPeers(true)
         let pid = peers.findIndex((p) => p === this.peer.id)
 
@@ -85,11 +91,19 @@ export class MPyCManager extends EventTarget {
             this.pidToPeerID.set(i, peers[i])
         }
 
-        this.worker.sync.on_run_mpc_message({
+        let contents = await fetch(this.mainFilePath)
+        let pyCode = await contents.text()
+        // console.log(pyCode)
+        // ui.term.write(pyCode)
+
+
+        this.worker.sync.run_mpc({
             pid: pid,
             parties: peers,
             is_async: is_async,
             no_async: !is_async,
+            exec: pyCode,
+            // exec: "import mpycweb.redirect_stdout",
         })
     }
 

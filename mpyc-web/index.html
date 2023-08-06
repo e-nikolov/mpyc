@@ -62,9 +62,14 @@
     <div class=" row row-cols-1">
       <div class="col-sm-auto">
         <div class="input-group">
-          <button id="startButton" class="btn btn-primary">Run MPyC</button>
-          <button id="startAsyncButton" class="btn btn-primary">Run MPyC Async</button>
-          <button id="stopButton" class="btn btn-primary">Stop</button>
+          <button id="startButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC"
+            class="btn btn-primary bi bi-play-btn-fill"></button>
+          <button id="startAsyncButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC Async"
+            class="btn btn-primary bi bi-play"></button>
+          <button id="stopButton" data-bs-toggle="tooltip" data-bs-title="Restart"
+            class="btn btn-primary bi-arrow-clockwise"></button>
+          <button id="clearTerminal" data-bs-toggle="tooltip" data-bs-title="Clear terminal"
+            class="btn btn-primary bi-trash"></button>
         </div>
       </div>
     </div>

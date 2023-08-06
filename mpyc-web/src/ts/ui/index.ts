@@ -48,6 +48,7 @@ export function initUI(mpyc: MPyCManager, initMPyC: () => void) {
     ui.stopMPyCButton.addEventListener('click', () => { console.log('resetPeerID2'); initMPyC() });
     ui.connectToPeerButton.addEventListener('click', () => { localStorage.setItem('hostPeerID', ui.hostPeerIDInput.value); mpyc.connectToPeer(ui.hostPeerIDInput.value) });
     ui.sendMessageButton.addEventListener('click', () => { ui.sendChatMessage(mpyc); });
+    ui.clearTerminalButton.addEventListener('click', () => { ui.term.clear(); });
 
     if (localStorage.getItem('myPeerID')) {
         ui.myPeerIDEl.value = localStorage.getItem('myPeerID')!;
