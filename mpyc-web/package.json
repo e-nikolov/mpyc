@@ -7,7 +7,8 @@
     "dev": "cp -f node_modules/coi-serviceworker/coi-serviceworker.js public/coi-serviceworker.js && vite",
     "build": "cp -f node_modules/coi-serviceworker/coi-serviceworker.min.js public/coi-serviceworker.js && tsc && vite build",
     "preview": "vite preview",
-    "gh-pages": "gh-pages -d dist -t true"
+    "gh-pages": "gh-pages -d dist -t true",
+    "py": "cd ../ && poetry build -C ../ && cp dist/mpyc-*.whl mpyc-web/public/py/"
   },
   "devDependencies": {
     "coi-serviceworker": "^0.1.7",

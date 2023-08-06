@@ -1,4 +1,12 @@
-packages = ["numpy", "gmpy2", "ssl"]
+packages = [
+    "numpy",
+    "gmpy2",
+    "ssl",
+    "pyee",
+    "http://localhost:5173/mpyc/py/mpyc-0.8.8-py3-none-any.whl"
+]
+# "/pyodide/mpyc-0.8.8-py3-none-any.whl"
+# 
 # packages = ["numpy", "gmpy2", "ssl", "aiortc"]
 # xterm = true
 
@@ -8,26 +16,51 @@ packages = ["numpy", "gmpy2", "ssl"]
 [[fetch]]
 from = "./py/"
 to_folder = "./"
-files = ["secretsanta.py"]
+files = ["logging_setup.py"]
+
 [[fetch]]
-from = "./py/mpyc"
-to_folder = "./mpyc"
+from = "./py/mpycweb"
+to_folder = "./mpycweb"
 files = [
-    "__main__.py",
-    "fingroups.py",
-    "thresha.py",
-    "mpctools.py",
-    "README.md",
-    "gfpx.py",
-    "runtime.py",
-    "asyncoro.py",
-    "numpy.py",
-    "seclists.py",
-    "sectypes.py",
-    "random.py",
-    "gmpy.py",
-    "secgroups.py",
-    "finfields.py",
-    "statistics.py",
-    "__init__.py"
+    "__init__.py",
+    "debug.py",
+    "peerjs.py",
+    "state.py",
+    "redirect_stdout.py",
+    "transport.py",
+    "worker.py"
 ]
+
+# [[fetch]]
+# from = "./py/demos"
+# to_folder = "./demos"
+# files = [
+#     "secretsanta.py",
+#     "helloworld.py",
+#     "oneliners.py",
+#     "bnnmnist.py",
+#     "cnnmnist.py"
+# ]
+
+# [[fetch]]
+# from = "./py/mpyc"
+# to_folder = "./mpyc"
+# files = [
+#     "__main__.py",
+#     "fingroups.py",
+#     "thresha.py",
+#     "mpctools.py",
+#     "README.md",
+#     "gfpx.py",
+#     "runtime.py",
+#     "asyncoro.py",
+#     "numpy.py",
+#     "seclists.py",
+#     "sectypes.py",
+#     "random.py",
+#     "gmpy.py",
+#     "secgroups.py",
+#     "finfields.py",
+#     "statistics.py",
+#     "__init__.py"
+# ]

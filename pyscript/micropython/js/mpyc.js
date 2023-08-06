@@ -179,6 +179,8 @@ function processChatMessage(peerID, message) {
         return;
     }
 
+    console.log("Chat message received");
+
     term.writeln(`${safe(peerID)}: ${safe(message)}`);
 }
 
@@ -331,6 +333,7 @@ function newWorker() {
         let msg = JSON.parse(event.data);
 
         if (msg.display) {
+            console.log("++++++++++++++ display data")
             document.term.writeln(msg.display);
         }
         if (msg.peerJS) {

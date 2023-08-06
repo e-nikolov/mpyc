@@ -18,27 +18,16 @@ import * as ui from './ui';
 var mpyc: MPyCManager = initMPyC()
 ui.initUI(mpyc, initMPyC);
 
+
 function initMPyC() {
     if (mpyc) {
+        console.log("Closing previous MPyCManager instance...")
         mpyc.close();
+        mpyc.init("", "./py/main.py", "config.toml");
+        return mpyc;
     }
+    mpyc = new MPyCManager(localStorage.getItem("myPeerID"), "./py/main.py", "config.toml");
 
-    mpyc = new MPyCManager(localStorage.getItem("myPeerID"), "config.toml");
-    mpyc.onPeerConnectedHook = ui.onPeerConnectedHook;
-    mpyc.onPeerDisconnectedHook = ui.onPeerDisconnectedHook;
-    mpyc.onPeerJSUserDataReceivedHook = ui.processChatMessage;
-    mpyc.onPeerIDReadyHook = (peerID: string) => {
-        ui.myPeerIDEl.value = ui.safe(peerID);
-        localStorage.setItem("myPeerID", peerID);
-        console.log('My peer ID is: ' + peerID);
-    };
-    ui.term.writeln("Loading PyScript runtime...");
-    mpyc.onRuntimeReadyHook = () => {
-        ui.term.writeln("PyScript runtime ready.");
-    };
-    mpyc.onPyScriptDisplayHook = (message: string) => {
-        ui.term.writeln(message);
-    };
     document.mpyc = mpyc;
     document.r = initMPyC;
     document.run = () => mpyc.runMPyCDemo(false);

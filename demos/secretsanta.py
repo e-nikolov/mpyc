@@ -9,7 +9,6 @@ fixed points are also called 'derangements'.
 import sys
 from mpyc.runtime import mpc
 import asyncio
-import uvloop
 
 
 @mpc.coroutine

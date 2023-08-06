@@ -5,7 +5,13 @@ import { SearchAddon } from 'xterm-addon-search';
 import { Terminal } from 'xterm';
 
 export function makeTerminal(sel: string): Terminal {
-    let term = new Terminal();
+    let term = new Terminal({
+        screenReaderMode: true,
+        cols: 80,
+        allowProposedApi: true,
+        cursorBlink: true,
+        convertEol: true
+    });
     const fitAddon = new FitAddon();
     const searchAddon = new SearchAddon();
     term.loadAddon(fitAddon);
@@ -45,7 +51,7 @@ export function makeTerminal(sel: string): Terminal {
         } else {
         }
     })
-    term.resize(100, 18);
+    term.resize(150, 18);
     fitAddon.fit();
     term.onRender(() => { fitAddon.fit(); });
     document.term = term;

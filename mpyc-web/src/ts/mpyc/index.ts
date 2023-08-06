@@ -4,25 +4,50 @@ import * as polyscript from "polyscript";
 
 type ConnMap = Map<string, DataConnection>;
 
-export class MPyCManager {
+class Ev extends CustomEvent<{ args: any[] }> {
+}
+
+export class MPyCManager extends EventTarget {
     peer: Peer;
     conns: ConnMap = new Map<string, DataConnection>();
-    worker: Worker;
+    peerIDToPID: Map<string, number> = new Map<string, number>();
+    pidToPeerID: Map<number, string> = new Map<number, string>();
+    worker: Worker & { sync: any };
 
-
-    constructor(peerID: string | null, configFilePath: string) {
-        this.peer = this.newPeerJS(peerID);
-        this.worker = this.newWorker(this.conns, configFilePath)
+    on(type: string, handler: (...args: any[]) => void) {
+        this.addEventListener(type, (e: Event) => {
+            // console.log("on", type, e)
+            handler(...((e as Ev).detail.args))
+        });
     }
 
-    public onPeerConnectedHook: (peerID: string, success: boolean, mpyc: MPyCManager) => void = () => { };
-    public onPeerDisconnectedHook: (peerID: string, mpyc: MPyCManager) => void = () => { };
-    public onPeerJSUserDataReceivedHook: (peerID: string, data: any, mpyc: MPyCManager) => void = () => { };
-    public onPeerIDReadyHook: (peerID: string, mpyc: MPyCManager) => void = () => { };
-    public onPyScriptDisplayHook: (message: string, mpyc: MPyCManager) => void = () => { };
-    public onRuntimeReadyHook: (mpyc: MPyCManager) => void = () => { };
+    async emit(type: string, ...args: any[]) {
+        this.dispatchEvent(new Ev(type, { detail: { args } }));
+    }
+
+    constructor(peerID: string | null, mainFilePath: string, configFilePath: string) {
+        super();
+        this.peer = this.newPeerJS(peerID);
+        this.worker = this.newWorker(mainFilePath, configFilePath)
+
+        this.on('peerjs:conn:data:peers', this.processNewPeers);
+        this.on('peerjs:conn:data:mpyc', this.processMPyCMessage);
+
+    }
+
+    public init(peerID: string | null, mainFilePath: string, configFilePath: string): [Peer, Worker & { sync: any }] {
+        this.peer = this.newPeerJS(peerID);
+        this.worker = this.newWorker(mainFilePath, configFilePath)
+
+        this.on('peerjs:conn:data:peers', this.processNewPeers);
+        this.on('peerjs:conn:data:mpyc', this.processMPyCMessage);
+
+        return [this.peer, this.worker];
+    }
 
     getPeers(includeSelf = false) {
+        console.log("getPeers")
+        console.log(this.conns)
         let peers = Array.from(this.conns, ([_, conn]) => conn.peer);
 
         if (includeSelf) {
@@ -32,9 +57,9 @@ export class MPyCManager {
         return peers.sort();
     }
 
-    broadcastMessage(message: any) {
+    broadcastMessage(type: string, data: any) {
         this.conns.forEach(conn => {
-            conn.send(message);
+            conn.send({ type: `user:${type}`, data });
         });
     }
 
@@ -44,21 +69,7 @@ export class MPyCManager {
             reliable: true
         });
 
-        conn.on('open', () => {
-            this.sendKnownPeers(conn);
-            this.conns.set(conn.peer, conn);
-            this.onPeerConnectedHook(conn.peer, true, this);
-        });
-
-        conn.on('error', (err) => {
-            this.onPeerConnectedHook(conn.peer, false, this);
-            console.log(err)
-        });
-        // conn.on('connection', function (e:DataConnectionEvent) {
-        //     sendKnownPeers(conn);
-        //     addPeer(conn);
-        // });
-        this.ready(conn); //?????
+        this.addConnEventHandlers(conn); //?????
     }
 
     runMPyCDemo(is_async = false) {
@@ -69,17 +80,21 @@ export class MPyCManager {
         console.log("my id:", this.peer.id)
         console.log("my pid:", pid)
 
-        this.postWorkerMessage({
-            init: {
-                pid: pid,
-                parties: peers,
-                is_async: is_async,
-                no_async: !is_async,
-            }
-        });
+        for (let i = 0; i < peers.length; i++) {
+            this.peerIDToPID.set(peers[i], i)
+            this.pidToPeerID.set(i, peers[i])
+        }
+
+        this.worker.sync.on_run_mpc_message({
+            pid: pid,
+            parties: peers,
+            is_async: is_async,
+            no_async: !is_async,
+        })
     }
 
     close() {
+        console.log("destroying peer and worker");
         this.peer.destroy();
         this.worker.terminate();
     }
@@ -87,62 +102,75 @@ export class MPyCManager {
     newPeerJS(peerID: string | null): Peer {
         var peer: Peer;
 
+        console.log("trying to create peer with peerID:", peerID)
         if (peerID) {
+            console.log(peerID)
+            console.log(`calling new Peer(${peerID})`)
             peer = new Peer(peerID);
         } else {
+            console.log(`calling new Peer()`);
             peer = new Peer();
         }
 
-        this.addPeerEvents(peer)
+
+        this.addPeerEventHandlers(peer)
 
         return peer;
     }
 
-    newWorker(conns: ConnMap, configFilePath: string) {
-        let worker = polyscript.XWorker("./py/worker.py", { async: true, type: "pyodide", config: configFilePath });
+    newWorker(mainFilePath: string, configFilePath: string) {
+        let worker = polyscript.XWorker(mainFilePath, { async: true, type: "pyodide", config: configFilePath });
         worker.sync.myFunc = function (x: any) {
             console.log("myFunc", x);
         }
 
-        // Hook(pyodide);
+        worker.sync.console = console;
+        worker.sync.log = console.log;
 
+        worker.sync.display = (message: string) => {
+            this.emit('worker:display', message, this);
+        }
 
+        worker.sync.displayRaw = (message: string) => {
+            this.emit('worker:display:raw', message, this);
+        }
 
-        // Process messages from worker.py
-        worker.onmessage = (event: any) => {
-            console.log("(mpyc.js:worker:onmessage): --------------- data", event.data);
-            let msg = JSON.parse(event.data);
-
-            if (msg.display) {
-                this.onPyScriptDisplayHook(msg.display, this);
-            }
-            if (msg.peerJS) {
-                console.log("++++++++++++++ peerJS data")
-                conns.get(msg.peerJS.peerID)?.send({
-                    mpycMessage: msg.peerJS.message,
-                })
-            }
+        worker.sync.sendRuntimeMessage = (pid: number, message: string) => {
+            let peerID = this.pidToPeerID.get(pid);
+            this.conns.get(peerID!)?.send({
+                runtime_message: message,
+            })
         };
+
+        worker.sync.sendReadyMessage = (pid: number, message: string) => {
+            let peerID = this.pidToPeerID.get(pid);
+            this.conns.get(peerID!)?.send({
+                ready_message: message,
+            })
+        };
+
+        worker.onerror = (err: ErrorEvent) => { console.error(err.error); this.emit('worker:error', err, this) };
 
         return worker;
     }
 
-    private addPeerEvents(peer: Peer) {
+    private addPeerEventHandlers(peer: Peer) {
         peer.on('open', (peerID) => {
-            this.onPeerIDReadyHook(peerID, this);
+            this.emit('peerjs:ready', peerID, this);
+        });
+
+        peer.on('error', (err) => {
+            this.emit('peerjs:error', err, this);
+        });
+
+        peer.on('close', () => {
+            this.emit('peerjs:closed', this);
         });
 
         // new incoming peer connection
         // data received works here
         peer.on('connection', (conn: DataConnection) => {
-            conn.on('open', () => {
-                this.sendKnownPeers(conn);
-            });
-            // data sending doesn't work?
-            this.conns.set(conn.peer, conn);
-            this.onPeerConnectedHook(conn.peer, true, this);
-
-            this.ready(conn);
+            this.addConnEventHandlers(conn);
         });
     }
 
@@ -156,28 +184,37 @@ export class MPyCManager {
         })
     }
 
-    private ready(conn: DataConnection) {
+    private addConnEventHandlers(conn: DataConnection) {
+        console.log("________________ new peer connection", conn.peer)
+        console.log("________________ peer", this.peer, this.peer.id)
+        conn.on('open', () => {
+            console.log("peer connection is now open", conn.peer)
+            this.sendKnownPeers(conn);
+
+            this.conns.set(conn.peer, conn);
+            this.emit("peerjs:conn:ready", conn.peer, this);
+        });
+
+        conn.on('error', (err) => {
+            this.emit("peerjs:conn:error", conn.peer, err, this)
+            console.log(err)
+        });
         // Process messages from other peers received via peerJS
         conn.on('data', (data: any) => {
             console.log("Data received");
             console.log(data);
-            this.processNewPeers(data?.knownPeers);
 
-            // Need to somehow store those messages if we receive them before our user has clicked the start button
-            this.processMPyCMessage(conn.peer, data?.mpycMessage);
-
-
-
-            this.onPeerJSUserDataReceivedHook(conn.peer, data, this);
+            this.emit(`peerjs:conn:data:${data.type}`, conn.peer, data.data)
         });
+
 
         conn.on('close', () => {
             this.conns.delete(conn.peer);
-            this.onPeerDisconnectedHook(conn.peer, this);
+            this.emit('peerjs:conn:disconnected', conn.peer, this);
         });
     }
 
-    private processNewPeers(newPeers: string[]) {
+    private async processNewPeers(peerID: string, newPeers: string[]) {
         if (!newPeers) {
             return;
         }
@@ -188,31 +225,15 @@ export class MPyCManager {
         });
     }
 
-    private processMPyCMessage(peerID: string, message: any) {
-        if (!message) {
-            return;
+    private async processMPyCMessage(peerID: string, data: any) {
+        let pid = this.peerIDToPID.get(peerID);
+
+        if (data?.ready_message) {
+            this.worker.sync.on_ready_message(pid, data.ready_message)
         }
 
-        this.postWorkerMessage({
-            peerJS: {
-                peerID,
-                message,
-            }
-        });
-    }
-
-    private postWorkerMessage(message: any) {
-        this.worker.postMessage(this.workMessage(message));
-    }
-
-    private workMessage(obj: any) {
-        obj = { ...{ init: null, peerJS: null }, ...obj };
-
-        if (obj.peerJS) {
-            obj.peerJS.message = { ...{ runtime_message: null, ready_message: null }, ...obj.peerJS.message };
+        if (data?.runtime_message) {
+            this.worker.sync.on_runtime_message(pid, data.runtime_message)
         }
-
-        return obj;
     }
-
 }

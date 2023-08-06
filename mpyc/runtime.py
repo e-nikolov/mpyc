@@ -249,16 +249,14 @@ class Runtime:
 
     def run(self, f):
         """Run the given coroutine or future until it is done."""
-        logging.debug("+++++++run+++++++++")
-        logging.debug(self.parties)
-        logging.debug(self._loop.is_running())
-        logging.debug(asyncio.iscoroutine(f))
         if self._loop.is_running():
             if not asyncio.iscoroutine(f):
                 f = asyncoro._wrap_in_coro(f)
-            i = 1
-
-            return self._loop.run_until_complete(f)
+            while True:
+                try:
+                    f.send(None)
+                except StopIteration as exc:
+                    return exc.value
 
         return self._loop.run_until_complete(f)
 
