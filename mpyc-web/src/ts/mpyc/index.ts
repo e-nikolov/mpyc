@@ -17,10 +17,10 @@ export class MPyCManager extends EventTarget {
     configFilePath: string;
 
 
-    constructor(peerID: string | null, mainFilePath: string, configFilePath: string) {
+    constructor(peerID: string | null, mainFilePath: string, shimFilePath: string, configFilePath: string) {
         super();
         this.peer = this.newPeerJS(peerID);
-        this.worker = this.newWorker(mainFilePath, configFilePath)
+        this.worker = this.newWorker(shimFilePath, configFilePath)
         this.mainFilePath = mainFilePath;
         this.configFilePath = configFilePath;
 
@@ -28,9 +28,9 @@ export class MPyCManager extends EventTarget {
         this.on('peerjs:conn:data:mpyc', this.processMPyCMessage);
     }
 
-    public init(peerID: string | null, mainFilePath: string, configFilePath: string): [Peer, Worker & { sync: any }] {
+    public init(peerID: string | null, mainFilePath: string, shimFilePath: string, configFilePath: string): [Peer, Worker & { sync: any }] {
         this.peer = this.newPeerJS(peerID);
-        this.worker = this.newWorker(mainFilePath, configFilePath)
+        this.worker = this.newWorker(shimFilePath, configFilePath)
         this.mainFilePath = mainFilePath;
         this.configFilePath = configFilePath;
 
@@ -48,6 +48,7 @@ export class MPyCManager extends EventTarget {
     }
 
     async emit(type: string, ...args: any[]) {
+        console.log("emit", type, args)
         this.dispatchEvent(new Ev(type, { detail: { args } }));
     }
 
@@ -91,6 +92,11 @@ export class MPyCManager extends EventTarget {
             this.pidToPeerID.set(i, peers[i])
         }
 
+        console.log("____________________")
+        console.log(this.peerIDToPID)
+        console.log(this.pidToPeerID)
+        console.log("^^^^^^^^^^^^^^^^^^^^")
+
         let contents = await fetch(this.mainFilePath)
         let pyCode = await contents.text()
         // console.log(pyCode)
@@ -132,11 +138,8 @@ export class MPyCManager extends EventTarget {
         return peer;
     }
 
-    newWorker(mainFilePath: string, configFilePath: string) {
-        let worker = polyscript.XWorker(mainFilePath, { async: true, type: "pyodide", config: configFilePath });
-        worker.sync.myFunc = function (x: any) {
-            console.log("myFunc", x);
-        }
+    newWorker(shimFilePath: string, configFilePath: string) {
+        let worker = polyscript.XWorker(shimFilePath, { async: true, type: "pyodide", config: configFilePath });
 
         worker.sync.console = console;
         worker.sync.log = console.log;
@@ -152,6 +155,7 @@ export class MPyCManager extends EventTarget {
         worker.sync.sendRuntimeMessage = (pid: number, message: string) => {
             let peerID = this.pidToPeerID.get(pid);
             this.conns.get(peerID!)?.send({
+                type: 'mpyc',
                 runtime_message: message,
             })
         };
@@ -159,6 +163,7 @@ export class MPyCManager extends EventTarget {
         worker.sync.sendReadyMessage = (pid: number, message: string) => {
             let peerID = this.pidToPeerID.get(pid);
             this.conns.get(peerID!)?.send({
+                type: 'mpyc',
                 ready_message: message,
             })
         };
@@ -218,7 +223,7 @@ export class MPyCManager extends EventTarget {
             console.log("Data received");
             console.log(data);
 
-            this.emit(`peerjs:conn:data:${data.type}`, conn.peer, data.data)
+            this.emit(`peerjs:conn:data:${data.type}`, conn.peer, data)
         });
 
 
@@ -228,7 +233,7 @@ export class MPyCManager extends EventTarget {
         });
     }
 
-    private async processNewPeers(peerID: string, newPeers: string[]) {
+    private processNewPeers = (peerID: string, newPeers: string[]) => {
         if (!newPeers) {
             return;
         }
@@ -239,7 +244,7 @@ export class MPyCManager extends EventTarget {
         });
     }
 
-    private async processMPyCMessage(peerID: string, data: any) {
+    processMPyCMessage = (peerID: string, data: any) => {
         let pid = this.peerIDToPID.get(peerID);
 
         if (data?.ready_message) {

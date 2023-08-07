@@ -39,7 +39,8 @@
             <button id="copyPeerID" data-bs-toggle="tooltip" data-bs-title="Copied!"
               class="btn btn-success bi bi-check2 " style="display: none;">
             </button>
-            <button id="resetPeerID" class="btn btn-primary bi-arrow-clockwise"></button>
+            <button id="resetPeerID" data-bs-toggle="tooltip" data-bs-title="Reset peer ID"
+              class="btn btn-primary bi-arrow-clockwise"></button>
           </div>
 
           <div class="input-group mb-1">
@@ -48,7 +49,8 @@
             <!-- <label for="scan-qr" class="btn btn-primary bi bi-qr-code-scan camera-label" data-bs-toggle="tooltip" -->
             <!-- data-bs-title="Scan from QR code"></label> -->
             <input type="file" id="scan-qr" class="camera-button" accept="image/*" capture="environment">
-            <button id="connect" class="btn btn-primary bi-link-45deg"></button>
+            <button id="connect" data-bs-toggle="tooltip" data-bs-title="Connect to peer"
+              class="btn btn-primary bi-link-45deg"></button>
           </div>
         </div>
       </div>
@@ -79,7 +81,8 @@
         <div class="input-group mb-3">
           <textarea id="chatInput" type="text" class="form-control"
             placeholder="Send a message to all peers..."></textarea>
-          <button id="sendMessageButton" class="btn btn-primary bi-send"></button>
+          <button id="sendMessageButton" data-bs-toggle="tooltip" data-bs-title="Send"
+            class="btn btn-primary bi-send"></button>
         </div>
       </div>
       <script type="py-script"> </script>

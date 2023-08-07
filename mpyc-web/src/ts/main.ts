@@ -23,10 +23,10 @@ function initMPyC() {
     if (mpyc) {
         console.log("Closing previous MPyCManager instance...")
         mpyc.close();
-        mpyc.init("", "./py/main.py", "config.toml");
+        mpyc.init("", "./py/main.py", "./py/shim.py", "config.toml");
         return mpyc;
     }
-    mpyc = new MPyCManager(localStorage.getItem("myPeerID"), "./py/main.py", "config.toml");
+    mpyc = new MPyCManager(localStorage.getItem("myPeerID"), "./py/main.py", "./py/shim.py", "config.toml");
 
     document.mpyc = mpyc;
     document.r = initMPyC;

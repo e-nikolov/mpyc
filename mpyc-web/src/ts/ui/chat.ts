@@ -10,7 +10,7 @@ export function sendChatMessage(mpyc: MPyCManager) {
     mpyc.broadcastMessage('chat', message)
 }
 
-export function processChatMessage(peerID: string, message: string) {
+export function processChatMessage(peerID: string, { data: message }: { data: string }) {
     console.log("received chat", message)
     term.writeln(`${safe(peerID)}: ${safe(message)}`);
 }

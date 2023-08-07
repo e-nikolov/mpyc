@@ -64,9 +64,9 @@ class PeerJSTransport(asyncio.Transport):
             self.client.send_ready_message(self.pid, "ready?")
             await asyncio.sleep(3)
 
-            self._loop.call_soon(self._protocol.connection_made, self)
+        self._loop.call_soon(self._protocol.connection_made, self)
 
-    async def on_ready_message(self, message: str):
+    def on_ready_message(self, message: str):
         match message:
             case "ready?":
                 logging.debug(f"party ${self.pid} asks if we are ready to start")

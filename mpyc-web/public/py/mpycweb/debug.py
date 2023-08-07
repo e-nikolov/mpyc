@@ -17,6 +17,9 @@ def print_tree(path, prefix="", str=""):
             print_tree(item, prefix + "│   ", str)
 
 
+print_tree(Path("./"))
+
+
 def sdump(obj):
     s = ""
     if s == "":
