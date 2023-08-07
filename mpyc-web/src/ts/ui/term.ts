@@ -8,6 +8,7 @@ export function makeTerminal(sel: string): Terminal {
     let term = new Terminal({
         screenReaderMode: true,
         cols: 80,
+        rows: 17,
         allowProposedApi: true,
         cursorBlink: true,
         convertEol: true
@@ -51,7 +52,7 @@ export function makeTerminal(sel: string): Terminal {
         } else {
         }
     })
-    term.resize(150, 18);
+    term.resize(80, 17);
     fitAddon.fit();
     term.onRender(() => { fitAddon.fit(); });
     document.term = term;

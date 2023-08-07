@@ -74,25 +74,27 @@ async def start(runtime: Runtime) -> None:
 
         logging.debug(f"Connecting to {peer}")
 
-        # while True:
-        try:
-            if peer.pid > runtime.pid:
-                factory = lambda: asyncoro.MessageExchanger(runtime, peer.pid)
-            else:
-                factory = lambda: asyncoro.MessageExchanger(runtime)
+        while True:
+            try:
+                if peer.pid > runtime.pid:
+                    factory = lambda: asyncoro.MessageExchanger(runtime, peer.pid)
+                else:
+                    factory = lambda: asyncoro.MessageExchanger(runtime, peer.pid)
+                    factory = lambda: asyncoro.MessageExchanger(runtime)
+                    # factory = lambda: asyncoro.MessageExchanger(runtime)
 
-            logging.debug(f"~~~~~~~~~~ creating peerjs connection to {peer.pid}...")
+                logging.debug(f"~~~~~~~~~~ creating peerjs connection to {peer.pid}...")
 
-            await pjs.create_connection(runtime._loop, peer.pid, factory)
+                await pjs.create_connection(runtime._loop, peer.pid, factory)
 
-            logging.debug(f"~~~~~~~~~~ creating peerjs connection to {peer.pid}... done")
-            break
-        except asyncio.CancelledError:
-            raise
+                logging.debug(f"~~~~~~~~~~ creating peerjs connection to {peer.pid}... done")
+                break
+            except asyncio.CancelledError:
+                raise
 
-        except Exception as exc:
-            logging.debug(exc)
-            # await asyncio.sleep(1)
+            except Exception as exc:
+                logging.debug(exc)
+            await asyncio.sleep(1)
 
     logging.info("Waiting for all parties to connect")
     await runtime.parties[runtime.pid].protocol

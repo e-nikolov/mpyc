@@ -67,7 +67,6 @@ async def main():
     else:
         N = 8
         print("Setting input to default =", N)
-        print("test----------------------------")
 
     await mpc.start()
 

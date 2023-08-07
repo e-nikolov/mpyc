@@ -15,6 +15,7 @@ export class MPyCManager extends EventTarget {
     worker: Worker & { sync: any };
     mainFilePath: string;
     configFilePath: string;
+    running = false;
 
 
     constructor(peerID: string | null, mainFilePath: string, shimFilePath: string, configFilePath: string) {
@@ -79,7 +80,8 @@ export class MPyCManager extends EventTarget {
         this.addConnEventHandlers(conn); //?????
     }
 
-    async runMPyCDemo(is_async = false) {
+    runMPyCDemo = async (is_async = false) => {
+        this.running = true;
         let peers = this.getPeers(true)
         let pid = peers.findIndex((p) => p === this.peer.id)
 
@@ -117,6 +119,7 @@ export class MPyCManager extends EventTarget {
         console.log("destroying peer and worker");
         this.peer.destroy();
         this.worker.terminate();
+        this.running = false;
     }
 
     newPeerJS(peerID: string | null): Peer {
@@ -143,6 +146,10 @@ export class MPyCManager extends EventTarget {
 
         worker.sync.console = console;
         worker.sync.log = console.log;
+
+        worker.sync.mpcDone = () => {
+            this.running = false;
+        }
 
         worker.sync.display = (message: string) => {
             this.emit('worker:display', message, this);
@@ -199,6 +206,7 @@ export class MPyCManager extends EventTarget {
 
     private sendKnownPeers(conn: DataConnection) {
         conn.send({
+            type: 'peers',
             knownPeers: this.getPeers()
         })
     }
@@ -233,7 +241,7 @@ export class MPyCManager extends EventTarget {
         });
     }
 
-    private processNewPeers = (peerID: string, newPeers: string[]) => {
+    private processNewPeers = (_: string, { knownPeers: newPeers }: { knownPeers: string[] }) => {
         if (!newPeers) {
             return;
         }
@@ -245,6 +253,12 @@ export class MPyCManager extends EventTarget {
     }
 
     processMPyCMessage = (peerID: string, data: any) => {
+        console.log(">>>>>>>>>>>>>>>>>>>running?", this.running)
+        if (!this.running) {
+            // ignore mpc messages if we're not running
+            console.log("ignoring mpc message because we're not running")
+            return;
+        }
         let pid = this.peerIDToPID.get(peerID);
 
         if (data?.ready_message) {

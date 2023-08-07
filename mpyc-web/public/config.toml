@@ -1,4 +1,6 @@
 packages = ["numpy", "gmpy2", "ssl", "pyee"]
+
+# "https://e-nikolov.github.io/mpyc/py/mpyc-0.8.8-py3-none-any.whl"
 # "http://localhost:5173/mpyc/py/mpyc-0.8.8-py3-none-any.whl"
 # "/pyodide/mpyc-0.8.8-py3-none-any.whl"
 # 

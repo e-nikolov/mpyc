@@ -23,8 +23,6 @@ async def xprint(N, text, sectype) -> None:
         display(f"{bcolors.OKBLUE}{n} {await mpc.output(random_derangement(n, sectype))}{bcolors.ENDC}")
 
 
-print("mpc.options.no_async")
-print(mpc.options.no_async)
 # demos.secretsanta.xprint = xprint
 asyncio.ensure_future(demos.secretsanta.main())
 # mpc.run(demos.secretsanta.main())
