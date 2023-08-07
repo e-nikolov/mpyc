@@ -13,7 +13,7 @@ from polyscript import xworker
 from .debug import *
 
 
-def run_mpc(data):
+async def run_mpc(data):
     logging.debug("starting mpyc execution...")
     mpc.options.no_async = data.no_async
     parties = []
@@ -25,9 +25,19 @@ def run_mpc(data):
     mpc.__init__(data.pid, parties, mpc.options)
 
     exec(data.exec)
+    # await async_exec(data.exec)
+    # xworker.sync.mpcDone()
 
     # for coro in state.mpc_coros:
     #     asyncio.ensure_future(clone_coro(coro))
+
+
+async def async_exec(code):
+    # Make an async function with the code and `exec` it
+    exec(f"async def __ex(): " + "".join(f"\n {l}" for l in code.split("\n")))
+
+    # Get `__ex` from local variables, call it and return the result
+    return await locals()["__ex"]()
 
 
 xworker.sync.run_mpc = run_mpc
