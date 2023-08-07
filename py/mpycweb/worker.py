@@ -2,45 +2,42 @@
 import asyncio
 import json
 import logging
-from typing import Callable, Any
+from typing import Callable, Any, Coroutine
 
-from mpyc.runtime import mpc
+from mpyc.runtime import Party, mpc
+from . import state
 
 # pyright: reportMissingImports=false
 from polyscript import xworker
 
 from .debug import *
 
-from . import state
+
+def run_mpc(data):
+    logging.debug("starting mpyc execution...")
+    mpc.options.no_async = data.no_async
+    parties = []
+    for pid, peerID in enumerate(data.parties):
+        parties.append(Party(pid, peerID))
+    logging.debug(f"setting _____________parties {sdump(parties)}")
+
+    # reinitialize the mpyc runtime with the new parties
+    mpc.__init__(data.pid, parties, mpc.options)
+
+    exec(data.exec)
+
+    # for coro in state.mpc_coros:
+    #     asyncio.ensure_future(clone_coro(coro))
 
 
-def send_message(msg):
-    xworker.postMessage(json.dumps(msg))
+xworker.sync.run_mpc = run_mpc
 
 
-def on_message(
-    onInit: Callable[[Any], None], onReadyMessage: Callable[[int, str, str], None], onRuntimeMessage: Callable[[int, str], None]
-) -> Callable[[Any], None]:
-    def _on_message(event) -> None:
-        logging.debug("message received from main JS thread")
+def clone_coro(coro: Coroutine):
+    function_name = coro.__qualname__
+    # function_name = coro.__name__
 
-        if event.data.init:
-            onInit(event.data.init)
-        if event.data.peerJS:
-            logging.debug(f"peerJS: {event.data.peerJS.peerID}")
+    func = coro.cr_frame.f_globals[function_name]
+    args = coro.cr_frame.f_locals.values()
 
-            if event.data.peerJS.peerID not in state.peerjsIDToPID:
-                logging.debug(f"___________________ unknown peer id: {event.data.peerJS.peerID}")
-                logging.debug(f"___________________ peers: {sdump(state.peerjsIDToPID)}")
-                return
-
-            pid = state.peerjsIDToPID[event.data.peerJS.peerID]
-
-            # logging.debug("peerJS: ", event.data.peerJS.message.ready_message)
-            if event.data.peerJS.message.ready_message:
-                onReadyMessage(pid, event.data.peerJS.peerID, event.data.peerJS.message.ready_message)
-
-            if event.data.peerJS.message.runtime_message:
-                onRuntimeMessage(pid, event.data.peerJS.message.runtime_message)
-
-    return _on_message
+    return func(*args)

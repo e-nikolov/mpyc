@@ -4,26 +4,29 @@ import logging
 from typing import Any
 
 # pyright: reportMissingImports=false
-from . import peerjs
-
 logging = logging.getLogger("transport.py")
 
-import secretsanta as secretsanta
 from mpyc import asyncoro
-from mpyc.runtime import mpc, Party
-from debug import sdump, dump, print_tree
+from mpyc.runtime import mpc, Party, Runtime
+from .debug import *
+
+
+class AbstractClient:
+    def send_runtime_message(self, pid: int, message: bytes):
+        raise NotImplementedError
+
+    def send_ready_message(self, pid: int, message: str):
+        raise NotImplementedError
 
 
 class PeerJSTransport(asyncio.Transport):
-    ready_to_start = False
-
-    def __init__(self, runtime, protocol, peerjs_id):
+    def __init__(self, _loop: asyncio.AbstractEventLoop, pid: int, client: AbstractClient, protocol: asyncoro.MessageExchanger):
         super().__init__()
-        self.runtime = runtime
-        self._loop = runtime._loop
-        self.set_protocol(protocol)
+        self._loop = _loop
+        self._protocol = protocol
         self._closing = False
-        self.peerjs_id = peerjs_id
+        self.pid = pid
+        self.client = client
 
         self.ready_to_start = True
         self.peer_ready_to_start = False
@@ -44,10 +47,7 @@ class PeerJSTransport(asyncio.Transport):
     def get_protocol(self):
         return self._protocol
 
-    def data_received(self, data):
-        pass
-
-    def write(self, data):
+    def write(self, data: bytes):
         """Write some data bytes to the transport.
 
         This does not block; it buffers the data and arranges for it
@@ -55,24 +55,27 @@ class PeerJSTransport(asyncio.Transport):
         """
         logging.debug("<<<<<<<<<<<<<<<<<< writing data...")
         # postPeerJSMessage(self.peerjs_id, new_runtime_message(data))
-        peerjs.send_message(self.peerjs_id, new_runtime_message(data))
+        self.client.send_runtime_message(self.pid, data)
         logging.debug("<<<<<<<<<<<<<<<<<< writing data... done")
 
     async def _ready_for_connections(self):
         while not self.peer_ready_to_start:
             ## send ready messages to this connection's peer to check if the user has clicked "run mpyc demo"
-            peerjs.send_message(self.peerjs_id, new_ready_message("ready?"))
+            self.client.send_ready_message(self.pid, "ready?")
             await asyncio.sleep(3)
 
-        try:
-            self._loop.call_soon(self._protocol.connection_made, self)
-        except Exception as exc:
-            logging.debug(exc)
+        self._loop.call_soon(self._protocol.connection_made, self)
 
+    def on_ready_message(self, message: str):
+        match message:
+            case "ready?":
+                logging.debug(f"party ${self.pid} asks if we are ready to start")
+                logging.debug(f"___________________________________ ready to start: {self.ready_to_start}")
+                if self.ready_to_start:
+                    self.client.send_ready_message(self.pid, "ready_ack")
+            case "ready_ack":
+                logging.debug(f"party ${self.pid} confirmed ready to start")
+                self.peer_ready_to_start = True
 
-def new_ready_message(msg):
-    return dict(ready_message=msg)
-
-
-def new_runtime_message(msg):
-    return dict(runtime_message=msg.hex())
+    def on_runtime_message(self, data: bytes):
+        self._protocol.data_received(data)

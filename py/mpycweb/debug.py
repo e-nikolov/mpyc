@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from pprint import pformat
@@ -13,33 +14,52 @@ def print_tree(path, prefix="", str=""):
     for item in path.iterdir():
         logging.info(f"{prefix}├── {item.name}")
         if item.is_dir():
-            print_tree(item, prefix + "│   ")
+            print_tree(item, prefix + "│   ", str)
+
+
+print_tree(Path("./"))
 
 
 def sdump(obj):
     s = ""
-    try:
-        s = pformat(vars(obj), indent=4)
-    except TypeError:
-        pass
-
     if s == "":
         try:
-            s = pformat(obj, indent=4)
-        except TypeError:
+            s = "json: " + pformat(json.dumps(obj), indent=4)
+        except:
+            pass
+    if s == "":
+        try:
+            s = "vars: " + pformat(vars(obj), indent=4)
+        except:
             pass
 
     if s == "":
         try:
-            s = pformat(dict(obj), indent=4)
-        except TypeError:
+            s = "dict: " + pformat(dict(obj), indent=4)
+        except:
             pass
 
-    return f"{type(obj)}: {s}"
+    if s == "":
+        try:
+            s = "pformat: " + pformat(obj, indent=4)
+        except:
+            pass
+
+    if s == "":
+        try:
+            s = "attrs: "
+
+            for attr in dir(obj):
+                s += f"obj.%s = %r\n" % (attr, getattr(obj, attr))
+        except:
+            pass
+    return f"type: {type(obj)}: {s}"
 
 
 def dump(obj):
+    logging.debug("-----------------------")
     logging.debug(sdump(obj))
+    logging.debug("-----------------------")
 
 
 # def dump(obj):
@@ -65,3 +85,16 @@ class bcolors:
 
 def display(msg):
     xworker.sync.display(msg)
+
+
+def displayRaw(msg):
+    xworker.sync.displayRaw(msg)
+
+
+async def ping():
+    while True:
+        xworker.sync.log("Python Worker Ping")
+        await asyncio.sleep(5)
+
+
+asyncio.ensure_future(ping())

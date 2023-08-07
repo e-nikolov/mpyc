@@ -1,10 +1,4 @@
-from typing import Dict
-from . import transport
+from asyncio import Task
+from typing import Coroutine, Dict, List
 
-
-peerjsIDToPID: dict[str, int] = {}
-peerTransports: dict[int, transport.PeerJSTransport] = {}
-
-
-async def run_func() -> None:
-    pass
+mpc_coros: List[Coroutine] = []

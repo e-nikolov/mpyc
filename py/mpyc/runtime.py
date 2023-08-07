@@ -109,7 +109,6 @@ class Runtime:
 
     def __init__(self, pid, parties, options):
         """Initialize runtime."""
-        logging.debug(f"--------\npid: {pid},\nparties: {sdump(parties)},\noptions: {sdump(options)}\n--------")
         self.pid = pid
         # self.transport_manager = TCPTransportManager(self)
         self.parties = tuple(parties)
@@ -257,6 +256,8 @@ class Runtime:
                     f.send(None)
                 except StopIteration as exc:
                     return exc.value
+
+        return self._loop.run_until_complete(f)
 
     def logging(self, enable=None):
         """Toggle/enable/disable logging."""
