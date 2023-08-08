@@ -109,14 +109,16 @@ export class MPyCManager extends EventTarget {
             this.pidToPeerID.set(i, peers[i])
         }
 
+        this.peersReady.set(this.peer.id, true);
+
         this.worker.sync.run_mpc({
             pid: pid,
             parties: peers,
             is_async: is_async,
             no_async: !is_async,
             exec: code,
-            // exec: "import mpycweb.redirect_stdout",
         })
+        this.emit('worker:run', this);
     }
 
     newPeerJS(peerID: string | null): Peer {
@@ -146,7 +148,6 @@ export class MPyCManager extends EventTarget {
         worker.sync.displayRaw = (message: string) => { this.emit('worker:display:raw', message, this); }
         worker.onerror = (err: ErrorEvent) => { console.error(err.error); this.emit('worker:error', err, this) };
         worker.sync.mpcDone = () => { this.running = false; }
-
 
         return worker;
     }

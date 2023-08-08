@@ -1,3 +1,4 @@
+import { EditorView } from 'codemirror';
 import * as ui from '.';
 
 export const hostPeerIDInput = document.querySelector<HTMLInputElement>('input#hostPeerID')!;
@@ -17,4 +18,5 @@ export const scanQRInput = document.querySelector<HTMLInputElement>('#scan-qr')!
 export const qrCanvas = document.querySelector<HTMLCanvasElement>('#qrr')!;
 export const qrCanvas2 = document.querySelector<HTMLCanvasElement>('#canvas')!;
 export const testDiv = document.querySelector<HTMLCanvasElement>('div#test')!;
+export const demoSelector = document.querySelector<HTMLSelectElement>('select#select-demo')!;
 export var term = ui.makeTerminal('#terminal');

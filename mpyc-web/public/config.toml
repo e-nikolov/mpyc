@@ -37,7 +37,12 @@ files = [
     "helloworld.py",
     "oneliners.py",
     "bnnmnist.py",
-    "cnnmnist.py"
+    "cnnmnist.py",
+    "dsa.py",
+    "aes.py",
+    "lpsolver.py",
+    "kmsurvival.py",
+    "elgamal.py"
 ]
 
 [[fetch]]

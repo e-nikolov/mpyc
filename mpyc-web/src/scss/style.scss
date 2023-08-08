@@ -8,6 +8,15 @@ $tooltip-max-width: 300px;
 @import "bootstrap-icons/font/bootstrap-icons.css";
 // @import "./theme-solar-after.scss";
 
+// .cm-editor {
+//   height: 100%
+// }
+
+.cm-scroller {
+  overflow: auto;
+  min-height: 250px;
+  max-height: 350px;
+}
 
 body {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;

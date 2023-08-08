@@ -31,7 +31,7 @@ export function updateKnownPeersDiv(mpyc: MPyCManager) {
         <li class="list-group-item ${p == mpyc.peer.id ? 'list-group-item-light' : ''}"> 
             <span style="user-select:none">${pid}: </span>
             <span class="">${safe(p)}</span> 
-            ${p == mpyc.peer.id ? '' : icon}
+            ${icon}
         </li>`;
     });
 }

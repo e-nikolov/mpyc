@@ -61,8 +61,39 @@
         <ul id="knownPeers" class="list-group" start="6"> </ul>
       </div>
     </div>
-    <div class=" row row-cols-1">
+    <div class="row row-cols-1">
       <div class="col-sm-auto">
+      </div>
+    </div>
+    <div class="row row-cols-1">
+      <div class="col-sm-auto">
+
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-12 mb-3">
+        <div>
+          <select autocomplete="" id="select-demo" class="form-select" aria-label="Select Demo">
+            <option value="your-code">Your Code</option>
+            <option selected value="./py/main.py">Demo</option>
+            <option value="./py/demos/secretsanta.py">Secret Santa</option>
+            <option value="./py/demos/helloworld.py">Hello World</option>
+            <option value="./py/demos/oneliners.py">Oneliners</option>
+            <option value="./py/demos/bnnmnist.py">Binarized Neural Network MNIST classifier</option>
+            <option value="./py/demos/cnnmnist.py">Convolutional Neural Network MNIST classifier</option>
+            <option value="./py/demos/dsa.py">Threshold DSA</option>
+            <option value="./py/demos/aes.py">Threshold AES cipher</option>
+            <option value="./py/demos/lpsolver.py">Linear Programming (LP) solver</option>
+            <option value="./py/demos/kmsurvival.py">Kaplan-Meier surivival analysis</option>
+            <option value="./py/demos/elgamal.py">Threshold ElGamal Cryptosystem</option>
+          </select>
+        </div>
+        <div id="editor"></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-lg-12">
+
         <div class="input-group">
           <button id="startButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC"
             class="btn btn-primary bi bi-play-btn-fill"></button>
@@ -73,11 +104,7 @@
           <button id="clearTerminal" data-bs-toggle="tooltip" data-bs-title="Clear terminal"
             class="btn btn-primary bi-trash"></button>
         </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-sm">
-        <div id="terminal"></div>
+        <div rows="40" id="terminal"></div>
         <div class="input-group mb-3">
           <textarea id="chatInput" type="text" class="form-control"
             placeholder="Send a message to all peers..."></textarea>
@@ -85,9 +112,6 @@
             class="btn btn-primary bi-send"></button>
         </div>
       </div>
-      <script type="py-script"> </script>
-      <py-script> </py-script>
-
     </div>
 
   </div>
