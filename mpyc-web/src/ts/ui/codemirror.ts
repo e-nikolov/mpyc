@@ -3,9 +3,9 @@ import { python } from '@codemirror/lang-python';
 import { indentUnit } from '@codemirror/language';
 import { Compartment, Prec } from '@codemirror/state';
 import { keymap, Command, } from '@codemirror/view';
-import { defaultKeymap } from '@codemirror/commands';
+import { copyLineDown, defaultKeymap, deleteLine, moveLineDown, moveLineUp, redo } from '@codemirror/commands';
 import { birdsOfParadise } from 'thememirror';
-import { indentWithTab } from "@codemirror/commands"
+import { indentWithTab, } from "@codemirror/commands"
 
 export function makeEditor(pySrc: string, selector: string, exec: Command, execAsync: Command, save: Command): EditorView {
     // let parent = document.querySelector(selector)?.attachShadow({ mode: 'open' });
@@ -25,6 +25,11 @@ export function makeEditor(pySrc: string, selector: string, exec: Command, execA
                 { key: 'Ctrl-Enter', run: exec, preventDefault: true },
                 { key: 'Shift-Enter', run: execAsync, preventDefault: true },
                 { key: 'Ctrl-s', run: save, preventDefault: true },
+                { key: 'Ctrl-Shift-z', run: redo, preventDefault: true },
+                { key: 'Ctrl-d', run: copyLineDown, preventDefault: true },
+                { key: 'Ctrl-Shift-ArrowUp', run: moveLineUp, preventDefault: true },
+                { key: 'Ctrl-Shift-ArrowDown', run: moveLineDown, preventDefault: true },
+                { key: 'Ctrl-y', run: deleteLine, preventDefault: true },
             ])
         ),
     ];
