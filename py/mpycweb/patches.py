@@ -35,7 +35,7 @@ def run(self, f):
     return self._loop.run_until_complete(f)
 
 
-# mpc.run = types.MethodType(run, mpc)
+mpc.run = types.MethodType(run, mpc)
 
 # def run(self, f: Coroutine | Future) -> None:
 #     logging.debug("monkey patched run() %s", f.__class__.__name__)
