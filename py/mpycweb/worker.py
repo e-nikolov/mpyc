@@ -24,6 +24,10 @@ async def run_mpc(data):
     # reinitialize the mpyc runtime with the new parties
     mpc.__init__(data.pid, parties, mpc.options)
 
+    import sys
+
+    __name__ = "__main__"
+
     exec(data.exec)
     # await async_exec(data.exec)
     # xworker.sync.mpcDone()

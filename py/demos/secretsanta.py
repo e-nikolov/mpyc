@@ -82,41 +82,5 @@ async def main():
     await mpc.shutdown()
 
 
-async def tt():
-    print("asyncio.get_event_loop().is_running()")
-    print(asyncio.get_event_loop().is_running())
-    print(asyncio.get_event_loop().is_running())
-
-
 if __name__ == "__main__":
-    # mpc.run(main())
-    # asyncio.run(main())
-    # print(asyncio.get_event_loop().is_running())
-    # print(asyncio.get_event_loop().is_running())
-    # print(asyncio.get_event_loop().stop())
-    # print(loop := asyncio.new_event_loop())
-    # print(loop2 := asyncio.new_event_loop())
-    # print(loop.is_running())
-    # print("-------------------1")
-    # print(loop.run_until_complete(tt()))
-    # print("-------------------2")
-    # print(loop.is_running())
-    # print("-------------------3")
-    # print(loop2.is_running())
-    # print("-------------------4")
-    # print(loop2.run_until_complete(asyncio.sleep(1)))
-    # print(loop2.is_running())
-    # print("-------------------")
-    # print(loop.is_running())
-    # print(loop.is_running())
-    # print(loop.is_running())
-    # print(loop.is_running())
-    # print(loop.is_running())
-    # asyncio.sleep(2)
-    # print(loop.is_running())
-
-    mpc.options.no_async = False
     mpc.run(main())
-    # with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:
-    # runner.run(main())
-    # asyncio.run_until_complete(main())

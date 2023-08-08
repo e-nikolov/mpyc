@@ -21,6 +21,17 @@ pjs = peerjs.Client(xworker.sync)
 def run(self, f):
     """Run the given coroutine or future until it is done."""
     logging.debug("monkey patched run() %s", f.__class__.__name__)
+    """Run the given coroutine or future until it is done."""
+    if self._loop.is_running():
+        if not asyncio.iscoroutine(f):
+            f = asyncoro._wrap_in_coro(f)
+            while True:
+                try:
+                    f.send(None)
+                except StopIteration as exc:
+                    return exc.value
+        else:
+            return asyncio.ensure_future(f)
     return self._loop.run_until_complete(f)
 
 
