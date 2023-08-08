@@ -15,26 +15,16 @@ from mpyc.runtime import mpc, Runtime
 from polyscript import xworker
 
 
-display("PyScript runtime started.")
-
-
 pjs = peerjs.Client(xworker.sync)
 
 
 def run(self, f):
     """Run the given coroutine or future until it is done."""
     logging.debug("monkey patched run() %s", f.__class__.__name__)
-    if self._loop.is_running():
-        if not asyncio.iscoroutine(f):
-            f = asyncoro._wrap_in_coro(f)
-        i = 1
-
-        return self._loop.run_until_complete(f)
-
     return self._loop.run_until_complete(f)
 
 
-# mpc.run = types.MethodType(run, mpc)
+mpc.run = types.MethodType(run, mpc)
 
 # def run(self, f: Coroutine | Future) -> None:
 #     logging.debug("monkey patched run() %s", f.__class__.__name__)
@@ -79,9 +69,7 @@ async def start(runtime: Runtime) -> None:
                 if peer.pid > runtime.pid:
                     factory = lambda: asyncoro.MessageExchanger(runtime, peer.pid)
                 else:
-                    factory = lambda: asyncoro.MessageExchanger(runtime, peer.pid)
                     factory = lambda: asyncoro.MessageExchanger(runtime)
-                    # factory = lambda: asyncoro.MessageExchanger(runtime)
 
                 logging.debug(f"~~~~~~~~~~ creating peerjs connection to {peer.pid}...")
 

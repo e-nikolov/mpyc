@@ -13,32 +13,44 @@ export class MPyCManager extends EventTarget {
     peerIDToPID: Map<string, number> = new Map<string, number>();
     pidToPeerID: Map<number, string> = new Map<number, string>();
     worker: Worker & { sync: any };
-    mainFilePath: string;
+    shimFilePath: string;
     configFilePath: string;
     running = false;
 
 
-    constructor(peerID: string | null, mainFilePath: string, shimFilePath: string, configFilePath: string) {
+    constructor(peerID: string | null, shimFilePath: string, configFilePath: string) {
         super();
         this.peer = this.newPeerJS(peerID);
         this.worker = this.newWorker(shimFilePath, configFilePath)
-        this.mainFilePath = mainFilePath;
+        this.shimFilePath = shimFilePath;
         this.configFilePath = configFilePath;
 
         this.on('peerjs:conn:data:peers', this.processNewPeers);
         this.on('peerjs:conn:data:mpyc', this.processMPyCMessage);
     }
 
-    public init(peerID: string | null, mainFilePath: string, shimFilePath: string, configFilePath: string): [Peer, Worker & { sync: any }] {
+    public reset(peerID: string | null) {
+        this.resetPeer(peerID);
+        this.resetWorker();
+    }
+
+    resetPeer(peerID: string | null) {
+        console.log("resetting peer");
+        this.peer.destroy();
         this.peer = this.newPeerJS(peerID);
-        this.worker = this.newWorker(shimFilePath, configFilePath)
-        this.mainFilePath = mainFilePath;
-        this.configFilePath = configFilePath;
+    }
+    resetWorker() {
+        console.log("resetting worker");
+        this.worker.terminate();
+        this.worker = this.newWorker(this.shimFilePath, this.configFilePath)
+        this.running = false;
+    }
 
-        this.on('peerjs:conn:data:peers', this.processNewPeers);
-        this.on('peerjs:conn:data:mpyc', this.processMPyCMessage);
-
-        return [this.peer, this.worker];
+    close() {
+        console.log("destroying peer and worker");
+        this.peer.destroy();
+        this.worker.terminate();
+        this.running = false;
     }
 
     on(type: string, handler: (...args: any[]) => void) {
@@ -80,7 +92,7 @@ export class MPyCManager extends EventTarget {
         this.addConnEventHandlers(conn); //?????
     }
 
-    runMPyCDemo = async (is_async = false) => {
+    runMPyCDemo = async (code: string, is_async = false) => {
         this.running = true;
         let peers = this.getPeers(true)
         let pid = peers.findIndex((p) => p === this.peer.id)
@@ -94,32 +106,14 @@ export class MPyCManager extends EventTarget {
             this.pidToPeerID.set(i, peers[i])
         }
 
-        console.log("____________________")
-        console.log(this.peerIDToPID)
-        console.log(this.pidToPeerID)
-        console.log("^^^^^^^^^^^^^^^^^^^^")
-
-        let contents = await fetch(this.mainFilePath)
-        let pyCode = await contents.text()
-        // console.log(pyCode)
-        // ui.term.write(pyCode)
-
-
         this.worker.sync.run_mpc({
             pid: pid,
             parties: peers,
             is_async: is_async,
             no_async: !is_async,
-            exec: pyCode,
+            exec: code,
             // exec: "import mpycweb.redirect_stdout",
         })
-    }
-
-    close() {
-        console.log("destroying peer and worker");
-        this.peer.destroy();
-        this.worker.terminate();
-        this.running = false;
     }
 
     newPeerJS(peerID: string | null): Peer {

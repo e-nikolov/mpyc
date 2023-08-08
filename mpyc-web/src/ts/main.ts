@@ -8,40 +8,14 @@
 
 'use strict';
 
-import { Terminal } from 'xterm';
 import '../scss/style.scss';
 
 import { MPyCManager } from './mpyc';
 
 import * as ui from './ui';
 
-var mpyc: MPyCManager = initMPyC()
-ui.initUI(mpyc, initMPyC);
+ui.ensureStorageSchema(18);
+let peerID = ui.loadPeerID();
 
-
-function initMPyC() {
-    if (mpyc) {
-        console.log("Closing previous MPyCManager instance...")
-        mpyc.close();
-        mpyc.init("", "./py/main.py", "./py/shim.py", "config.toml");
-        return mpyc;
-    }
-    mpyc = new MPyCManager(localStorage.getItem("myPeerID"), "./py/main.py", "./py/shim.py", "config.toml");
-
-    document.mpyc = mpyc;
-    document.r = initMPyC;
-    document.run = () => mpyc.runMPyCDemo(false);
-    document.runa = () => mpyc.runMPyCDemo(true);
-
-    return mpyc;
-}
-
-declare global {
-    interface Document {
-        r: any;
-        run: any;
-        runa: any;
-        mpyc: MPyCManager;
-        term: Terminal;
-    }
-}
+var mpyc: MPyCManager = new MPyCManager(peerID, "./py/shim.py", "config.toml");
+ui.init(mpyc);

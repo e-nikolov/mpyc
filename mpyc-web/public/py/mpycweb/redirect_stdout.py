@@ -11,9 +11,10 @@ class MyWriter(io.StringIO):
     def write(self, text):
         displayRaw(text)
 
+    def writelines(self, __lines: Iterable[str]) -> None:
+        for line in __lines:
+            display(line)
 
-out = MyWriter()
-err = MyWriter()
 
-sys.stdout = out
-sys.stderr = err
+sys.stdout = MyWriter()
+sys.stderr = MyWriter()
