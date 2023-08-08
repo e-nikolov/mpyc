@@ -10,14 +10,28 @@ import pprint
 from polyscript import xworker
 
 
+def display(msg):
+    xworker.sync.display(msg)
+
+
+def displayRaw(msg):
+    xworker.sync.displayRaw(msg)
+
+
+# print(Path.cwd())
+
+
 def print_tree(path, prefix="", str=""):
-    for item in path.iterdir():
-        logging.info(f"{prefix}├── {item.name}")
-        if item.is_dir():
-            print_tree(item, prefix + "│   ", str)
+    try:
+        for item in path.iterdir():
+            display(f"{prefix}├── {item.name}")
+            if item.is_dir():
+                print_tree(item, prefix + "│   ", str)
+    except:
+        pass
 
 
-print_tree(Path("./"))
+# print_tree(Path("../"))
 
 
 def sdump(obj):
@@ -81,14 +95,6 @@ class bcolors:
     ENDC = "\033[0m"
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
-
-
-def display(msg):
-    xworker.sync.display(msg)
-
-
-def displayRaw(msg):
-    xworker.sync.displayRaw(msg)
 
 
 async def ping():

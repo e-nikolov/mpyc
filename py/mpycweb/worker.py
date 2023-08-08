@@ -27,8 +27,13 @@ async def run_mpc(data):
     import sys
 
     __name__ = "__main__"
+    code = "".join(f"\n{line}" for line in data.exec.split("\n")) + "\n"
 
-    exec(data.exec)
+    code = data.exec
+    code = "__name__ = '__main__'\n" + code + "\n"
+
+    # sys.path.append(os.path.join(os.path.dirname(__file__), pointdir))
+    exec(code, globals())
     # await async_exec(data.exec)
     # xworker.sync.mpcDone()
 

@@ -17,4 +17,4 @@ class MyWriter(io.StringIO):
 
 
 sys.stdout = MyWriter()
-sys.stderr = MyWriter()
+# sys.stderr = MyWriter()
