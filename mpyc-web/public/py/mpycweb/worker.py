@@ -19,7 +19,7 @@ async def run_mpc(data):
     parties = []
     for pid, peerID in enumerate(data.parties):
         parties.append(Party(pid, peerID))
-    logging.debug(f"setting _____________parties {sdump(parties)}")
+    logging.debug(f"setting parties {sdump(parties)}")
 
     # reinitialize the mpyc runtime with the new parties
     mpc.__init__(data.pid, parties, mpc.options)

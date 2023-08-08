@@ -9,8 +9,8 @@ export const initQRCodeUI = () => {
             .then(_ => {
                 document.querySelector('#qrURL')!.innerHTML = ui.safe(displayURL);
             })
-            .catch(err => {
-                console.error(err)
+            .catch(_ => {
+                //console.error(err)
             })
     });
     ui.showQRCodeButton.addEventListener("click", () => {

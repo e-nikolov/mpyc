@@ -379,7 +379,6 @@ class Runtime:
 
         logging.info("Waiting for all parties to connect")
         await self.parties[self.pid].protocol
-        logging.info(f"All parties connected, {'not zero' if self.pid else 'zero'}")
         if self.options.ssl:
             logging.info(f"All {m} parties connected via SSL.")
         else:

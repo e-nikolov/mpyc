@@ -86,7 +86,6 @@ async def start(runtime: Runtime) -> None:
 
     logging.info("Waiting for all parties to connect")
     await runtime.parties[runtime.pid].protocol
-    logging.info(f"All parties connected, {'not zero' if runtime.pid else 'zero'}")
     logging.info(f"All {m} parties connected.")
 
 
