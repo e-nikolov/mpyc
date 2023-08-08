@@ -31,7 +31,7 @@ export function init(mpyc: MPyCManager) {
         console.log('My peer ID is: ' + peerID);
         ui.term.writeln('PeerJS ready with ID: ' + peerID);
     });
-    mpyc.on('peerjs:closed', (e) => { ui.term.writeln('PeerJS closed.'); });
+    mpyc.on('peerjs:closed', () => { ui.term.writeln('PeerJS closed.'); });
     mpyc.on('peerjs:error', (err: Error) => { ui.term.writeln('PeerJS failed: ' + err.message); });
     mpyc.on('peerjs:conn:ready', ui.onPeerConnectedHook);
     mpyc.on('peerjs:conn:disconnected', ui.onPeerDisconnectedHook);
@@ -42,7 +42,7 @@ export function init(mpyc: MPyCManager) {
     mpyc.on('worker:display:raw', (message: string) => { ui.term.write(message); });
     ui.term.writeln('Initializing PyScript runtime...');
     mpyc.on('worker:ready', () => { ui.term.writeln('PyScript runtime ready.'); });
-    mpyc.on('peerjs:conn:data:mpyc:ready', (peerID: string, message: string) => { ui.updateKnownPeersDiv(mpyc); });
+    mpyc.on('peerjs:conn:data:mpyc:ready', () => { ui.updateKnownPeersDiv(mpyc); });
 
     ui.resetPeerIDButton.addEventListener('click', () => { delete sessionStorage.myPeerID; ui.term.writeln("Restarting PeerJS..."); mpyc.resetPeer(""); });
     ui.stopMPyCButton.addEventListener('click', () => { ui.term.writeln("Restarting PyScript runtime..."); mpyc.resetWorker(); });
