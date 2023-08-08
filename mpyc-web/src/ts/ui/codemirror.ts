@@ -1,15 +1,13 @@
 import { basicSetup, EditorView } from 'codemirror';
 import { python } from '@codemirror/lang-python';
 import { indentUnit } from '@codemirror/language';
-import { Compartment, Extension, Prec } from '@codemirror/state';
-import { keymap, Command, DOMEventHandlers, ViewUpdate } from '@codemirror/view';
+import { Compartment, Prec } from '@codemirror/state';
+import { keymap, Command, } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
-import { oneDarkTheme } from '@codemirror/theme-one-dark';
 import { birdsOfParadise } from 'thememirror';
-import { ui } from 'jquery';
 import { indentWithTab } from "@codemirror/commands"
 
-export function makeEditor(pySrc: string, selector: string, exec: Command, save: Command): EditorView {
+export function makeEditor(pySrc: string, selector: string, exec: Command, execAsync: Command, save: Command): EditorView {
     // let parent = document.querySelector(selector)?.attachShadow({ mode: 'open' });
 
     const languageConf = new Compartment();
@@ -25,7 +23,7 @@ export function makeEditor(pySrc: string, selector: string, exec: Command, save:
         Prec.highest(
             keymap.of([
                 { key: 'Ctrl-Enter', run: exec, preventDefault: true },
-                { key: 'Shift-Enter', run: exec, preventDefault: true },
+                { key: 'Shift-Enter', run: execAsync, preventDefault: true },
                 { key: 'Ctrl-s', run: save, preventDefault: true },
             ])
         ),

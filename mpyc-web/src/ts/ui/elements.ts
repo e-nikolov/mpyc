@@ -1,4 +1,3 @@
-import { EditorView } from 'codemirror';
 import * as ui from '.';
 
 export const hostPeerIDInput = document.querySelector<HTMLInputElement>('input#hostPeerID')!;

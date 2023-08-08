@@ -2,7 +2,7 @@ import { MPyCManager } from '../mpyc';
 import * as ui from '.';
 import { Tooltip } from 'bootstrap';
 import { Terminal } from 'xterm';
-import { EditorView, ViewUpdate } from '@codemirror/view';
+import { EditorView } from '@codemirror/view';
 
 export * from './copy-btn';
 export * from './term';
@@ -51,8 +51,8 @@ export function init(mpyc: MPyCManager) {
 
     ui.resetPeerIDButton.addEventListener('click', () => { delete sessionStorage.myPeerID; ui.term.writeln("Restarting PeerJS..."); mpyc.resetPeer(""); });
     ui.stopMPyCButton.addEventListener('click', () => { ui.term.writeln("Restarting PyScript runtime..."); mpyc.resetWorker(); });
-    ui.runMPyCButton.addEventListener('click', async () => { mpyc.runMPyCDemo(await getUserDemoCode(), false); });
-    ui.runMPyCAsyncButton.addEventListener('click', async () => mpyc.runMPyCDemo(await getUserDemoCode(), true));
+    ui.runMPyCButton.addEventListener('click', async () => { mpyc.runMPyCDemo(await getCodeFromEditor(), false); });
+    ui.runMPyCAsyncButton.addEventListener('click', async () => mpyc.runMPyCDemo(await getCodeFromEditor(), true));
     ui.connectToPeerButton.addEventListener('click', () => { localStorage.hostPeerID = ui.hostPeerIDInput.value; mpyc.connectToPeer(ui.hostPeerIDInput.value) });
     ui.sendMessageButton.addEventListener('click', () => { ui.sendChatMessage(mpyc); });
     ui.clearTerminalButton.addEventListener('click', () => { ui.term.clear(); });
@@ -91,14 +91,19 @@ export function init(mpyc: MPyCManager) {
         localStorage.demoSelectorSelectedIndex = ui.demoSelector.selectedIndex;
         let demoCode = await fetchSelectedDemo();
         updateEditor(demoCode);
+        ui.editor.focus();
     }
 
-    ui.fetchSelectedDemo(ui.demoSelector.value).then((code) => {
+    ui.fetchSelectedDemo().then((code) => {
         editor = ui.makeEditor(
             code,
             "#editor",
             () => {
-                getUserDemoCode().then((code) => { mpyc.runMPyCDemo(code, false) });
+                getCodeFromEditor().then((code) => { mpyc.runMPyCDemo(code, false) });
+                return true;
+            },
+            () => {
+                getCodeFromEditor().then((code) => { mpyc.runMPyCDemo(code, true) });
                 return true;
             },
             () => {
@@ -114,8 +119,8 @@ export function init(mpyc: MPyCManager) {
     document.mpyc = mpyc;
     document.clearTabCount = () => { delete localStorage.tabCount }
     document.r = () => { mpyc.reset("") };
-    document.run = async () => mpyc.runMPyCDemo(await getUserDemoCode(), false);
-    document.runa = async () => mpyc.runMPyCDemo(await getUserDemoCode(), true);
+    document.run = async () => mpyc.runMPyCDemo(await getCodeFromEditor(), false);
+    document.runa = async () => mpyc.runMPyCDemo(await getCodeFromEditor(), true);
 
 }
 
@@ -126,7 +131,7 @@ function updateEditor(code: string) {
     });
 }
 
-export async function fetchSelectedDemo(src = "./py/main.py"): Promise<string> {
+export async function fetchSelectedDemo(): Promise<string> {
     var demoCode: string;
     if (ui.demoSelector.selectedIndex == 0) {
         demoCode = localStorage.customCode || "";
@@ -142,7 +147,7 @@ export async function fetchDemoCode(src = "./py/main.py"): Promise<string> {
     return pyCode;
 }
 
-export async function getUserDemoCode(): Promise<string> {
+export async function getCodeFromEditor(): Promise<string> {
     return ui.editor.state.doc.toString();
 }
 
