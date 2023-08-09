@@ -1,6 +1,6 @@
 
 import { FitAddon } from 'xterm-addon-fit';
-import { SearchAddon } from 'xterm-addon-search';
+// import { SearchAddon } from 'xterm-addon-search';
 
 import { Terminal } from 'xterm';
 
@@ -14,11 +14,10 @@ export function makeTerminal(sel: string): Terminal {
         convertEol: true
     });
     const fitAddon = new FitAddon();
-    const searchAddon = new SearchAddon();
+    // const searchAddon = new SearchAddon();
     term.loadAddon(fitAddon);
-    term.loadAddon(searchAddon);
-    term.open(document.querySelector(sel)!);
-    term.options.fontFamily = "MesloLGS NF";
+    // term.loadAddon(searchAddon);
+    term.options.fontFamily = "MesloLGS NF, Hack";
     term.options.fontSize = 16;
     term.options.fontWeight = 500;
     term.options.theme = {
@@ -44,6 +43,7 @@ export function makeTerminal(sel: string): Terminal {
         "cursor": "#fc531d"
     }
 
+    term.open(document.querySelector(sel)!);
     term.onKey(({ key }) => {
         console.log(key)
         // put the keycode you copied from the console
@@ -52,9 +52,8 @@ export function makeTerminal(sel: string): Terminal {
         } else {
         }
     })
-    term.resize(80, 10);
-    fitAddon.fit();
-    term.onRender(() => { fitAddon.fit(); });
+    window.addEventListener('resize', () => { fitAddon.fit() })
+    term.onResize(() => { fitAddon.fit(); });
     document.term = term;
     return term
 }
