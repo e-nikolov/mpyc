@@ -66,6 +66,20 @@ body {
   min-width: 90px;
 }
 
+.form-select {
+  background-color: $form-control-background;
+  color: $form-control-color;
+}
+
+.form-control {
+  background-color: $form-control-background;
+  color: $form-control-color;
+}
+
+.form-control::placeholder {
+  color: $form-control-color;
+}
+
 #knownPeers {
   font-size: 14px;
 }

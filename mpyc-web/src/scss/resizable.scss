@@ -83,7 +83,7 @@
     .splitter-horizontal {
         flex: 0 0 auto;
         height: 18px;
-        background: url(https://raw.githubusercontent.com/RickStrahl/jquery-resizable/master/assets/hsizegrip.png) center center no-repeat #ffffff;
+        background: url(./hsizegrip.png) center center no-repeat $form-control-background;
         cursor: row-resize;
         z-index: 100000;
     }
