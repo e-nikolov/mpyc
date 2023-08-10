@@ -8,8 +8,8 @@
   <script src="/mpyc/coi-serviceworker.js"></script>
   <link rel="icon" href="/mpyc/favicon.ico" />
   
-  <script type="module" crossorigin src="/mpyc/assets/index-7e377874.js"></script>
-  <link rel="stylesheet" href="/mpyc/assets/index-787edf5a.css">
+  <script type="module" crossorigin src="/mpyc/assets/index-f70128ac.js"></script>
+  <link rel="stylesheet" href="/mpyc/assets/index-5218ed7e.css">
 </head>
 
 <body>
@@ -20,11 +20,12 @@
           <h1>MPyC Web</h1>
         </div>
         <div class="peer-ids">
+          <!-- My Party ID -->
           <div class="input-group mb-2">
             <span id="basic-addon0" class="input-group-text"><strong>My ID</strong></span>
             <input id="myPeerID" type="text" readonly class="form-control w-30" aria-describedby="basic-addon0"
               onClick="this.select();">
-
+            <!-- My Party ID - Buttons -->
             <button id="show-qr" data-bs-toggle="tooltip" data-bs-html="true"
               data-bs-title="<canvas id='qr'></canvas><br /><span style='font-size: 10px !important;' id='qrURL'></span>"
               class="btn btn-primary bi bi-qr-code">
@@ -39,11 +40,11 @@
               class="btn btn-primary bi-arrow-clockwise"></button>
           </div>
 
+          <!-- Host Party ID -->
           <div class="input-group mb-3">
             <span class="input-group-text"><strong>Party ID</strong></span>
             <input id="hostPeerID" type="text" onClick="this.select();" class="form-control w-30" />
-            <!-- <label for="scan-qr" class="btn btn-primary bi bi-qr-code-scan camera-label" data-bs-toggle="tooltip" -->
-            <!-- data-bs-title="Scan from QR code"></label> -->
+            <!-- Host Party ID - Buttons -->
             <input type="file" id="scan-qr" class="camera-button" accept="image/*" capture="environment">
             <button id="connect" data-bs-toggle="tooltip" data-bs-title="Connect to peer"
               class="btn btn-primary bi-link-45deg"></button>
@@ -51,11 +52,12 @@
         </div>
 
         <div class="mb-3">
-
+          <!-- Connected Parties -->
           <h5> Connected Parties: </h5>
           <ul id="knownPeers" class="list-group" start="6"> </ul>
         </div>
 
+        <!-- Chat -->
         <div class="input-group mb-3">
           <textarea id="chatInput" type="text" class="form-control"
             placeholder="Send a message to all parties..."></textarea>
@@ -63,6 +65,7 @@
             class="btn btn-primary bi-send"></button>
         </div>
 
+        <!-- Demos -->
         <h5> Demos: </h5>
         <select size=15 id="select-demo" class="form-select" aria-label="Select Demo">
           <option value="your-code">Your Code</option>
@@ -80,15 +83,16 @@
         </select>
       </div>
       <div class="col-lg-9 mb-3 h-100">
-        <!-- <div class="resizable123"> -->
         <div class="panel-container-vertical">
           <div class="panel-top">
+            <!-- Editor -->
             <div id="editor" class="editor rezisable"></div>
           </div>
 
           <div class="splitter-horizontal">
           </div>
           <div class="panel-bottom">
+            <!-- Terminal - Buttons -->
             <div class="input-group">
               <button id="startButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC"
                 class="btn btn-primary bi bi-play-btn-fill"></button>
@@ -99,6 +103,7 @@
               <button id="clearTerminal" data-bs-toggle="tooltip" data-bs-title="Clear terminal"
                 class="btn btn-primary bi-trash"></button>
             </div>
+            <!-- Terminal -->
             <div id="terminal" class="h-100"></div>
           </div>
         </div>
