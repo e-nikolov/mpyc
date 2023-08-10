@@ -1,34 +1,29 @@
+<!doctype html>
 <html lang="en" data-bs-theme="dark">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MPyC in PyScript Core</title>
+  <title>MPyC Web</title>
   <script src="/coi-serviceworker.js"></script>
   <link rel="icon" href="/favicon.ico" />
   <script defer type="module" src="/src/ts/main.ts"></script>
 </head>
 
 <body>
-  <div class="container">
-    <div class="row">
-      <div class="col-sm">
-        <h1>MPyC in PyScript</h1>
-      </div>
-    </div>
-    <div class="row">
-      <div id="test" class="col-sm-6">
-      </div>
-    </div>
-    <div class="row mb-4">
-      <div class="col-lg-6">
-        <h5> &nbsp; </h5>
+  <div class="container-fluid h-100">
+    <div class="row h-100">
+      <div class="col-lg-3">
+        <div class="col-sm">
+          <h1>MPyC Web</h1>
+        </div>
         <div class="peer-ids">
+          <!-- My Party ID -->
           <div class="input-group mb-2">
             <span id="basic-addon0" class="input-group-text"><strong>My ID</strong></span>
             <input id="myPeerID" type="text" readonly class="form-control w-30" aria-describedby="basic-addon0"
               onClick="this.select();">
-
+            <!-- My Party ID - Buttons -->
             <button id="show-qr" data-bs-toggle="tooltip" data-bs-html="true"
               data-bs-title="<canvas id='qr'></canvas><br /><span style='font-size: 10px !important;' id='qrURL'></span>"
               class="btn btn-primary bi bi-qr-code">
@@ -43,74 +38,79 @@
               class="btn btn-primary bi-arrow-clockwise"></button>
           </div>
 
-          <div class="input-group mb-1">
-            <span class="input-group-text"><strong>Peer ID</strong></span>
+          <!-- Host Party ID -->
+          <div class="input-group mb-3">
+            <span class="input-group-text"><strong>Party ID</strong></span>
             <input id="hostPeerID" type="text" onClick="this.select();" class="form-control w-30" />
-            <!-- <label for="scan-qr" class="btn btn-primary bi bi-qr-code-scan camera-label" data-bs-toggle="tooltip" -->
-            <!-- data-bs-title="Scan from QR code"></label> -->
+            <!-- Host Party ID - Buttons -->
             <input type="file" id="scan-qr" class="camera-button" accept="image/*" capture="environment">
             <button id="connect" data-bs-toggle="tooltip" data-bs-title="Connect to peer"
               class="btn btn-primary bi-link-45deg"></button>
           </div>
         </div>
-      </div>
-      <div class="col-lg-6">
-        <div class="col-sm">
-          <h5> Connected Peers: </h5>
-        </div>
-        <ul id="knownPeers" class="list-group" start="6"> </ul>
-      </div>
-    </div>
-    <div class="row row-cols-1">
-      <div class="col-sm-auto">
-      </div>
-    </div>
-    <div class="row row-cols-1">
-      <div class="col-sm-auto">
 
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-lg-12 mb-3">
-        <div>
-          <select autocomplete="" id="select-demo" class="form-select" aria-label="Select Demo">
-            <option value="your-code">Your Code</option>
-            <option selected value="./py/main.py">Demo</option>
-            <option value="./py/demos/secretsanta.py">Secret Santa</option>
-            <option value="./py/demos/helloworld.py">Hello World</option>
-            <option value="./py/demos/oneliners.py">Oneliners</option>
-            <option value="./py/demos/bnnmnist.py">Binarized Neural Network MNIST classifier</option>
-            <option value="./py/demos/cnnmnist.py">Convolutional Neural Network MNIST classifier</option>
-            <option value="./py/demos/dsa.py">Threshold DSA</option>
-            <option value="./py/demos/aes.py">Threshold AES cipher</option>
-            <option value="./py/demos/lpsolver.py">Linear Programming (LP) solver</option>
-            <option value="./py/demos/kmsurvival.py">Kaplan-Meier surivival analysis</option>
-            <option value="./py/demos/elgamal.py">Threshold ElGamal Cryptosystem</option>
-          </select>
+        <div class="mb-3">
+          <!-- Connected Parties -->
+          <h5> Connected Parties: </h5>
+          <ul id="knownPeers" class="list-group" start="6"> </ul>
         </div>
-        <div id="editor"></div>
+
+        <!-- Chat -->
+        <div class="input-group mb-3">
+          <textarea id="chatInput" type="text" class="form-control"
+            placeholder="Send a message to all parties..."></textarea>
+          <button id="sendMessageButton" data-bs-toggle="tooltip" data-bs-title="Send"
+            class="btn btn-primary bi-send"></button>
+        </div>
+
+        <!-- Demos -->
+        <h5> Demos: </h5>
+        <select size=15 id="select-demo" class="form-select" aria-label="Select Demo">
+          <option value="your-code">Your Code</option>
+          <option selected value="./py/main.py">Demo</option>
+          <option value="./py/demos/secretsanta.py">Secret Santa</option>
+          <option value="./py/demos/helloworld.py">Hello World</option>
+          <option value="./py/demos/oneliners.py">Oneliners</option>
+          <option value="./py/demos/bnnmnist.py">Binarized Neural Network MNIST classifier</option>
+          <option value="./py/demos/cnnmnist.py">Convolutional Neural Network MNIST classifier</option>
+          <option value="./py/demos/dsa.py">Threshold DSA</option>
+          <option value="./py/demos/aes.py">Threshold AES cipher</option>
+          <option value="./py/demos/lpsolver.py">Linear Programming (LP) solver</option>
+          <option value="./py/demos/kmsurvival.py">Kaplan-Meier surivival analysis</option>
+          <option value="./py/demos/elgamal.py">Threshold ElGamal Cryptosystem</option>
+        </select>
       </div>
+      <div class="col-lg-9 mb-3 h-100">
+        <div class="panel-container-vertical">
+          <div class="panel-top">
+            <!-- Editor -->
+            <div id="editor" class="editor rezisable"></div>
+          </div>
+
+          <div class="splitter-horizontal">
+          </div>
+          <div class="panel-bottom">
+            <!-- Terminal - Buttons -->
+            <div class="input-group">
+              <button id="startButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC"
+                class="btn btn-primary bi bi-play-btn-fill"></button>
+              <button id="startAsyncButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC Async"
+                class="btn btn-primary bi bi-play"></button>
+              <button id="stopButton" data-bs-toggle="tooltip" data-bs-title="Restart"
+                class="btn btn-primary bi-arrow-clockwise"></button>
+              <button id="clearTerminal" data-bs-toggle="tooltip" data-bs-title="Clear terminal"
+                class="btn btn-primary bi-trash"></button>
+            </div>
+            <!-- Terminal -->
+            <div id="terminal" class="h-100"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
     <div class="row">
       <div class="col-lg-12">
 
-        <div class="input-group">
-          <button id="startButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC"
-            class="btn btn-primary bi bi-play-btn-fill"></button>
-          <button id="startAsyncButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC Async"
-            class="btn btn-primary bi bi-play"></button>
-          <button id="stopButton" data-bs-toggle="tooltip" data-bs-title="Restart"
-            class="btn btn-primary bi-arrow-clockwise"></button>
-          <button id="clearTerminal" data-bs-toggle="tooltip" data-bs-title="Clear terminal"
-            class="btn btn-primary bi-trash"></button>
-        </div>
-        <div id="terminal"></div>
-        <div class="input-group mb-3">
-          <textarea id="chatInput" type="text" class="form-control"
-            placeholder="Send a message to all peers..."></textarea>
-          <button id="sendMessageButton" data-bs-toggle="tooltip" data-bs-title="Send"
-            class="btn btn-primary bi-send"></button>
-        </div>
       </div>
     </div>
 

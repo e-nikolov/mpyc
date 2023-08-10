@@ -6,18 +6,18 @@ import { Terminal } from 'xterm';
 
 export function makeTerminal(sel: string): Terminal {
     let term = new Terminal({
-        screenReaderMode: true,
+        // screenReaderMode: true,
         cols: 80,
-        rows: 10,
-        allowProposedApi: true,
-        cursorBlink: true,
+        rows: 30,
+        // allowProposedApi: true,
+        cursorBlink: false,
         convertEol: true
     });
     const fitAddon = new FitAddon();
     // const searchAddon = new SearchAddon();
     term.loadAddon(fitAddon);
     // term.loadAddon(searchAddon);
-    term.options.fontFamily = "MesloLGS NF, Hack";
+    term.options.fontFamily = "MesloLGS NF, Hack, monospace";
     term.options.fontSize = 16;
     term.options.fontWeight = 500;
     term.options.theme = {
@@ -53,7 +53,6 @@ export function makeTerminal(sel: string): Terminal {
         }
     })
     window.addEventListener('resize', () => { fitAddon.fit() })
-    term.onResize(() => { fitAddon.fit(); });
     document.term = term;
     return term
 }

@@ -4,6 +4,9 @@ import { Tooltip } from 'bootstrap';
 import { Terminal } from 'xterm';
 import { EditorView } from '@codemirror/view';
 
+import $ from 'jquery'
+import 'jquery-resizable-dom'
+
 export * from './copy-btn';
 export * from './term';
 export * from './elements';
@@ -34,6 +37,7 @@ export function init(mpyc: MPyCManager) {
 
         console.log('My peer ID is: ' + peerID);
         ui.term.writeln('PeerJS ready with ID: ' + peerID);
+        ui.updateKnownPeersDiv(mpyc);
     });
     mpyc.on('peerjs:closed', () => { ui.term.writeln('PeerJS closed.'); });
     mpyc.on('peerjs:error', (err: Error) => { ui.term.writeln('PeerJS failed: ' + err.message); });
@@ -51,8 +55,8 @@ export function init(mpyc: MPyCManager) {
 
     ui.resetPeerIDButton.addEventListener('click', () => { delete sessionStorage.myPeerID; ui.term.writeln("Restarting PeerJS..."); mpyc.resetPeer(""); });
     ui.stopMPyCButton.addEventListener('click', () => { ui.term.writeln("Restarting PyScript runtime..."); mpyc.resetWorker(); });
-    ui.runMPyCButton.addEventListener('click', async () => { mpyc.runMPyCDemo(await getCodeFromEditor(), false); });
-    ui.runMPyCAsyncButton.addEventListener('click', async () => mpyc.runMPyCDemo(await getCodeFromEditor(), true));
+    ui.runMPyCButton.addEventListener('click', async () => { mpyc.runMPC(await getCodeFromEditor(), false); });
+    ui.runMPyCAsyncButton.addEventListener('click', async () => mpyc.runMPC(await getCodeFromEditor(), true));
     ui.connectToPeerButton.addEventListener('click', () => { localStorage.hostPeerID = ui.hostPeerIDInput.value; mpyc.connectToPeer(ui.hostPeerIDInput.value) });
     ui.sendMessageButton.addEventListener('click', () => { ui.sendChatMessage(mpyc); });
     ui.clearTerminalButton.addEventListener('click', () => { ui.term.clear(); });
@@ -85,6 +89,9 @@ export function init(mpyc: MPyCManager) {
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     tooltipTriggerList.forEach(tooltipTriggerEl => new Tooltip(tooltipTriggerEl,));
 
+    if (window.innerWidth < 800) {
+        ui.demoSelector.size = 0;
+    }
     ui.demoSelector.selectedIndex = parseInt(localStorage.demoSelectorSelectedIndex) || 1;
 
     ui.demoSelector.onchange = async () => {
@@ -98,30 +105,28 @@ export function init(mpyc: MPyCManager) {
         editor = ui.makeEditor(
             code,
             "#editor",
-            () => {
-                getCodeFromEditor().then((code) => { mpyc.runMPyCDemo(code, false) });
-                return true;
-            },
-            () => {
-                getCodeFromEditor().then((code) => { mpyc.runMPyCDemo(code, true) });
-                return true;
-            },
-            () => {
-                localStorage.customCode = ui.editor.state.doc.toString();
-                if (ui.demoSelector.selectedIndex != 0) {
-                    ui.demoSelector.selectedIndex = 0;
-                }
-                return true;
-            });
+            mpyc,
+        )
+
+        document.editor = editor;
     });
 
     ui.initQRCodeUI();
     document.mpyc = mpyc;
     document.clearTabCount = () => { delete localStorage.tabCount }
     document.r = () => { mpyc.reset("") };
-    document.run = async () => mpyc.runMPyCDemo(await getCodeFromEditor(), false);
-    document.runa = async () => mpyc.runMPyCDemo(await getCodeFromEditor(), true);
+    document.run = async () => mpyc.runMPC(await getCodeFromEditor(), false);
+    document.runa = async () => mpyc.runMPC(await getCodeFromEditor(), true);
 
+    document.querySelector(".resizable")?.addEventListener('resize', () => {
+        console.log("resized editor!")
+        ui.editor.requestMeasure();
+    })
+
+    $(".panel-top").resizableSafe({
+        handleSelector: ".splitter-horizontal",
+        resizeWidth: false
+    });
 }
 
 function updateEditor(code: string) {
@@ -187,6 +192,9 @@ export function setTabState(key: string, value: any) {
 }
 
 declare global {
+    interface JQuery {
+        resizableSafe: (obj: any) => void;
+    }
     interface Document {
         clearTabCount: any;
         r: any;
@@ -194,6 +202,7 @@ declare global {
         runa: any;
         mpyc: MPyCManager;
         term: Terminal;
+        editor: EditorView;
     }
     interface PerformanceEntry {
         type: string;

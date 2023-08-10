@@ -6,16 +6,40 @@ $tooltip-max-width: 300px;
 @import "bootstrap/scss/bootstrap";
 @import "./theme-superhero-after.scss";
 @import "bootstrap-icons/font/bootstrap-icons.css";
-// @import "./theme-solar-after.scss";
+@import "./resizable.scss";
 
-// .cm-editor {
-//   height: 100%
-// }
+// @import "./theme-solar-after.scss";
+@media (max-width: 576px) {
+  .editor {
+    // display: none;
+  }
+}
+
+.terminal {
+  height: calc(100% - 50px);
+  overflow: hidden;
+}
+
+@media (min-width: 576px) {
+  .container-fluid {
+    overflow: hidden;
+  }
+}
+
+.editor {
+  height: 100%;
+  overflow: auto;
+}
 
 .cm-scroller {
   overflow: auto;
-  min-height: 250px;
-  max-height: 350px;
+  height: 100%;
+}
+
+.cm-editor {
+  height: 100%;
+  height: calc(100%);
+  // overflow: auto;
 }
 
 body {
@@ -44,7 +68,7 @@ body {
 
 .peer-ids>.input-group>.input-group-text {
   flex: 0 0 13%;
-  min-width: 80px;
+  min-width: 90px;
 }
 
 

@@ -60,7 +60,6 @@ export class MPyCManager extends EventTarget {
 
     on(type: string, handler: (...args: any[]) => void) {
         this.addEventListener(type, (e: Event) => {
-            // console.log("on", type, e)
             handler(...((e as Ev).detail.args))
         });
     }
@@ -82,7 +81,7 @@ export class MPyCManager extends EventTarget {
 
     broadcastMessage(type: string, data: any) {
         this.conns.forEach(conn => {
-            conn.send({ type: `user:${type}`, data });
+            conn.send({ type: `user:${type}`, payload: data });
         });
     }
 
@@ -95,7 +94,7 @@ export class MPyCManager extends EventTarget {
         this.addConnEventHandlers(conn); //?????
     }
 
-    runMPyCDemo = async (code: string, is_async = false) => {
+    runMPC = async (code: string, is_async = false) => {
         this.running = true;
         let peers = this.getPeers(true)
         let pid = peers.findIndex((p) => p === this.peer.id)
