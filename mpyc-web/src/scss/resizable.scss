@@ -85,7 +85,7 @@
         height: 18px;
         background: url(./hsizegrip.png) center center no-repeat $form-control-background;
         cursor: row-resize;
-        z-index: 100000;
+        // z-index: 100000;
     }
 
     .panel-bottom {
