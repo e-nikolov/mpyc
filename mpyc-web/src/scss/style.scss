@@ -10,9 +10,24 @@ $tooltip-max-width: 300px;
 
 // @import "./theme-solar-after.scss";
 
+#terminal {
+  height: calc(100% - 100px);
+}
+
 .terminal {
-  height: calc(100% - 50px);
+  // height: calc(100% - 100px);
+  height: 100%;
   overflow: hidden;
+  // overflow: auto;
+}
+
+.xterm-viewport {
+  // height: calc(100% - 100px);
+  overflow: auto;
+}
+
+.xterm-screen {
+  height: calc(100% - 100px) !important;
 }
 
 @media (min-width: 576px) {

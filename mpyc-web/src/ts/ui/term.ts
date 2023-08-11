@@ -52,7 +52,14 @@ export function makeTerminal(sel: string): Terminal {
         } else {
         }
     })
+    document.fitAddon = fitAddon;
     window.addEventListener('resize', () => { fitAddon.fit() })
     document.term = term;
     return term
+}
+
+declare global {
+    interface Terminal {
+        fitAddon: FitAddon;
+    }
 }

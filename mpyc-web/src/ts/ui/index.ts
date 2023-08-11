@@ -6,6 +6,7 @@ import { EditorView } from '@codemirror/view';
 
 import $ from 'jquery'
 import 'jquery-resizable-dom'
+import { FitAddon } from 'xterm-addon-fit';
 
 export * from './copy-btn';
 export * from './term';
@@ -118,10 +119,25 @@ export function init(mpyc: MPyCManager) {
     document.run = async () => mpyc.runMPC(await getCodeFromEditor(), false);
     document.runa = async () => mpyc.runMPC(await getCodeFromEditor(), true);
 
-    document.querySelector(".resizable")?.addEventListener('resize', () => {
-        console.log("resized editor!")
-        ui.editor.requestMeasure();
-    })
+    // debounce resize
+
+    let resizeTimeout: NodeJS.Timeout;
+    let ro = new ResizeObserver(() => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            console.log("resized editor!")
+            document.fitAddon.fit();
+        }, 50);
+    });
+
+    ro.observe(document.querySelector(".xterm")!)
+    // document.querySelector(".xterm")?.addEventListener('resize', () => {
+    //     console.log("resized editor!")
+    //     ui.editor.requestMeasure();
+    //     document.fitAddon.fit();
+    // })
+
+
 
     $(".panel-top").resizableSafe({
         handleSelector: ".splitter-horizontal",
@@ -203,6 +219,7 @@ declare global {
         mpyc: MPyCManager;
         term: Terminal;
         editor: EditorView;
+        fitAddon: FitAddon;
     }
     interface PerformanceEntry {
         type: string;
