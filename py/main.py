@@ -1,10 +1,10 @@
 from mpycweb.debug import *
 from mpyc.runtime import mpc
-import demos.secretsanta
+import secretsanta
 
 
 async def main():
-    await demos.secretsanta.main()
+    await secretsanta.main()
 
 
 mpc.run(main())

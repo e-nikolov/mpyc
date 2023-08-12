@@ -31,7 +31,9 @@ def run(self, f):
                 except StopIteration as exc:
                     return exc.value
         else:
-            return asyncio.ensure_future(f)
+            # return asyncio.ensure_future(f)
+            return self._loop.run_until_complete(f)
+
     return self._loop.run_until_complete(f)
 
 
@@ -48,6 +50,8 @@ mpc.run = types.MethodType(run, mpc)
 #     # state.mpc_coros.append(f)
 
 
+# The regular start() starts TCP connections, which don't work in the browser.
+# We monkey patch it to use PeerJS instead.
 async def start(runtime: Runtime) -> None:
     """Start the MPyC runtime with a PeerJS transport.
 
@@ -82,11 +86,11 @@ async def start(runtime: Runtime) -> None:
                 else:
                     factory = lambda: asyncoro.MessageExchanger(runtime)
 
-                logging.debug(f"~~~~~~~~~~ creating peerjs connection to {peer.pid}...")
+                logging.debug(f"Creating peerjs connection to {peer.pid}...")
 
                 await pjs.create_connection(runtime._loop, peer.pid, factory)
 
-                logging.debug(f"~~~~~~~~~~ creating peerjs connection to {peer.pid}... done")
+                logging.debug(f"Creating peerjs connection to {peer.pid}... done")
                 break
             except asyncio.CancelledError:
                 raise
@@ -101,3 +105,14 @@ async def start(runtime: Runtime) -> None:
 
 
 mpc.start = types.MethodType(start, mpc)
+import gzip
+
+gzipOpen = gzip.open
+
+
+# PyScript automatically ungzips files, so we patch gzip.open to return a regular file object
+def gzipOpenPatch(filename, mode="rb", compresslevel=9, encoding=None, errors=None, newline=None):
+    return open(filename, mode, -1, encoding, errors, newline)
+
+
+gzip.open = gzipOpenPatch
