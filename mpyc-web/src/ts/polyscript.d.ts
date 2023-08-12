@@ -1,6 +1,21 @@
 declare module 'polyscript' {
-    export const env: typeof import("./polyscript/index").env;
-    export const XWorker: typeof import("./polyscript/index").XWorker;
-    export const define: typeof import("./polyscript/index").define;
-    export const whenDefined: typeof import("./polyscript/index").whenDefined;
+    export type WorkerOptions = {
+        /**
+         * the interpreter type to use
+         */
+        type: string;
+        /**
+         * the optional interpreter version to use
+         */
+        version?: string;
+        /**
+         * the optional config to use within such interpreter
+         */
+        config?: string;
+
+        async?: boolean;
+
+    };
+    // export const XWorker: typeof XWorker & { sync: any };
+    export const XWorker: (url: string, options?: WorkerOptions) => Worker & { sync: any };
 }

@@ -40,8 +40,16 @@ files = [
 
 [[fetch]]
 from = "./py/demos"
-to_folder = "./demos"
+to_folder = "./"
 files = [
+    "data/lp/kb2.csv",
+    "data/lp/LPExample_R20.csv",
+    "data/lp/LPExample.csv",
+    "data/lp/sc50b.csv",
+    "data/lp/tb2x2.csv",
+    "data/lp/uvlp.csv",
+    "data/lp/wiki.csv",
+    "data/lp/woody.csv",
     "data/surv/aml.csv",
     "data/surv/btrial.csv",
     "data/bnn/b_fc1.npy",

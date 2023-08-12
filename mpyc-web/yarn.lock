@@ -880,10 +880,10 @@ pngjs@^5.0.0:
   resolved "https://registry.yarnpkg.com/pngjs/-/pngjs-5.0.0.tgz#e79dd2b215767fd9c04561c01236df960bce7fbb"
   integrity sha512-40QW5YalBNfQo5yRYmiw7Yz6TKKVr3h6970B2YE+3fQpsWcrbj1PzJgxeJ19DRQjhMbKPIuMY8rFaXc8moolVw==
 
-polyscript@^0.1.5:
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/polyscript/-/polyscript-0.1.5.tgz#ad660d0a7b6cb0bb49b50f4f49721c72b75a6def"
-  integrity sha512-VMKH88jVyjgBoZrasttjoR4SiY7jpeQ+wsE95jqdAkmz/NoF3T72PKPpNjhxH7+39lN3FVOXu8TvPnawLHMZug==
+polyscript@^0.1.10:
+  version "0.1.10"
+  resolved "https://registry.yarnpkg.com/polyscript/-/polyscript-0.1.10.tgz#4efad4296083df300ed4c09d16397a75867d28de"
+  integrity sha512-NdO0inJIJyNgM8bYvD9z8aYbs1chQWq3iNtXjj7YrDT84A7IOVELPCFDlXzLU8UngpO/yQm3j4YrEoln89LbsA==
   dependencies:
     "@ungap/structured-clone" "^1.2.0"
     "@ungap/with-resolvers" "^0.1.0"

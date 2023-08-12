@@ -114,12 +114,12 @@ def pow_list(a, x, n):
     elif n == 2:
         powers = [a, a * x]
     else:
-        even_powers = pow_list(a, x * x, (n+1)//2)
-        if n%2:
+        even_powers = pow_list(a, x * x, (n + 1) // 2)
+        if n % 2:
             d = even_powers.pop()
         odd_powers = mpc.scalar_mul(x, even_powers)
         powers = [t for _ in zip(even_powers, odd_powers) for t in _]
-        if n%2:
+        if n % 2:
             powers.append(d)
     return powers
 
@@ -144,52 +144,57 @@ class SecureFraction:
 
 async def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--dataset', type=int, metavar='I',
-                        help=('dataset 0=uvlp (default), 1=wiki, 2=tb2x2, 3=woody, '
-                              '4=LPExample_R20, 5=sc50b, 6=kb2, 7=LPExample'))
-    parser.add_argument('-l', '--bit-length', type=int, metavar='L',
-                        help='override preset bit length for dataset')
+    parser.add_argument(
+        "-i",
+        "--dataset",
+        type=int,
+        metavar="I",
+        help="dataset 0=uvlp (default), 1=wiki, 2=tb2x2, 3=woody, 4=LPExample_R20, 5=sc50b, 6=kb2, 7=LPExample",
+    )
+    parser.add_argument("-l", "--bit-length", type=int, metavar="L", help="override preset bit length for dataset")
     parser.set_defaults(dataset=0, bit_length=0)
     args = parser.parse_args()
 
-    settings = [('uvlp', 8, 1, 2),
-                ('wiki', 6, 1, 2),
-                ('tb2x2', 6, 1, 2),
-                ('woody', 8, 1, 3),
-                ('LPExample_R20', 70, 1, 5),
-                ('sc50b', 104, 10, 55),
-                ('kb2', 536, 100000, 106),
-                ('LPExample', 110, 1, 178)]
+    settings = [
+        ("uvlp", 8, 1, 2),
+        ("wiki", 6, 1, 2),
+        ("tb2x2", 6, 1, 2),
+        ("woody", 8, 1, 3),
+        ("LPExample_R20", 70, 1, 5),
+        ("sc50b", 104, 10, 55),
+        ("kb2", 536, 100000, 106),
+        ("LPExample", 110, 1, 178),
+    ]
     name, bit_length, scale, n_iter = settings[args.dataset]
     if args.bit_length:
         bit_length = args.bit_length
 
-    with open(os.path.join('data', 'lp', name + '.csv')) as file:
+    with open(os.path.join("data", "lp", name + ".csv")) as file:
         T = list(csv.reader(file))
     m = len(T) - 1
     n = len(T[0]) - 1
     secint = mpc.SecInt(bit_length, n=m + n)  # force existence of Nth root of unity, N>=m+n
-    print(f'Using secure {bit_length}-bit integers: {secint.__name__}')
-    print(f'dataset: {name} with {m} constraints and {n} variables (scale factor {scale})')
-    T[0][-1] = '0'  # initialize optimal value
-    for i in range(m+1):
+    print(f"Using secure {bit_length}-bit integers: {secint.__name__}")
+    print(f"dataset: {name} with {m} constraints and {n} variables (scale factor {scale})")
+    T[0][-1] = "0"  # initialize optimal value
+    for i in range(m + 1):
         g = 0
-        for j in range(n+1):
+        for j in range(n + 1):
             T[i][j] = int(scale * float(T[i][j]))  # scale to integer
             g = math.gcd(g, T[i][j])
         g = max(g, 1) if i else 1  # skip cost row
-        for j in range(n+1):
+        for j in range(n + 1):
             T[i][j] = secint(T[i][j] // g)
 
     c = [-T[0][j] for j in range(n)]  # maximize c.x subject to A.x <= b, x >= 0
-    A = [T[i+1][:-1] for i in range(m)]
-    b = [T[i+1][-1] for i in range(m)]
+    A = [T[i + 1][:-1] for i in range(m)]
+    b = [T[i + 1][-1] for i in range(m)]
 
     Zp = secint.field
     N = Zp.nth
     w = Zp.root  # w is an Nth root of unity in Zp, where N >= m + n
     w_powers = [Zp(1)]
-    for _ in range(N-1):
+    for _ in range(N - 1):
         w_powers.append(w_powers[-1] * w)
     assert w_powers[-1] * w == 1
 
@@ -208,7 +213,7 @@ async def main():
 
         # find index of pivot row
         p_col = mpc.matrix_prod([p_col_index], T, True)[0]
-        constraints = [[T[i][-1] + (p_col[i] <= 0), p_col[i]] for i in range(1, m+1)]
+        constraints = [[T[i][-1] + (p_col[i] <= 0), p_col[i]] for i in range(1, m + 1)]
         p_row_index, (_, pivot) = argmin_rat(constraints)
 
         # reveal progress a bit
@@ -216,7 +221,7 @@ async def main():
         mx = await mpc.output(T[0][-1])
         cd = await mpc.output(previous_pivot)
         p = await mpc.output(pivot)
-        logging.info(f'Iteration {iteration}/{n_iter}: {mx / cd} pivot={p / cd}')
+        logging.info(f"Iteration {iteration}/{n_iter}: {mx / cd} pivot={p / cd}")
 
         # swap basis entries
         delta = mpc.in_prod(basis, p_row_index) - mpc.in_prod(cobasis, p_col_index)
@@ -236,12 +241,12 @@ async def main():
 
     mx = await mpc.output(T[0][-1])
     cd = await mpc.output(previous_pivot)  # common denominator for all entries of T
-    print(f'max = {mx} / {cd} / {scale} = {mx / cd / scale} in {iteration} iterations')
+    print(f"max = {mx} / {cd} / {scale} = {mx / cd / scale} in {iteration} iterations")
 
-    logging.info('Solution x')
+    logging.info("Solution x")
     sum_x_powers = [secint(0) for _ in range(N)]
     for i in range(m):
-        x_powers = pow_list(T[i+1][-1] / N, basis[i], N)
+        x_powers = pow_list(T[i + 1][-1] / N, basis[i], N)
         sum_x_powers = mpc.vector_add(sum_x_powers, x_powers)
     x = [None] * n
     for j in range(n):
@@ -252,7 +257,7 @@ async def main():
     Ax_bounded_by_b = mpc.all(Ax[i] <= b[i] * cd for i in range(m))
     x_nonnegative = mpc.all(x[j] >= 0 for j in range(n))
 
-    logging.info('Dual solution y')
+    logging.info("Dual solution y")
     sum_x_powers = [secint(0) for _ in range(N)]
     for j in range(n):
         x_powers = pow_list(T[0][j] / N, cobasis[j], N)
@@ -269,12 +274,13 @@ async def main():
     cx_eq_yb = cx == yb
     check = mpc.all([cx_eq_yb, Ax_bounded_by_b, x_nonnegative, yA_bounded_by_c, y_nonnegative])
     check = bool(await mpc.output(check))
-    print(f'verification c.x == y.b, A.x <= b, x >= 0, y.A >= c, y >= 0: {check}')
+    print(f"verification c.x == y.b, A.x <= b, x >= 0, y.A >= c, y >= 0: {check}")
 
     x = await mpc.output(x)
-    print(f'solution = {[a / cd for a in x]}')
+    print(f"solution = {[a / cd for a in x]}")
 
     await mpc.shutdown()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     mpc.run(main())

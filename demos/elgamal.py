@@ -52,7 +52,7 @@ def encrypt(g, h, M):
     if n is None:
         n = isqrt(-group.discriminant)
     u = random.randrange(n)
-    c = (g^u, (h^u) @ M)
+    c = (g ^ u, (h ^ u) @ M)
     return c
 
 
@@ -70,7 +70,7 @@ async def decrypt(C, x, public_out=True):
         A_x = await secgrp.repeat_public(A, -x)  # A^-x
         assert isinstance(A_x, group)
     else:
-        A_x = A^-x
+        A_x = A ^ -x
         assert isinstance(A_x, secgrp)
     M = A_x @ B
     return M
@@ -85,8 +85,8 @@ async def election(secgrp):
 
     # Each party encrypts a random vote:
     v = random.randint(0, 1)
-    print(f'''My vote: {v} (for {'"yes"' if v else '"no"'})''')
-    c = encrypt(g, h, g^v)  # additive homomorphic ElGamal
+    print(f"""My vote: {v} (for {'"yes"' if v else '"no"'})""")
+    c = encrypt(g, h, g ^ v)  # additive homomorphic ElGamal
     c = await mpc.transfer(c)
 
     # Accumulate all votes:
@@ -99,7 +99,7 @@ async def election(secgrp):
     M = await decrypt(C, x, public_out=True)
     T, t = group.identity, 0  # T = g^t
     while T != M:
-        T, t = T @ g, t+1
+        T, t = T @ g, t + 1
     print(f'Referendum result: {t} "yes" / {len(c) - t} "no"')
 
 
@@ -130,21 +130,18 @@ async def crypt_cycle(secgrp, M, public_out=True):
         M = secgrp.decode(M, Z)
     return M
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-g', '--group', type=int, metavar='G',
-                        help=('1=EC (default), 2=QR, 3=SG, 4=Cl'))
-    parser.add_argument('-b', '--batch-size', type=int, metavar='B',
-                        help='number of messages B in batch, B>=1')
-    parser.add_argument('-o', '--offset', type=int, metavar='O',
-                        help='offset O for batch of messages, O>=0')
-    parser.add_argument('--no-public-output', action='store_true',
-                        help='force secure (secret-shared) message upon decryption')
+    parser.add_argument("-g", "--group", type=int, metavar="G", help="1=EC (default), 2=QR, 3=SG, 4=Cl")
+    parser.add_argument("-b", "--batch-size", type=int, metavar="B", help="number of messages B in batch, B>=1")
+    parser.add_argument("-o", "--offset", type=int, metavar="O", help="offset O for batch of messages, O>=0")
+    parser.add_argument("--no-public-output", action="store_true", help="force secure (secret-shared) message upon decryption")
     parser.set_defaults(group=1, batch_size=1, offset=0)
     args = parser.parse_args()
 
     if args.group == 1:
-        secgrp = mpc.SecEllipticCurve('secp256k1', 'projective')
+        secgrp = mpc.SecEllipticCurve("secp256k1", "projective")
     elif args.group == 2:
         secgrp = mpc.SecQuadraticResidues(l=2048)
     elif args.group == 3:
@@ -154,23 +151,23 @@ if __name__ == '__main__':
             secgrp = mpc.SecClassGroup(l=32)
         else:
             secgrp = mpc.SecClassGroup(l=1024)
-    print(f'Using secure group: {secgrp.__name__}')
+    print(f"Using secure group: {secgrp.__name__}")
 
     mpc.run(mpc.start())
-    print('Boardroom election')
-    print('------------------')
+    print("Boardroom election")
+    print("------------------")
     mpc.run(election(secgrp))
     print()
 
-    print('Encryption/decryption tests')
-    print('---------------------------')
+    print("Encryption/decryption tests")
+    print("---------------------------")
     for m in range(args.batch_size):
         m += 1 + args.offset
-        print(f'Plaintext sent: {m}')
+        print(f"Plaintext sent: {m}")
         p = mpc.run(crypt_cycle(secgrp, m, not args.no_public_output))
         if args.no_public_output:
             # p is a secure
             p = mpc.run(mpc.output(p))
-        print(f'Plaintext received: {p}')
+        print(f"Plaintext received: {p}")
         assert m == p, (m, p)
     mpc.run(mpc.shutdown())
