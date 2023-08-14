@@ -90,9 +90,6 @@ export function init(mpyc: MPyCManager) {
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     tooltipTriggerList.forEach(tooltipTriggerEl => new Tooltip(tooltipTriggerEl,));
 
-    if (window.innerWidth < 800) {
-        ui.demoSelector.size = 0;
-    }
     ui.demoSelector.selectedIndex = parseInt(localStorage.demoSelectorSelectedIndex) || 1;
 
     ui.demoSelector.onchange = async () => {
@@ -127,10 +124,16 @@ export function init(mpyc: MPyCManager) {
         resizeTimeout = setTimeout(() => {
             console.log("resized editor!")
             document.fitAddon.fit();
+
         }, 50);
     });
 
     ro.observe(document.querySelector(".xterm")!)
+
+    resizeDemoSelector();
+    window.addEventListener('resize', () => {
+        resizeDemoSelector();
+    })
     // document.querySelector(".xterm")?.addEventListener('resize', () => {
     //     console.log("resized editor!")
     //     ui.editor.requestMeasure();
@@ -143,6 +146,10 @@ export function init(mpyc: MPyCManager) {
         handleSelector: ".splitter-horizontal",
         resizeWidth: false
     });
+}
+
+function resizeDemoSelector() {
+    ui.demoSelector.size = window.innerHeight / (4 * 21)
 }
 
 function updateEditor(code: string) {

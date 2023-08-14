@@ -2,13 +2,47 @@
 // @import "./theme-solar-before.scss";
 $tooltip-max-height: 300px;
 $tooltip-max-width: 300px;
+$material-icons-font-size: 16px;
+$grid-breakpoints: (
+  xs: 0,
+  sm: 300px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  xxl: 1400px
+);
 @import "./theme-superhero-before.scss";
 @import "bootstrap/scss/bootstrap";
 @import "./theme-superhero-after.scss";
 @import "bootstrap-icons/font/bootstrap-icons.css";
+@import 'material-icons/iconfont/material-icons.css';
+@import 'material-icons/css/material-icons.css';
+@import "@fortawesome/fontawesome-free/css/all.css";
 @import "./resizable.scss";
 
+$material-icons-font-size: 16px;
+
 // @import "./theme-solar-after.scss";
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+.material-icons,
+.material-icons-outlined {
+  vertical-align: -6px;
+}
 
 #terminal {
   height: calc(100% - 100px);
@@ -32,7 +66,7 @@ $tooltip-max-width: 300px;
 
 @media (min-width: 576px) {
   .container-fluid {
-    overflow: hidden;
+    // overflow: hidden;
   }
 }
 
@@ -53,11 +87,19 @@ $tooltip-max-width: 300px;
 }
 
 body {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   //   line-height: 1.5;
   //   font-weight: 400;
   //   margin: 0;
   //   padding: 1em;
+}
+
+body {
+  font-family: "Calibri", "Roboto", sans-serif;
+  font-family: Inter, system-ui;
+  font-weight: 300;
+  margin: 0;
+  padding: 1em;
+  word-break: break-word;
 }
 
 // .camera-button::file-selector-button {
@@ -86,6 +128,33 @@ body {
   color: $form-control-color;
 }
 
+
+label {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+}
+
+.form-floating>.form-control:not(:placeholder-shown):focus~label::after {
+  background-color: $form-control-focus-background;
+}
+
+.form-floating>.form-control:placeholder-shown:focus~label::after {
+  background-color: $form-control-focus-background;
+}
+
+// label:focus {
+//   background-color: $form-control-focus-background !important;
+// }
+
+.form-floating>.form-control:not(:placeholder-shown)~label::after {
+  background-color: $form-control-background;
+}
+
+.form-control:focus {
+  background-color: $form-control-focus-background;
+  color: $form-control-color;
+}
+
 .form-control {
   background-color: $form-control-background;
   color: $form-control-color;
@@ -97,6 +166,8 @@ body {
 
 #knownPeers {
   font-size: 14px;
+  max-height: 150px;
+  overflow: auto;
 }
 
 

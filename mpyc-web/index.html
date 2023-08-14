@@ -12,44 +12,90 @@
 
 <body>
   <div class="container-fluid h-100">
-    <div class="row h-100">
-      <div class="col-lg-3">
-        <div class="col-sm">
-          <h1>MPyC Web</h1>
-        </div>
+    <h2 class="d-flex align-items-center justify-content-center">MPyC Web</h2>
+    <div class="row">
+      <div class="col-3" style="min-width: 300px;">
+        <!-- My Party ID -->
         <div class="peer-ids">
-          <!-- My Party ID -->
           <div class="input-group mb-2">
-            <span id="basic-addon0" class="input-group-text"><strong>My ID</strong></span>
-            <input id="myPeerID" type="text" readonly class="form-control w-30" aria-describedby="basic-addon0"
-              onClick="this.select();">
+            <div class="form-floating">
+              <input type="text" class="form-control" onClick="this.select();" readonly id="myPeerID"
+                placeholder="My ID">
+              <label for="myPeerID">My ID</label>
+            </div>
+
             <!-- My Party ID - Buttons -->
             <button id="show-qr" data-bs-toggle="tooltip" data-bs-html="true"
               data-bs-title="<canvas id='qr'></canvas><br /><span style='font-size: 10px !important;' id='qrURL'></span>"
-              class="btn btn-primary bi bi-qr-code">
+              class="btn btn-primary">
+              <!-- <i class="bi bi-qr-code"></i> -->
+              <i class="fa fa-qrcode"></i>
             </button>
-            <button id="copyPeerID" data-bs-toggle="tooltip" data-bs-title="Copy to clipboard"
-              class="btn btn-primary bi bi-clipboard">
+            <button id="copyPeerID" data-bs-toggle="tooltip" style="width: 40px;" data-bs-title="Copy to clipboard"
+              class="btn btn-primary">
+              <!-- <i class="bi bi-clipboard"></i> -->
+              <i class="fa-regular fa-clipboard"></i>
             </button>
-            <button id="copyPeerID" data-bs-toggle="tooltip" data-bs-title="Copied!"
-              class="btn btn-success bi bi-check2 " style="display: none;">
+            <button id="copyPeerID" data-bs-toggle="tooltip" data-bs-title="Copied!" class="btn btn-success"
+              style="display: none;">
+              <!-- <i class="bi bi-check2"></i> -->
+              <i class="fa fa-check"></i>
             </button>
-            <button id="resetPeerID" data-bs-toggle="tooltip" data-bs-title="Reset peer ID"
-              class="btn btn-primary bi-arrow-clockwise"></button>
+            <button id="resetPeerID" data-bs-toggle="tooltip" data-bs-title="Reset peer ID" class="btn btn-primary">
+              <!-- <i class="bi bi-arrow-repeat"></i> -->
+              <!-- <i class="fa fa-repeat"></i> -->
+              <i class="fa fa-rotate"></i>
+              <!-- <i class="material-icons mi-cached"></i> -->
+            </button>
           </div>
-
           <!-- Host Party ID -->
           <div class="input-group mb-3">
-            <span class="input-group-text"><strong>Party ID</strong></span>
-            <input id="hostPeerID" type="text" onClick="this.select();" class="form-control w-30" />
+            <div class="form-floating">
+              <input id="hostPeerID" type="text" onClick="this.select();" class="form-control w-30"
+                placeholder="Party ID" />
+              <label for="hostPeerID">
+                Party ID
+                <!-- <strong>Party ID</strong> -->
+              </label>
+            </div>
             <!-- Host Party ID - Buttons -->
             <input type="file" id="scan-qr" class="camera-button" accept="image/*" capture="environment">
-            <button id="connect" data-bs-toggle="tooltip" data-bs-title="Connect to peer"
-              class="btn btn-primary bi-link-45deg"></button>
+
+            <button id="connect" data-bs-toggle="tooltip" data-bs-title="Connect to peer" class="btn btn-primary">
+              <!-- <i class="bi bi-link-45deg"></i> -->
+              <!-- <i class="fa fa-rss"></i> -->
+              <!-- <i class="fa fa-tower-cell"></i> -->
+              <!-- <i class="fa fa-tower-broadcast"></i> -->
+              <!-- <i class="material-icons">sensors</i> -->
+              <i class="material-icons mi-link"></i>
+              <!-- <i class="material-icons mi-cached"></i> -->
+              <!-- <i class="fa fa-globe"></i> -->
+              <!-- <i class="fa fa-wifi"></i> -->
+              <!-- <i class="fa fa-circle-nodes"></i> -->
+              <!-- <i class="fa fa-link"></i> -->
+            </button>
           </div>
         </div>
-
+        <!-- Demos -->
         <div class="mb-3">
+          <h5> MPC Demos: </h5>
+          <select size=15 id="select-demo" class="form-select" aria-label="Select Demo">
+            <option value="your-code">Your Code</option>
+            <option selected value="./py/main.py">Demo</option>
+            <option value="./py/demos/secretsanta.py">Secret Santa</option>
+            <option value="./py/demos/helloworld.py">Hello World</option>
+            <option value="./py/demos/oneliners.py">Oneliners</option>
+            <option value="./py/demos/bnnmnist.py">Binarized Neural Network MNIST classifier</option>
+            <option value="./py/demos/cnnmnist.py">Convolutional Neural Network MNIST classifier</option>
+            <option value="./py/demos/dsa.py">Threshold DSA</option>
+            <option value="./py/demos/aes.py">Threshold AES cipher</option>
+            <option value="./py/demos/lpsolver.py">Linear Programming (LP) solver</option>
+            <option value="./py/demos/kmsurvival.py">Kaplan-Meier surivival analysis</option>
+            <option value="./py/demos/elgamal.py">Threshold ElGamal Cryptosystem</option>
+          </select>
+        </div>
+
+        <div class="connected-parties mb-3">
           <!-- Connected Parties -->
           <h5> Connected Parties: </h5>
           <ul id="knownPeers" class="list-group" start="6"> </ul>
@@ -59,59 +105,50 @@
         <div class="input-group mb-3">
           <textarea id="chatInput" type="text" class="form-control"
             placeholder="Send a message to all parties..."></textarea>
-          <button id="sendMessageButton" data-bs-toggle="tooltip" data-bs-title="Send"
-            class="btn btn-primary bi-send"></button>
+          <button id="sendMessageButton" data-bs-toggle="tooltip" data-bs-title="Send" class="btn btn-primary">
+            <!-- <i class="bi bi-send"></i> -->
+            <i class="material-icons mi-send"></i>
+          </button>
         </div>
 
-        <!-- Demos -->
-        <h5> Demos: </h5>
-        <select size=15 id="select-demo" class="form-select" aria-label="Select Demo">
-          <option value="your-code">Your Code</option>
-          <option selected value="./py/main.py">Demo</option>
-          <option value="./py/demos/secretsanta.py">Secret Santa</option>
-          <option value="./py/demos/helloworld.py">Hello World</option>
-          <option value="./py/demos/oneliners.py">Oneliners</option>
-          <option value="./py/demos/bnnmnist.py">Binarized Neural Network MNIST classifier</option>
-          <option value="./py/demos/cnnmnist.py">Convolutional Neural Network MNIST classifier</option>
-          <option value="./py/demos/dsa.py">Threshold DSA</option>
-          <option value="./py/demos/aes.py">Threshold AES cipher</option>
-          <option value="./py/demos/lpsolver.py">Linear Programming (LP) solver</option>
-          <option value="./py/demos/kmsurvival.py">Kaplan-Meier surivival analysis</option>
-          <option value="./py/demos/elgamal.py">Threshold ElGamal Cryptosystem</option>
-        </select>
       </div>
-      <div class="col-lg-9 mb-3 h-100">
+      <div class="col-sm h-100" style="min-width:400px; ">
+        <!-- Terminal - Buttons -->
+        <div class="input-group">
+          <button id="startButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC" class="btn btn-primary">
+            <!-- <i class="bi bi-play-btn-fill"></i> -->
+            <i class="fa fa-play"></i>
+          </button>
+          <button id="startAsyncButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC Async" class="btn btn-primary">
+            <!-- <i class="bi bi-play"></i> -->
+            <i class="fa fa-circle-play"></i>
+            <!-- <i class="material-icons-outlined mi-play-arrow"></i> -->
+          </button>
+          <button id="stopButton" data-bs-toggle="tooltip" data-bs-title="Restart" class="btn btn-primary">
+            <!-- <i class="bi bi-arrow-repeat"></i> -->
+            <i class="fa fa-rotate"></i>
+            <!-- <i class="material-icons mi-cached"></i> -->
+          </button>
+          <button id="clearTerminal" data-bs-toggle="tooltip" data-bs-title="Clear terminal" class="btn btn-primary">
+            <!-- <i class="bi bi-trash"></i> -->
+            <i class="fa-regular fa-trash-can"></i>
+            <!-- <i class="material-icons mi-cleaning-services"></i> -->
+          </button>
+        </div>
         <div class="panel-container-vertical">
           <div class="panel-top">
             <!-- Editor -->
-            <div class="input-group">
-              <button id="startButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC"
-                class="btn btn-primary bi bi-play-btn-fill"></button>
-              <button id="startAsyncButton" data-bs-toggle="tooltip" data-bs-title="Run MPyC Async"
-                class="btn btn-primary bi bi-play"></button>
-              <button id="stopButton" data-bs-toggle="tooltip" data-bs-title="Restart"
-                class="btn btn-primary bi-arrow-clockwise"></button>
-              <button id="clearTerminal" data-bs-toggle="tooltip" data-bs-title="Clear terminal"
-                class="btn btn-primary bi-trash"></button>
-            </div>
             <div id="editor" class="editor rezisable"></div>
           </div>
 
           <div class="splitter-horizontal">
           </div>
           <div class="panel-bottom">
-            <!-- Terminal - Buttons -->
             <!-- Terminal -->
             <!-- <div id="terminal" class="h-100"></div> -->
             <div id="terminal" class=""></div>
           </div>
         </div>
-      </div>
-
-    </div>
-    <div class="row">
-      <div class="col-lg-12">
-
       </div>
     </div>
 

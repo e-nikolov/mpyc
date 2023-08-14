@@ -19,6 +19,7 @@ $gray-800: #343a40 !default;
 $gray-900: #212529 !default;
 $black: #000 !default;
 
+$form-control-focus-background: $gray-700;
 $form-control-background: $gray-800;
 $form-control-color: white;
 
@@ -85,7 +86,7 @@ $input-color: $gray-900 !default;
 $input-border-color: transparent !default;
 $input-border-width: 0 !default;
 
-$input-placeholder-color: $gray-500 !default;
+$input-placeholder-color: $gray-400 !default;
 
 $input-group-addon-color: $body-color !default;
 $input-group-addon-bg: $gray-600 !default;
