@@ -40,32 +40,6 @@ mpc_coro = asyncoro.mpc_coro
 mpc_coro_no_pc = asyncoro._mpc_coro_no_pc
 
 
-class Awaitable:
-    def __await__(self):
-        value = yield 7
-        logging.debug("Awaitable received:", value)
-        value = yield 2
-        logging.debug("Awaitable received:", value)
-        value = yield 3
-        logging.debug("Awaitable received:", value)
-        return 42
-
-
-class TCPTransportManager:
-    def __init__(self, runtime):
-        self.runtime = runtime
-
-    def send(self, peer_pid, data):
-        logging.debug("sending", data)
-        self.runtime.parties[peer_pid].protocol.send(self.runtime._program_counter[0], data)
-
-    def receive(self, peer_pid):
-        return self.runtime.parties[peer_pid].protocol.receive(self.runtime._program_counter[0])
-
-    def close_connection(self, peer_pid):
-        pass
-
-
 class Runtime:
     """MPyC runtime secure against passive attacks.
 
@@ -121,10 +95,10 @@ class Runtime:
         self._loop.set_exception_handler(asyncoro.exception_handler)  # exceptions re MPyC coroutine
         self.start_time = None
         self.aggregate_load = 0.0 * 10000  # unit: basis point 0.0001 = 0.01%
-        self.stats_send = 0
-        self.stats_receive = 0
-        self.stats_send_to = {}
-        self.stats_receive_from = {}
+        self.stats_messages_sent = 0
+        self.stats_messages_received = 0
+        self.stats_messages_sent_to = {}
+        self.stats_messages_received_from = {}
 
     @property
     def threshold(self):
@@ -164,21 +138,21 @@ class Runtime:
 
     def _send_message(self, peer_pid, data):
         """Send data to given peer, labeled by current program counter."""
-        # logging.debug(f"sending {data} to peer {peer_pid}")
-        self.stats_send += 1
-        if peer_pid not in self.stats_send_to:
-            self.stats_send_to[peer_pid] = 0
-        self.stats_send_to[peer_pid] += 1
+        logging.debug(f"sending {data.hex()} to peer {peer_pid}")
+        self.stats_messages_sent += 1
+        if peer_pid not in self.stats_messages_sent_to:
+            self.stats_messages_sent_to[peer_pid] = 0
+        self.stats_messages_sent_to[peer_pid] += 1
         # logging.debug("AAAA")
         self.parties[peer_pid].protocol.send(self._program_counter[0], data)
         # logging.debug("BBBB")
 
     def _receive_message(self, peer_pid):
         """Receive data from given peer, labeled by current program counter."""
-        self.stats_receive += 1
-        if peer_pid not in self.stats_receive_from:
-            self.stats_receive_from[peer_pid] = 0
-        self.stats_receive_from[peer_pid] += 1
+        self.stats_messages_received += 1
+        if peer_pid not in self.stats_messages_received_from:
+            self.stats_messages_received_from[peer_pid] = 0
+        self.stats_messages_received_from[peer_pid] += 1
         return self.parties[peer_pid].protocol.receive(self._program_counter[0])
 
     def _exchange_shares(self, in_shares):
@@ -216,35 +190,9 @@ class Runtime:
         self.aggregate_load -= 10000
         await self.barrier(name=name)
 
-    def rr(self, f):
-        try:
-            f.send(None)
-            f.send(1)
-            f.send(2)
-            f.send(3)
-        except StopIteration as exc:
-            return exc.value
-
     @mpc_coro
     async def out(self, o):
         return Future()
-
-    async def foo(self):
-        logging.debug("foo start")
-        result = Awaitable()
-        await result
-        logging.debug("foo received result:", result)
-        logging.debug("foo end")
-
-    async def xprint(self):
-        logging.debug(await self.out("0"))
-        logging.debug(await self.out(11))
-        logging.debug(await self.out(22))
-        logging.debug(await self.out(33))
-
-    def run2(self, f):
-        f.send(None)
-        f.send(None)
 
     def run(self, f):
         """Run the given coroutine or future until it is done."""
@@ -254,45 +202,6 @@ class Runtime:
             while True:
                 try:
                     f.send(None)
-                except StopIteration as exc:
-                    return exc.value
-
-        return self._loop.run_until_complete(f)
-
-    def logging(self, enable=None):
-        """Toggle/enable/disable logging."""
-        if enable is None:
-            self._logging_enabled = not self._logging_enabled
-        else:
-            self._logging_enabled = enable
-        if self._logging_enabled:
-            logging.disable(logging.NOTSET)
-        else:
-            logging.disable(logging.INFO)
-
-    def run3(self, f):
-        """Run the given coroutine or future until it is done."""
-        logging.debug(self._loop.is_running())
-        logging.debug(asyncio.iscoroutine(f))
-        if self._loop.is_running():
-            if not asyncio.iscoroutine(f):
-                f = asyncoro._wrap_in_coro(f)
-            i = 1
-
-            while True:
-                try:
-                    logging.debug(f"iter #{i}")
-                    logging.debug(f.__name__)
-                    logging.debug(f.__class__)
-                    logging.debug("sending None")
-                    f.send(None)
-                    logging.debug("sending 1")
-                    f.send([1, 0])
-                    logging.debug("sending 2")
-                    f.send([2, 0])
-                    logging.debug("sending 3")
-                    f.send([3, 0])
-                    i += 1
                 except StopIteration as exc:
                     return exc.value
 
@@ -341,11 +250,9 @@ class Runtime:
             else:
                 context = None
             factory = lambda: asyncoro.MessageExchanger(self)
-            logging.debug("@@@@@@@@@@@@@@@@@@@ - creating listener")
 
             # This will use the factory to create a new asyncoro.MessageExchanger with no peer_pid for each incoming connection
             server = await loop.create_server(factory, port=listen_port, ssl=context)
-            logging.debug("@@@@@@@@@@@@@@@@@@@ - done creating listener")
             logging.debug(f"Listening on port {listen_port}")
 
         # Connect to all parties > self.pid.
@@ -410,17 +317,18 @@ class Runtime:
         # Close connections to all parties > self.pid.
         logging.debug("Closing connections with other parties")
         for peer in self.parties[self.pid + 1 :]:
+            logging.info("Closing connection with peer %d", peer.pid)
             peer.protocol.close_connection()
         await self.parties[self.pid].protocol
 
-        logging.debug("stats_send", self.stats_send)
-        logging.debug("stats_receive", self.stats_receive)
+        logging.info(f"stats_messages_sent:\t\t{self.stats_messages_sent}")
+        logging.info(f"stats_messages_received:\t\t{self.stats_messages_received}")
 
-        for peer_pid in self.stats_send_to:
-            logging.debug("stats_send_to", peer_pid, self.stats_send_to[peer_pid])
+        for peer_pid in self.stats_messages_sent_to:
+            logging.info(f"stats_messages_sent_to:\t\t{peer_pid}, {self.stats_messages_sent_to[peer_pid]}")
 
-        for peer_pid in self.stats_receive_from:
-            logging.debug("stats_receive_from", peer_pid, self.stats_receive_from[peer_pid])
+        for peer_pid in self.stats_messages_received_from:
+            logging.info(f"stats_messages_received_from:\t\t{peer_pid}, {self.stats_messages_received_from[peer_pid]}")
 
     async def __aenter__(self):
         """Start MPyC runtime when entering async with context."""
@@ -2785,7 +2693,9 @@ class Runtime:
                 z = thresha.pseudorandom_share_zero(field, m, self.pid, prfs, self._prss_uci(), h)
                 for i in range(h):
                     r2s[i] += z[i]
+            # logging.debug("aaaaaaaaaa")
             r2s = await self.output(r2s, threshold=2 * t)
+            # logging.debug("bbbbbbbbbbbbb")
             for r, r2 in zip(rs, r2s):
                 if r2.value != 0:
                     h -= 1

@@ -2,6 +2,8 @@
 and computation of secret-shared values.
 """
 
+import json
+from pprint import pformat
 import sys
 import traceback
 import struct
@@ -17,6 +19,8 @@ import logging
 from asyncio import streams, transports, get_event_loop
 
 import time
+
+logging = logging.getLogger(__name__)
 
 
 class MessageExchanger(Protocol):
@@ -46,9 +50,18 @@ class MessageExchanger(Protocol):
 
     def _key_transport_done(self):
         rt = self.runtime
+        logging.debug(f"......................... 1: {rt.pid} - {self.peer_pid}")
+        logging.debug(f"......................... 2: {rt.pid} - {self.peer_pid}")
         rt.parties[self.peer_pid].protocol = self
+        logging.debug(f"......................... 3: {rt.pid} - {self.peer_pid}")
         if all(p.protocol is not None for p in rt.parties):
+            logging.debug(f"......................... 4: {rt.pid} - {self.peer_pid}")
+            logging.debug(rt.parties[rt.pid])
+            logging.debug(rt.parties[rt.pid].protocol)
             rt.parties[rt.pid].protocol.set_result(None)
+            logging.debug(f"......................... 5: {rt.pid} - {self.peer_pid}")
+
+        logging.debug(f"......................... 6: {rt.pid} - {self.peer_pid}")
 
     def connection_made(self, transport):
         """Called when a connection is made.
@@ -56,7 +69,7 @@ class MessageExchanger(Protocol):
         If this party is a client for this connection, it sends its identity
         to the peer as well as any PRSS keys.
         """
-        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made???")
+        logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made???: {self.peer_pid}, {transport}")
         self.transport = transport
         # This is a client connection to a server peer
         # peer_pid is the PID of the associated server peer
@@ -64,31 +77,31 @@ class MessageExchanger(Protocol):
             rt = self.runtime
             m = len(rt.parties)
             t = rt.threshold
-            logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 2")
+            logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 2: {self.peer_pid}")
             pid_keys = [rt.pid.to_bytes(2, "little")]  # send pid
-            logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 3")
+            logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 3: {self.peer_pid}")
             if not rt.options.no_prss:
-                logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 4")
+                logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 4: {self.peer_pid}")
                 for subset in itertools.combinations(range(m), m - t):
-                    logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 5")
+                    logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 5: {self.peer_pid}")
                     if subset[0] == rt.pid and self.peer_pid in subset:
-                        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6")
+                        logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6: {self.peer_pid}")
                         x = rt._prss_keys
-                        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.0.1")
+                        logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.0.1: {self.peer_pid}")
                         logging.debug(x)
-                        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.0.2")
+                        logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.0.2: {self.peer_pid}")
                         logging.debug(subset)
-                        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.0.3")
+                        logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.0.3: {self.peer_pid}")
                         x = x[subset]
-                        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.1")
+                        logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.1: {self.peer_pid}")
                         logging.debug(pid_keys)
-                        logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.2")
+                        logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 6.2: {self.peer_pid}")
                         pid_keys.append(x)  # send PRSS keys
-                    logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 7")
+                    logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 7: {self.peer_pid}")
             transport.writelines(pid_keys)
-            logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 8")
+            logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 8: {self.peer_pid}")
             self._key_transport_done()
-            logging.debug("^^^^^^^^^^^^^^^^^^^^^ Connection made??? 9")
+            logging.debug(f"^^^^^^^^^^^^^^^^^^^^^ Connection made??? 9: {self.peer_pid}")
 
     def send(self, pc, payload):
         """Send payload labeled with pc to the peer.
@@ -100,6 +113,8 @@ class MessageExchanger(Protocol):
         """
         payload_size = len(payload)
         fmt = f"<Iq{payload_size}s"
+        if self.transport is None:
+            raise Exception(f"transport for pid {self.peer_pid} is None")
         self.transport.write(struct.pack(fmt, payload_size, pc, payload))
 
     def data_received(self, data):
@@ -110,6 +125,7 @@ class MessageExchanger(Protocol):
 
         First message from peer is processed differently if peer is a client.
         """
+        logging.debug(f"received {data.hex()} from peer {self.peer_pid}")
         self.bytes.extend(data)
         # no associated peer_pid yet, so we're a server
         if self.peer_pid is None:  # peer is client (this party is server)
@@ -172,7 +188,7 @@ class MessageExchanger(Protocol):
         """
         if exc:
             raise exc
-
+        logging.info("Connection with peer %d closed", self.peer_pid)
         rt = self.runtime
         rt.parties[self.peer_pid].protocol = None
         if all(p.protocol is None for p in rt.parties if p.pid != rt.pid):
@@ -180,6 +196,7 @@ class MessageExchanger(Protocol):
 
     def close_connection(self):
         """Close connection with the peer."""
+        logging.info("Closing connection with peer %d", self.peer_pid)
         self.transport.close()
 
 
@@ -408,12 +425,6 @@ def _mpc_coro_no_pc(func):
     return mpc_coro(func, pc=False)
 
 
-def printt(str):
-    # logging.debug(str)
-    logging.debug(str)
-    #
-
-
 def mpc_coro(func, pc=True):
     """Decorator turning coroutine func into an MPyC coroutine.
 
@@ -426,32 +437,32 @@ def mpc_coro(func, pc=True):
 
     @functools.wraps(func)
     def typed_asyncoro(*args, **kwargs):
-        # printt("??????????????? 1")
+        # logging.debug("??????????????? 1")
         runtime._pc_level += 1
-        # printt("??????????????? 2")
+        # logging.debug("??????????????? 2")
         coro = func(*args, **kwargs)
-        # printt("??????????????? 3")
+        # logging.debug("??????????????? 3")
         if rettype:
             decl = returnType(rettype, wrap=False)
-            # printt("??????????????? 4")
+            # logging.debug("??????????????? 4")
         else:
-            # printt("??????????????? 5")
+            # logging.debug("??????????????? 5")
             try:
                 decl = coro.send(None)
             except StopIteration as exc:
-                # logging.debug("??????????????? 6", exc.value, exc.__class__)
+                # logging.debug(f"??????????????? 6 {exc.value}, {exc.__class__}")
                 runtime._pc_level -= 1
                 return exc.value
 
             except Exception:
-                # printt("??????????????? 7")
+                # logging.debug("??????????????? 7")
                 runtime._pc_level -= 1
                 raise
 
         if runtime.options.no_async:
-            # printt("??????????????? 8")
+            # logging.debug("??????????????? 8")
             while True:
-                # printt("??????????????? 9")
+                # logging.debug("??????????????? 9")
                 try:
                     coro.send(None)
                 except StopIteration as exc:
@@ -468,31 +479,77 @@ def mpc_coro(func, pc=True):
             coro = _wrap_in_coro(_ProgramCounterWrapper(runtime, coro))
         task = Task(coro, loop=runtime._loop)
         task.f_back = sys._getframe(1)  # enclosing MPyC coroutine call
+        # logging.debug("cccccccccccccccc")
         task.add_done_callback(lambda t: _reconcile(decl, t))
+        # logging.debug("dddddddddddddddd")
         return _ncopy(decl)
 
-    # printt("??????????????? 999")
+    # logging.debug("??????????????? 999")
     return typed_asyncoro
+
+
+def sdump(obj):
+    s = ""
+    if s == "":
+        try:
+            s = "json: " + pformat(json.dumps(obj), indent=4)
+        except:
+            pass
+    if s == "":
+        try:
+            s = "vars: " + pformat(vars(obj), indent=4)
+        except:
+            pass
+
+    if s == "":
+        try:
+            s = "dict: " + pformat(dict(obj), indent=4)
+        except:
+            pass
+
+    if s == "":
+        try:
+            s = "attrs: "
+
+            for attr in dir(obj):
+                s += f"obj.%s = %r\n" % (attr, getattr(obj, attr))
+        except:
+            pass
+    if s == "":
+        try:
+            s = "pformat: " + pformat(obj, indent=4)
+        except:
+            pass
+    return f"type: {type(obj)}: {s}"
 
 
 def exception_handler(loop, context):
     """Handle some MPyC coroutine related exceptions."""
     if "handle" in context:
         if "mpc_coro" in context["message"]:
-            task = context["handle"]._args[0]
+            args = context["handle"]._args
             del context["message"]  # suppress detailed message
             del context["handle"]  # suppress details of handle
+
             loop.default_exception_handler(context)
-            print("Traceback (enclosing MPyC coroutine call):")
-            traceback.print_stack(task.f_back)  # TODO: extend call chain
+            for arg in args:
+                traceback.print_stack(arg.f_back)
+                print(arg, file=sys.stderr)
             return
 
     elif "task" in context:
+        # logging.debug("iiiiiiiiiiiiiii")
         cb = context["task"]._callbacks[0]
+        # logging.debug("jjjjjjjjjjjjjjj")
         if isinstance(cb, tuple):
+            # logging.debug("kkkkkkkkkkkkkkk")
             cb = cb[0]  # NB: drop context parameter
         if "mpc_coro" in cb.__qualname__:
+            # logging.debug("lllllllllllllll")
             if not loop.get_debug():  # Unless asyncio debug mode is enabled,
+                # logging.debug("mmmmmmmmmmmmmmm")
                 return  # suppress 'Task was destroyed but it is pending!' message.
+    # logging.debug("nnnnnnnnnnnnnnn")
 
     loop.default_exception_handler(context)
+    print(sdump(context["exception"]), file=sys.stderr)
