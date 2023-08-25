@@ -159,10 +159,16 @@ gzipOpen = gzip.open
 
 # PyScript automatically ungzips files, so we patch gzip.open to return a regular file object
 def gzipOpenPatch(filename, mode="rb", compresslevel=9, encoding=None, errors=None, newline=None):
+    f = None
+
     try:
-        return gzipOpen(filename, mode, compresslevel, encoding, errors, newline)
-    except:
-        return open(filename, mode, -1, encoding, errors, newline)
+        f = gzipOpen(filename, mode, compresslevel, encoding, errors, newline)
+        print("!!!!!!!!!!!!!!!!!!!!!!!")
+    except gzip.BadGzipFile:
+        print("????????????????")
+        f = open(filename, mode, -1, encoding, errors, newline)
+
+    return f
 
 
 gzip.open = gzipOpenPatch

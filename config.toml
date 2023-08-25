@@ -33,7 +33,6 @@ files = [
     "patches.py",
     "peerjs.py",
     "redirect_stdout.py",
-    "state.py",
     "transport.py",
     "worker.py"
 ]
