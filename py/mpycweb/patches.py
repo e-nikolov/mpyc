@@ -1,14 +1,13 @@
 from asyncio import Future, Task
 import time
 import types
-from typing import Coroutine
+from typing import Awaitable, Coroutine
 
 from .debug import *
 
 from .transport import *
 from .worker import *
 from . import peerjs
-from . import state
 from mpyc.runtime import mpc, Runtime
 import datetime
 import logging
@@ -21,7 +20,7 @@ from polyscript import xworker
 pjs = peerjs.Client(xworker.sync)
 
 
-def run(self, f):
+def run2(self, f):
     """Run the given coroutine or future until it is done."""
     logging.debug(f"monkey patched run() {f.__class__.__name__}")
 
@@ -34,23 +33,21 @@ def run(self, f):
                 except StopIteration as exc:
                     return exc.value
         else:
-            # return asyncio.ensure_future(f)
-            return self._loop.run_until_complete(f)
+            return asyncio.ensure_future(f)
 
-    return self._loop.run_until_complete(f)
+    return asyncio.ensure_future(f)
 
 
-mpc.run = types.MethodType(run, mpc)
+async def run(self, f):
+    """Run the given coroutine or future until it is done."""
+    if asyncio.iscoroutine(f):
+        return await f
+    if asyncio.isfuture(f):
+        return await f
+    return f
 
-# def run(self, f: Coroutine | Future) -> None:
-#     logging.debug("monkey patched run() %s", f.__class__.__name__)
-#     asyncio.ensure_future(f)
-#     # if not asyncio.iscoroutine(f):
-#     #     print("not a coroutine", f.__class__.__name__)
-#     #     f = asyncoro._wrap_in_coro(f)
 
-#     # print("coroutine??", f.__class__.__name__)
-#     # state.mpc_coros.append(f)
+mpc.run = types.MethodType(run2, mpc)
 
 
 # The regular start() starts TCP connections, which don't work in the browser.
@@ -162,7 +159,10 @@ gzipOpen = gzip.open
 
 # PyScript automatically ungzips files, so we patch gzip.open to return a regular file object
 def gzipOpenPatch(filename, mode="rb", compresslevel=9, encoding=None, errors=None, newline=None):
-    return open(filename, mode, -1, encoding, errors, newline)
+    try:
+        return gzipOpen(filename, mode, compresslevel, encoding, errors, newline)
+    except:
+        return open(filename, mode, -1, encoding, errors, newline)
 
 
 gzip.open = gzipOpenPatch

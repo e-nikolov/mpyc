@@ -1,8 +1,11 @@
 ## Receiving stuff from the main JS thread
 import asyncio
+from asyncio import futures
 import json
 import logging
-from typing import Callable, Any, Coroutine
+import traceback
+import types
+from typing import Awaitable
 
 from mpyc.runtime import Party, mpc
 from . import state
@@ -11,8 +14,12 @@ from . import state
 from polyscript import xworker
 
 from .debug import *
+import ast
+from asyncio import AbstractEventLoop
 
 logging = logging.getLogger(__name__)
+
+import inspect
 
 
 async def run_mpc(data):
@@ -33,55 +40,92 @@ async def run_mpc(data):
     # reinitialize the mpyc runtime with the new parties
     mpc.__init__(data.pid, parties, mpc.options)
 
-    import sys
-
-    __name__ = "__main__"
-    code = "".join(f"\n{line}" for line in data.exec.split("\n")) + "\n"
-
-    code = data.exec
-    code = "__name__ = '__main__'\n" + code + "\n"
-
-    # sys.path.append(os.path.join(os.path.dirname(__file__), pointdir))
-    exec(code, globals())
-    # await async_exec(data.exec)
-    # xworker.sync.mpcDone()
-
-    # for coro in state.mpc_coros:
-    #     asyncio.ensure_future(clone_coro(coro))
+    f = await exec_async(data.exec)
+    # print("mpc done")
 
 
-# def setup():
-#     """Setup a runtime."""
-#     if options.threshold is None:
-#         options.threshold = (m - 1) // 2
-#     assert 2 * options.threshold < m, f"threshold {options.threshold} too large for {m} parties"
-
-#     rt = Runtime(pid, parties, options)
-#     sectypes.runtime = rt
-#     asyncoro.runtime = rt
-#     mpyc.seclists.runtime = rt
-#     mpyc.secgroups.runtime = rt
-#     mpyc.random.runtime = rt
-#     mpyc.statistics.runtime = rt
-#     return rt
+async def exec_async(source: str):
+    source = "__name__ = '__main__'\n" + source + "\n"
+    code = compile(source, "_mpc_run_compiled.py", "exec", ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+    func = types.FunctionType(code, globals())
+    if asyncio.iscoroutinefunction(func):
+        return await func()
+    else:
+        return func()
 
 
-async def async_exec(code):
-    # Make an async function with the code and `exec` it
-    exec(f"async def __ex(): " + "".join(f"\n {l}" for l in code.split("\n")))
+def runcode(loop: AbstractEventLoop, coro: types.FunctionType):
+    future = asyncio.Future()
 
-    # Get `__ex` from local variables, call it and return the result
-    return await locals()["__ex"]()
+    def callback():
+        print("callback? 1")
+        global inner_future
+        inner_future = None
+
+        print("callback? 2")
+        if not asyncio.iscoroutine(coro):
+            future.set_result(coro)
+            return
+
+        print("callback? 3")
+        try:
+            inner_future = loop.create_task(coro)
+            futures._chain_future(inner_future, future)
+        except BaseException as exc:
+            future.set_exception(exc)
+        print("callback? 4")
+
+    print(loop.call_soon_threadsafe)
+    print(loop.call_soon)
+    loop.call_soon(callback)
+    print("called soon?")
+    return future.result()
+    # try:
+
+    # except:
+    #     traceback.print_stack()
+
+
+def runcode2(loop: AbstractEventLoop, code: types.CodeType):
+    future = asyncio.Future()
+
+    def callback():
+        global inner_future
+        inner_future = None
+
+        func = types.FunctionType(code, globals())
+        # func = types.FunctionType(code, locals())
+        try:
+            coro = func()
+        except SystemExit:
+            raise
+
+        except BaseException as ex:
+            future.set_exception(ex)
+            return
+
+        print("callback? 2")
+        if not inspect.iscoroutine(coro):
+            future.set_result(coro)
+            return
+
+        print("callback? 3")
+        try:
+            inner_future = loop.create_task(coro)
+            futures._chain_future(inner_future, future)
+        except BaseException as exc:
+            future.set_exception(exc)
+        print("callback? 4")
+
+    print(loop.call_soon_threadsafe)
+    print(loop.call_soon)
+    loop.call_soon(callback)
+    print("called soon?")
+
+    return future.result()
+    # try:
+    # except BaseException:
+    #     traceback.print_stack()
 
 
 xworker.sync.run_mpc = run_mpc
-
-
-def clone_coro(coro: Coroutine):
-    function_name = coro.__qualname__
-    # function_name = coro.__name__
-
-    func = coro.cr_frame.f_globals[function_name]
-    args = coro.cr_frame.f_locals.values()
-
-    return func(*args)
