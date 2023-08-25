@@ -65,13 +65,17 @@ from mpyc.runtime import mpc
 
 async def synthesize_data(n_samples, n_features, n_targets):
     rnd = await mpc.transfer(random.randrange(2**31), senders=0)
-    X, Y = sklearn.datasets.make_regression(n_samples=n_samples,
-                                            n_features=n_features,
-                                            n_informative=max(1, n_features - 5),
-                                            n_targets=n_targets, bias=42,
-                                            effective_rank=max(1, n_features - 3),
-                                            tail_strength=0.5, noise=1.2,
-                                            random_state=rnd)  # all parties use same rnd
+    X, Y = sklearn.datasets.make_regression(
+        n_samples=n_samples,
+        n_features=n_features,
+        n_informative=max(1, n_features - 5),
+        n_targets=n_targets,
+        bias=42,
+        effective_rank=max(1, n_features - 3),
+        tail_strength=0.5,
+        noise=1.2,
+        random_state=rnd,
+    )  # all parties use same rnd
     if n_targets == 1:
         Y = np.transpose([Y])
     X = np.concatenate((X, Y), axis=1)
@@ -87,16 +91,16 @@ async def synthesize_data(n_samples, n_features, n_targets):
 
 
 def read_data(infofile):
-    with open(infofile, newline='') as file:
+    with open(infofile, newline="") as file:
         reader = csv.reader(file)
 
         # process first line
         datafile, delim, skip_header, split, n, d_, e = next(reader)
         skip_header = int(skip_header)  # number of lines to skip at start of datafile
-        split = int(split)              # train-test split (0 for random split)
-        n = int(n)                      # number of samples
-        d_ = int(d_)                    # number of features in datafile
-        e = int(e)                      # number of targets
+        split = int(split)  # train-test split (0 for random split)
+        n = int(n)  # number of samples
+        d_ = int(d_)  # number of features in datafile
+        e = int(e)  # number of targets
 
         # process remaining lines
         d = 0
@@ -107,51 +111,51 @@ def read_data(infofile):
         for j in range(L):
             line = next(reader)
             feature_type = line[0]
-            if feature_type == 'numerical':
+            if feature_type == "numerical":
                 m, M = float(line[1]), float(line[2])
                 coef_add[j] = -(m + M) / 2
                 coef_mul[j] = 2 / (M - m)
                 d += 1
-            elif feature_type == 'categorical':
+            elif feature_type == "categorical":
                 while not line[-1]:  # drop trailing empty columns
                     line.pop()
                 categories[j] = line[1:]
                 d += len(categories[j])  # one hot encoding
-            elif feature_type == 'exclude':
+            elif feature_type == "exclude":
                 categories[j] = []
             else:
-                raise ValueError('unknown feature type')
+                raise ValueError("unknown feature type")
         d -= e  # number of features
 
-    datafile = os.path.join('data', 'regr', datafile)
-    if datafile.endswith('.gz'):
-        open_file = lambda f: gzip.open(f, mode='rt', newline='')
-    elif datafile.find('.zip!') >= 0:
-        archive, datafile = datafile.split('!')
-        open_file = lambda f: io.TextIOWrapper(zipfile.ZipFile(archive).open(f), newline='')
+    datafile = os.path.join("data", "regr", datafile)
+    if datafile.endswith(".gzip"):
+        open_file = lambda f: gzip.open(f, mode="rt", newline="")
+    elif datafile.find(".zip!") >= 0:
+        archive, datafile = datafile.split("!")
+        open_file = lambda f: io.TextIOWrapper(zipfile.ZipFile(archive).open(f), newline="")
     else:
-        open_file = lambda f: open(f, newline='')
+        open_file = lambda f: open(f, newline="")
 
     offset = 0
-    if datafile.find('Year') >= 0 or datafile.find('HIGGS') >= 0:
+    if datafile.find("Year") >= 0 or datafile.find("HIGGS") >= 0:
         offset = 1 - L  # hack: rotate left for YearPrediction and HIGGS
-    elif datafile.find('ethylene') >= 0:
+    elif datafile.find("ethylene") >= 0:
         offset = 3 - L  # hack: rotate left by 3 for ethylene
-        csv.register_dialect('ethylene', delimiter=' ', skipinitialspace=True)
+        csv.register_dialect("ethylene", delimiter=" ", skipinitialspace=True)
 
     X = np.empty((n, d + e), dtype=float)
     float1 = float(1)
     float_1 = float(-1)
     with open_file(datafile) as file:
         reader = csv.reader(file, delimiter=delim)
-        if datafile.find('ethylene') >= 0:
-            reader = csv.reader(file, dialect='ethylene')
+        if datafile.find("ethylene") >= 0:
+            reader = csv.reader(file, dialect="ethylene")
         for _ in range(skip_header):
             next(reader)
         n100 = n // 100
         for i, row in enumerate(reader):
             if not i % n100:
-                print(f'Loading ... {round(100*i/n)}%', end='\r')
+                print(f"Loading ... {round(100*i/n)}%", end="\r")
             if len(row) > L:
                 row = row[:L]  # ignore spurious columns
             x = X[i]
@@ -184,26 +188,26 @@ def bareiss(Zp, A):
 
     # division-free Gaussian elimination
     for k in range(d):
-        for i in range(k+1, d):
-            for j in range(k+1, d_e):
+        for i in range(k + 1, d):
+            for j in range(k + 1, d_e):
                 A[i, j] = (A[k, k] * A[i, j] - A[k, j] * A[i, k]) % p
 
     # back substitution
-    for i in range(d-1, -1, -1):
+    for i in range(d - 1, -1, -1):
         inv = (1 / Zp(A[i, i])).value
-        if i < d-2:
+        if i < d - 2:
             A[i, i] = inv  # keep reciprocal for determinant
         for j in range(d, d_e):
             s = A[i, j]
-            for k in range(i+1, d):
+            for k in range(i + 1, d):
                 s -= A[i, k] * A[k, j]
             s %= p
             A[i, j] = (s * inv) % p
 
     # postponed division for determinant
     inv = 1
-    det = A[d-1, d-1]
-    for i in range(d-2):
+    det = A[d - 1, d - 1]
+    for i in range(d - 2):
         inv = (inv * A[i, i]) % p
         det = (det * inv) % p
 
@@ -211,7 +215,7 @@ def bareiss(Zp, A):
 
 
 def random_matrix_determinant(secnum, d):
-    d_2 = d * (d-1) // 2
+    d_2 = d * (d - 1) // 2
     L = np.diagflat([secnum(1)] * d)
     L[np.tril_indices(d, -1)] = mpc._randoms(secnum, d_2)
     L[np.triu_indices(d, 1)] = [secnum(0)] * d_2
@@ -244,30 +248,26 @@ async def linear_solve(A, B):
 
 
 def rmse(Y, P):
-    return np.sqrt(sklearn.metrics.mean_squared_error(Y, P, multioutput='raw_values'))
+    return np.sqrt(sklearn.metrics.mean_squared_error(Y, P, multioutput="raw_values"))
 
 
 async def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--dataset', type=int, metavar='I',
-                        help=('dataset 0=synthetic (default), 1=student, 2=wine-red, '
-                              '3=wine-white, 4=year, 5=gas-methane, 6=gas-CO, 7=higgs'))
-    parser.add_argument('-u', '--data-url', action='store_true',
-                        help='show URL for downloading dataset I')
-    parser.add_argument('-l', '--lambda_', type=float, metavar='L',
-                        help='regularization L>=0.0 (default=1.0)')
-    parser.add_argument('-a', '--accuracy', type=int, metavar='A',
-                        help='accuracy A (number of fractional bits)')
-    parser.add_argument('-n', '--samples', type=int, metavar='N',
-                        help='number of samples in synthetic data (default=1000)')
-    parser.add_argument('-d', '--features', type=int, metavar='D',
-                        help='number of features in synthetic data (default=10)')
-    parser.add_argument('-e', '--targets', type=int, metavar='E',
-                        help='number of targets in synthetic data (default=1)')
-    parser.add_argument('--ratrec', action='store_true',
-                        help='use rational reconstruction to hide determinant')
-    parser.set_defaults(dataset=0, lambda_=1.0, accuracy=-1,
-                        samples=1000, features=10, targets=1)
+    parser.add_argument(
+        "-i",
+        "--dataset",
+        type=int,
+        metavar="I",
+        help="dataset 0=synthetic (default), 1=student, 2=wine-red, 3=wine-white, 4=year, 5=gas-methane, 6=gas-CO, 7=higgs",
+    )
+    parser.add_argument("-u", "--data-url", action="store_true", help="show URL for downloading dataset I")
+    parser.add_argument("-l", "--lambda_", type=float, metavar="L", help="regularization L>=0.0 (default=1.0)")
+    parser.add_argument("-a", "--accuracy", type=int, metavar="A", help="accuracy A (number of fractional bits)")
+    parser.add_argument("-n", "--samples", type=int, metavar="N", help="number of samples in synthetic data (default=1000)")
+    parser.add_argument("-d", "--features", type=int, metavar="D", help="number of features in synthetic data (default=10)")
+    parser.add_argument("-e", "--targets", type=int, metavar="E", help="number of targets in synthetic data (default=1)")
+    parser.add_argument("--ratrec", action="store_true", help="use rational reconstruction to hide determinant")
+    parser.set_defaults(dataset=0, lambda_=1.0, accuracy=-1, samples=1000, features=10, targets=1)
     args = parser.parse_args()
 
     await mpc.start()
@@ -275,29 +275,31 @@ async def main():
     if not args.dataset:
         range_alpha = range(4, 8)
         n, d, e, split = args.samples, args.features, args.targets, 0
-        name = 'SYNTHETIC'
-        logging.info('Generating synthetic data')
+        name = "SYNTHETIC"
+        logging.info("Generating synthetic data")
         X = await synthesize_data(n, d, e)
     else:
-        settings = [('student+performance', 'student-mat', 6),
-                    ('Wine+Quality', 'winequality-red', 7),
-                    ('Wine+Quality', 'winequality-white', 8),
-                    ('Yearpredictionmsd', 'YearPredictionMSD', 6),
-                    ('Gas+sensor+array+under+dynamic+gas+mixtures', 'ethylene_methane', 8),
-                    ('Gas+sensor+array+under+dynamic+gas+mixtures', 'ethylene_CO', 9),
-                    ('HIGGS', 'HIGGS', 5)]
+        settings = [
+            ("student+performance", "student-mat", 6),
+            ("Wine+Quality", "winequality-red", 7),
+            ("Wine+Quality", "winequality-white", 8),
+            ("Yearpredictionmsd", "YearPredictionMSD", 6),
+            ("Gas+sensor+array+under+dynamic+gas+mixtures", "ethylene_methane", 8),
+            ("Gas+sensor+array+under+dynamic+gas+mixtures", "ethylene_CO", 9),
+            ("HIGGS", "HIGGS", 5),
+        ]
         url, name, alpha = settings[args.dataset - 1]
-        url = 'https://archive.ics.uci.edu/ml/datasets/' + url
+        url = "https://archive.ics.uci.edu/ml/datasets/" + url
         if args.data_url:
-            print(f'URL: {url}')
+            print(f"URL: {url}")
         range_alpha = range(alpha, alpha + 1)
-        infofile = os.path.join('data', 'regr', 'info-' + name + '.csv')
-        logging.info(f'Loading dataset {name}')
+        infofile = os.path.join("data", "regr", "info-" + name + ".csv")
+        logging.info(f"Loading dataset {name}")
         X, d, e, split = read_data(infofile)
         n = len(X)
-        logging.info(f'Loaded {n} samples')
-    print(f'dataset: {name} with {n} samples, {d} features, and {e} target(s)')
-    print(f'regularization lambda: {args.lambda_}')
+        logging.info(f"Loaded {n} samples")
+    print(f"dataset: {name} with {n} samples, {d} features, and {e} target(s)")
+    print(f"regularization lambda: {args.lambda_}")
 
     # split in train set and test set
     if split:
@@ -314,66 +316,61 @@ async def main():
     d = d + 1  # add (virtual) feature column X_d = [1, ..., 1] for vertical intercept
 
     # ridge regression "in the clear"
-    ridge = sklearn.linear_model.Ridge(alpha=args.lambda_,
-                                       fit_intercept=True,
-                                       copy_X=True,
-                                       solver='cholesky')
+    ridge = sklearn.linear_model.Ridge(alpha=args.lambda_, fit_intercept=True, copy_X=True, solver="cholesky")
     ridge.fit(X1, Y1)
     error_train_skit = rmse(Y1, ridge.predict(X1))
     error_test_skit = rmse(Y2, ridge.predict(X2))
-    print(f'scikit train error: {error_train_skit}')
-    print(f'scikit test error:  {error_test_skit}')
+    print(f"scikit train error: {error_train_skit}")
+    print(f"scikit test error:  {error_test_skit}")
 
     if args.accuracy >= 0:
         alpha = args.accuracy
         range_alpha = range(alpha, alpha + 1)
     for alpha in range_alpha:  # accuracy parameter
-        print('accuracy alpha:', alpha)
+        print("accuracy alpha:", alpha)
         # set parameters accordingly
         beta = 2**alpha
         lambda_ = round(args.lambda_ * beta**2)
         gamma = n1 * beta**2 + lambda_
         secint = mpc.SecInt(gamma.bit_length() + 1)
-        print(f'secint prime q: {secint.field.modulus.bit_length()} bits'
-              f' (secint bit length: {secint.bit_length})')
-        bound = round(d**(d/2)) * gamma**d
+        print(f"secint prime q: {secint.field.modulus.bit_length()} bits (secint bit length: {secint.bit_length})")
+        bound = round(d ** (d / 2)) * gamma**d
         if not args.ratrec:
-            secnum = mpc.SecFld(min_order=2*bound + 1, signed=True)
-            print(f'secfld prime p: {secnum.field.modulus.bit_length()} bits')
+            secnum = mpc.SecFld(min_order=2 * bound + 1, signed=True)
+            print(f"secfld prime p: {secnum.field.modulus.bit_length()} bits")
         else:
             secnum = mpc.SecInt(l=bound.bit_length() + 1)
-            print(f'secint prime p: {secnum.field.modulus.bit_length()} bits'
-                  f' (secint bit length: {secnum.bit_length})')
-            secfld = mpc.SecFld(min_order=4*bound**2)
+            print(f"secint prime p: {secnum.field.modulus.bit_length()} bits (secint bit length: {secnum.bit_length})")
+            secfld = mpc.SecFld(min_order=4 * bound**2)
             print(f"secfld prime p': {secfld.field.modulus.bit_length()} bits")
 
         f2 = float(beta)
         q = secint.field.modulus
-        logging.info('Transpose, scale, and create (degree 0) shares for X and Y')
+        logging.info("Transpose, scale, and create (degree 0) shares for X and Y")
         # enforce full size shares (mod q numbers) by adding q to each element
         Xt = [[int(a * f2) + q for a in col] for col in X1.transpose()]
         Yt = [[int(a * f2) + q for a in col] for col in Y1.transpose()]
 
         timeStart = time.process_time()
-        logging.info('Compute A = X^T X + lambda I and B = X^T Y')
+        logging.info("Compute A = X^T X + lambda I and B = X^T Y")
 
         AB = []
-        for i in range(d-1):
+        for i in range(d - 1):
             xi = Xt[i]
-            for j in range(i, d-1):
+            for j in range(i, d - 1):
                 xj = Xt[j]
                 s = 0
                 for k in range(n1):
                     s += xi[k] * xj[k]
-                AB.append(s)              # X_i dot X_j
-            AB.append(sum(xi) * beta)     # X_i dot X_d
+                AB.append(s)  # X_i dot X_j
+            AB.append(sum(xi) * beta)  # X_i dot X_d
             for j in range(e):
                 yj = Yt[j]
                 s = 0
                 for k in range(n1):
                     s += xi[k] * yj[k]
-                AB.append(s)              # X_i dot Y_j
-        AB.append(n1 * beta**2)           # X_d dot X_d
+                AB.append(s)  # X_i dot Y_j
+        AB.append(n1 * beta**2)  # X_d dot X_d
         for j in range(e):
             AB.append(beta * sum(Yt[j]))  # X_d dot Y_j
 
@@ -382,7 +379,7 @@ async def main():
         AB = await mpc._reshare(AB)
 
         timeMiddle = time.process_time()
-        logging.info('Compute w = A^-1 B')
+        logging.info("Compute w = A^-1 B")
 
         # convert secint to secnum
         AB = [secint(a) for a in AB]
@@ -395,7 +392,7 @@ async def main():
         for i in range(d):
             A[i][i] = AB[index] + lambda_
             index += 1
-            for j in range(i+1, d):
+            for j in range(i + 1, d):
                 A[i][j] = A[j][i] = AB[index]
                 index += 1
             for j in range(e):
@@ -411,25 +408,24 @@ async def main():
             w /= det
         else:
             *w, det = mpc.convert(w_det, secfld)
-            w = mpc.scalar_mul(1/det, w)
+            w = mpc.scalar_mul(1 / det, w)
             w = await mpc.output(w)
             w = [ratrec(int(a), secfld.field.modulus) for a in w]
             w = [a / b for a, b in w]
             w = np.reshape(w, (d, e))
 
         timeEnd = time.process_time()
-        logging.info(f'Total time {timeEnd - timeStart} = '
-                     f'A and B in {timeMiddle - timeStart} + '
-                     f'A^-1 B in {timeEnd - timeMiddle} seconds')
+        logging.info(f"Total time {timeEnd - timeStart} = A and B in {timeMiddle - timeStart} + A^-1 B in {timeEnd - timeMiddle} seconds")
 
         error_train_mpyc = rmse(Y1, np.dot(X1, w[:-1]) + w[-1])
         error_test_mpyc = rmse(Y2, np.dot(X2, w[:-1]) + w[-1])
-        print(f'MPyC train error: {error_train_mpyc}')
-        print(f'MPyC test error:  {error_test_mpyc}')
-        print(f'relative train error: {(error_train_mpyc - error_train_skit) / error_train_skit}')
-        print(f'relative test error:  {(error_test_mpyc - error_test_skit) / error_test_skit}')
+        print(f"MPyC train error: {error_train_mpyc}")
+        print(f"MPyC test error:  {error_test_mpyc}")
+        print(f"relative train error: {(error_train_mpyc - error_train_skit) / error_train_skit}")
+        print(f"relative test error:  {(error_test_mpyc - error_test_skit) / error_test_skit}")
 
     await mpc.shutdown()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     mpc.run(main())
