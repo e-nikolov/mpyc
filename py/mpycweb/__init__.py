@@ -9,7 +9,6 @@ from .transport import *
 from .worker import *
 from .patches import *
 from . import peerjs
-from . import state
 from mpyc.runtime import mpc, Runtime
 
 # pyright: reportMissingImports=false

@@ -8,7 +8,6 @@ import types
 from typing import Awaitable
 
 from mpyc.runtime import Party, mpc
-from . import state
 
 # pyright: reportMissingImports=false
 from polyscript import xworker
