@@ -107,7 +107,7 @@ from mpyc.runtime import mpc
 def pow_list(a, x, n):
     """Return [a,ax, ax^2, ..., ax^(n-1)].
 
-    Runs in O(log n) rounds using minimal number of n-1 secure multiplications.
+    Runs roughly in 2log_2(n)-1 rounds using n-1 + log_2(n) secure multiplications.
     """
     if n == 1:
         powers = [a]
@@ -155,16 +155,14 @@ async def main():
     parser.set_defaults(dataset=0, bit_length=0)
     args = parser.parse_args()
 
-    settings = [
-        ("uvlp", 8, 1, 2),
-        ("wiki", 6, 1, 2),
-        ("tb2x2", 6, 1, 2),
-        ("woody", 8, 1, 3),
-        ("LPExample_R20", 70, 1, 5),
-        ("sc50b", 104, 10, 55),
-        ("kb2", 536, 100000, 106),
-        ("LPExample", 110, 1, 178),
-    ]
+    settings = [('uvlp', 8, 1, 2),
+                ('wiki', 6, 1, 1),
+                ('tb2x2', 6, 1, 2),
+                ('woody', 8, 1, 3),
+                ('LPExample_R20', 70, 1, 9),
+                ('sc50b', 104, 10, 55),
+                ('kb2', 560, 100000, 154),
+                ('LPExample', 110, 1, 175)]
     name, bit_length, scale, n_iter = settings[args.dataset]
     if args.bit_length:
         bit_length = args.bit_length
@@ -174,16 +172,14 @@ async def main():
     m = len(T) - 1
     n = len(T[0]) - 1
     secint = mpc.SecInt(bit_length, n=m + n)  # force existence of Nth root of unity, N>=m+n
-    print(f"Using secure {bit_length}-bit integers: {secint.__name__}")
-    print(f"dataset: {name} with {m} constraints and {n} variables (scale factor {scale})")
-    T[0][-1] = "0"  # initialize optimal value
-    for i in range(m + 1):
-        g = 0
-        for j in range(n + 1):
+    print(f'Using secure {bit_length}-bit integers: {secint.__name__}')
+    print(f'dataset: {name} with {m} constraints and {n} variables (scale factor {scale})')
+    T[0][-1] = '0'  # initialize optimal value
+    for i in range(m+1):
+        for j in range(n+1):
             T[i][j] = int(scale * float(T[i][j]))  # scale to integer
-            g = math.gcd(g, T[i][j])
-        g = max(g, 1) if i else 1  # skip cost row
-        for j in range(n + 1):
+        g = max(math.gcd(*T[i]), 1) if i else 1  # skip cost row
+        for j in range(n+1):
             T[i][j] = secint(T[i][j] // g)
 
     c = [-T[0][j] for j in range(n)]  # maximize c.x subject to A.x <= b, x >= 0
@@ -205,11 +201,9 @@ async def main():
     previous_pivot = secint(1)
 
     iteration = 0
-    while True:
+    while await mpc.output((arg_min := argmin_int(T[0][:-1]))[1] < 0):
         # find index of pivot column
-        p_col_index, minimum = argmin_int(T[0][:-1])
-        if await mpc.output(minimum >= 0):
-            break  # maximum reached
+        p_col_index = arg_min[0]
 
         # find index of pivot row
         p_col = mpc.matrix_prod([p_col_index], T, True)[0]

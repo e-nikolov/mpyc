@@ -1,6 +1,6 @@
 """This module collects basic secure (secret-shared) types for MPyC.
 
-Secure (secret-shared) number types all use common base classes, which
+Secure number (array) types all use common base classes, which
 ensures that operators such as +,*,>= are defined by operator overloading.
 """
 
@@ -588,8 +588,6 @@ class SecureFixedPoint(SecureNumber):
 
     def _coerce2(self, other):
         if isinstance(other, float):
-            if other.is_integer():
-                other = round(other)
             return other
 
         return super()._coerce2(other)
@@ -657,7 +655,7 @@ def SecFld(order=None, modulus=None, char=None, ext_deg=None, min_order=None, si
     return _SecFld(field)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _SecFld(field):
     l = (field.order - 1).bit_length()
     name = f'SecFld{l}({field.__name__})'
@@ -712,7 +710,7 @@ def SecInt(l=None, p=None, n=2):
     return _SecInt(l, p, n)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _SecInt(l, p, n):
     name = f'SecInt{l}' if p is None else f'SecInt{l}({p})'
     secint = type(name, (SecureInteger,), {'__slots__': ()})
@@ -741,7 +739,7 @@ def SecFxp(l=None, f=None, p=None, n=2):
     return _SecFxp(l, f, p, n)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _SecFxp(l, f, p, n):
     name = f'SecFxp{l}:{f}' if p is None else f'SecFxp{l}:{f}({p})'
     secfxp = type(name, (SecureFixedPoint,), {'__slots__': ()})
@@ -994,7 +992,7 @@ def SecFlt(l=None, s=None, e=None):
     return _SecFlt(s, e)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _SecFlt(s, e):
     name = f'SecFlt{s + e}:{s}:{e}'
     secflt = type(name, (SecureFloat,), {'__slots__': ()})
@@ -1029,6 +1027,10 @@ class SecureArray(SecureObject):
         assert shape is not None
         self.shape = shape
         super().__init__(value)
+
+    def __bool__(self):
+        """Return True if secure array is nonempty, False otherwise."""
+        return bool(self.size)
 
     def __array_function__(self, func, types, args, kwargs):
         # minimal redirect for now
@@ -1088,7 +1090,11 @@ class SecureArray(SecureObject):
 
     def __neg__(self):
         """Matrix negation."""
-        return runtime.np_neg(self)
+        return runtime.np_negative(self)
+
+    def __abs__(self):
+        """Matrix absolute value."""
+        return runtime.np_absolute(self)
 
     def __add__(self, other):
         """Matrix addition."""
@@ -1142,6 +1148,14 @@ class SecureArray(SecureObject):
 
         return runtime.np_divide(other, self)
 
+    def __pow__(self, other):
+        """Exponentiation for public integral exponent."""
+        # TODO: extend to secret exponent
+        if not isinstance(other, int):  # TODO: extend to np.array
+            return NotImplemented
+
+        return runtime.np_pow(self, other)
+
     def __matmul__(self, other):
         """Matrix multiplication."""
         return runtime.np_matmul(self, other)
@@ -1168,8 +1182,7 @@ class SecureArray(SecureObject):
     def __ge__(self, other):
         """Greater-than or equal comparison."""
         # self >= other <=> not (self < other)
-        a = 1 - runtime.np_less(self, other)
-        return a
+        return 1 - runtime.np_less(self, other)
 
     def __gt__(self, other):
         """Strictly greater-than comparison."""
@@ -1192,8 +1205,7 @@ class SecureArray(SecureObject):
     @property
     def flat(self):
         # via flatten(), no MPyC coroutine for generators yet
-        for a in self.flatten():
-            yield a
+        yield from self.flatten()
 
     def __len__(self):
         if self.shape == ():
@@ -1232,6 +1244,48 @@ class SecureArray(SecureObject):
 
     def sum(self, *args, **kwargs):
         return runtime.np_sum(self, *args, **kwargs)
+
+    def sort(self, *args, **kwargs):
+        """Returns new array sorted along an axis.
+
+        By default, axis=-1.
+        If axis is None, the array is flattened.
+        """
+        return runtime.np_sort(self, *args, **kwargs)
+
+    def argmin(self, *args, **kwargs):
+        """Returns the indices of the minimum values along an axis.
+
+        If no axis is given (default), array is flattened first.
+
+        By default, the indices are returned as unit vectors.
+        Also, by default, the minimum values are returned (next to the indices).
+
+        NB: Different defaults than for np_argmin(). Latter behaves like np.argmin()
+        for NumPy arrays, returning the indices as numbers and omitting the minimum values.
+        """
+        if 'arg_unary' not in kwargs:
+            kwargs['arg_unary'] = True
+        if 'arg_only' not in kwargs:
+            kwargs['arg_only'] = False
+        return runtime.np_argmin(self, *args, **kwargs)
+
+    def argmax(self, *args, **kwargs):
+        """Returns the indices of the maximum values along an axis.
+
+        If no axis is given (default), array is flattened first.
+
+        By default, the indices are returned as unit vectors.
+        Also, by default, the maximum values are returned (next to the indices).
+
+        NB: Different defaults than for np_argmax(). Latter behaves like np.argmax()
+        for NumPy arrays, returning the indices as numbers and omitting the maximum values.
+        """
+        if 'arg_unary' not in kwargs:
+            kwargs['arg_unary'] = True
+        if 'arg_only' not in kwargs:
+            kwargs['arg_only'] = False
+        return runtime.np_argmax(self, *args, **kwargs)
 
 
 class SecureFiniteFieldArray(SecureArray):
@@ -1331,7 +1385,7 @@ class SecureFixedPointArray(SecureArray):
             if isinstance(value, np.ndarray):
                 if np.issubdtype(value.dtype, np.floating):
                     if integral is None:
-                        integral = np.vectorize(np.is_integral)(value).all()
+                        integral = np.vectorize(lambda a: a.is_integer())(value).all()
                         integral = bool(integral)  # NB: from np.bool_ to bool
                     f2 = 1 << self.frac_length
                     # Scale to Python int entries (by setting otypes='O', prevents overflow):
@@ -1371,8 +1425,6 @@ class SecureFixedPointArray(SecureArray):
 
     def _coerce2(self, other):
         if isinstance(other, float):
-            if other.is_integer():
-                other = round(other)
             return other  # TODO: consider returning np.array(other) here
 
         return super()._coerce2(other)

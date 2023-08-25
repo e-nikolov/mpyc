@@ -15,9 +15,10 @@ processing all array elements in one go. In contrast, for (nested) lists
 the elements are processed one by one in an uncoordinated manner, each time
 doing a small bit of work and communication.
 
-For this demo, we see a 15-fold speed-up when run with three parties on
-local host. Also, the memory consumption is reduced accordingly, e.g., by
-a factor of around 10 when run with all barriers disabled.
+For this demo, we see an 18-fold speedup when run with three parties on
+local host (using secure fixed-point arithmetic). Also, the memory consumption
+is reduced accordingly, e.g., by a factor of around 10 when run with all
+barriers disabled.
 
 See cnnmnist.py for background information on the CNN MNIST classifier.
 """
@@ -118,11 +119,11 @@ async def main():
     df = gzip.open(os.path.join("data", "cnn", "t10k-labels-idx1-ubyte.gzip"))
     d = df.read()[8 + offset : 8 + offset + batch_size]
     labels = list(map(int, d))
-    print("Labels:", labels)
-    df = gzip.open(os.path.join("data", "cnn", "t10k-images-idx3-ubyte.gzip"))
-    d = df.read()[16 + offset * 28**2 : 16 + (offset + batch_size) * 28**2]
-    x = list(map(lambda a: a / 255, d))
-    x = np.array(x).reshape(batch_size, 1, 28, 28)
+    print('Labels:', labels)
+    df = gzip.open(os.path.join('data', 'cnn', 't10k-images-idx3-ubyte.gzip'))
+    d = df.read()[16 + offset * 28**2: 16 + (offset + batch_size) * 28**2]
+    x = np.frombuffer(d, dtype=np.ubyte) / 255
+    x = np.reshape(x, (batch_size, 1, 28, 28))
     if batch_size == 1:
         print(np.array2string(np.vectorize(lambda a: int(bool(a)))(x[0, 0]), separator=""))
     if issubclass(secnum, mpc.SecureInteger):
@@ -176,9 +177,9 @@ async def main():
         secnum.bit_length = 37
 
     for i in range(batch_size):
-        prediction = int(await mpc.output(mpc.argmax(x[i].tolist())[0]))
-        error = "******* ERROR *******" if prediction != labels[i] else ""
-        print(f"Image #{offset+i} with label {labels[i]}: {prediction} predicted. {error}")
+        prediction = int(await mpc.output(np.argmax(x[i])))
+        error = '******* ERROR *******' if prediction != labels[i] else ''
+        print(f'Image #{offset+i} with label {labels[i]}: {prediction} predicted. {error}')
         print(await mpc.output(x[i]))
 
     await mpc.shutdown()

@@ -34,7 +34,7 @@ hardness assumptions.
 import math
 import decimal
 import functools
-from mpyc.gmpy import powmod, gcdext, is_prime, next_prime, legendre, isqrt, iroot
+from mpyc.gmpy import powmod, gcdext, is_prime, next_prime, prev_prime, legendre, isqrt, iroot
 from mpyc.gfpx import GFpX
 from mpyc.finfields import GF
 
@@ -247,7 +247,7 @@ class SymmetricGroupElement(FiniteGroupElement):
         return p.value == q.value
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def SymmetricGroup(n):
     """Create type for symmetric group of degree n, n>=0."""
     name = f'Sym({n})'
@@ -362,9 +362,9 @@ def _find_safe_prime(l):
         if l == 2:
             p = 3
         else:
-            q = next_prime(1 << l-2)
+            q = prev_prime(1 << l-1)
             while not is_prime(2*q+1):
-                q = next_prime(q)
+                q = prev_prime(q)
             # q is a Sophie Germain prime
             p = int(2*q + 1)
     return p
@@ -388,7 +388,7 @@ def QuadraticResidues(p=None, l=None):
     return _QuadraticResidues(p)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _QuadraticResidues(p):
     field = GF(p)  # raises if p is not prime
     g = 2
@@ -472,7 +472,7 @@ class SchnorrGroupElement(FiniteGroupElement):
 def SchnorrGroup(p=None, q=None, g=None, l=None, n=None):
     """Create type for Schnorr group of odd prime order q.
 
-    If q is not given, q will be the smallest n-bit prime, n>=2.
+    If q is not given, q will be the largest n-bit prime, n>=2.
     If p is not given, p will be the least l-bit prime, l>n, such that q divides p-1.
 
     If l and/or n are not given, default bit lengths will be set (2<=n<l).
@@ -484,7 +484,7 @@ def SchnorrGroup(p=None, q=None, g=None, l=None, n=None):
                 if l is None:
                     l = 2048
                 n = next((n for n, _ in n_l if _ >= l), 512)
-            q = next_prime(1 << n-1)
+            q = prev_prime(1 << n)
         else:
             if n is None:
                 n = q.bit_length()
@@ -497,7 +497,7 @@ def SchnorrGroup(p=None, q=None, g=None, l=None, n=None):
         p = 2*w*q + 1
         while not is_prime(p):
             p += 2*q
-        # 2^(l-1) < p < 2^l
+        # p < 2^l provided gap between n and l is sufficiently large
     else:
         assert q is not None  # if p is given, q must be given as well
         assert (p - 1) % q == 0
@@ -515,16 +515,13 @@ def SchnorrGroup(p=None, q=None, g=None, l=None, n=None):
     if g is None:
         w = (p-1) // q
         i = 2
-        while True:
-            g = powmod(i, w, p)
-            if g != 1 and powmod(g, q, p) == 1:
-                break
+        while (g := powmod(i, w, p)) == 1:
             i += 1
         g = int(g)
     return _SchnorrGroup(p, q, g)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _SchnorrGroup(p, q, g):
     field = GF(p)  # raises if modulus is not prime
     l = p.bit_length()
@@ -552,7 +549,7 @@ class EllipticCurvePoint(FiniteGroupElement):
     _identity = None
     gap = None
 
-    def __getitem__(self, key):  # NB:  no __setitem__ to prevent mutability
+    def __getitem__(self, key):  # NB: no __setitem__ to prevent mutability
         return self.value[key]
 
     # TODO: reconsider use of properties x, y, z (and t) ... currently used for pairings
@@ -1036,7 +1033,7 @@ def EllipticCurve(curvename='Ed25519', coordinates=None):
     return _EllipticCurve(curvename, coordinates)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _EllipticCurve(curvename, coordinates):
     if curvename.startswith('Ed'):
         if curvename == 'Ed25519':
@@ -1417,7 +1414,7 @@ def ClassGroup(Delta=None, l=None):
     return _ClassGroup(Delta)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _ClassGroup(Delta):
     l = Delta.bit_length()
     name = f'Cl{l}({Delta})'

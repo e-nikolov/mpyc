@@ -12,6 +12,7 @@ vectorized processing next to operator @ for matrix multiplication.
 Much of the NumPy API can be used to manipulate these arrays as well.
 """
 
+import os
 import functools
 from mpyc.numpy import np
 from mpyc import gmpy as gmpy2
@@ -61,7 +62,7 @@ class FiniteFieldElement:
 
     __slots__ = 'value'
 
-    modulus = None
+    modulus: type  # set by subclass
     order = None
     characteristic = None
     ext_deg = None
@@ -304,7 +305,7 @@ class FiniteFieldElement:
 
 
 def find_prime_root(l, blum=True, n=1):
-    """Find smallest prime of bit length at least l satisfying given constraints.
+    """Find prime of bit length at least l satisfying given constraints.
 
     Default is to return Blum primes (primes p with p % 4 == 3).
     Also, a primitive root w is returned of prime order at least n (0 < w < p).
@@ -318,10 +319,10 @@ def find_prime_root(l, blum=True, n=1):
             p = 3
             n, w = 2, p-1
     elif n <= 2:
-        p = gmpy2.next_prime(1 << l-1)
+        p = gmpy2.prev_prime(1 << l)
         if blum:
             while p%4 != 3:
-                p = gmpy2.next_prime(p)
+                p = gmpy2.prev_prime(p)
         p = int(p)
         w = p-1 if n == 2 else 1
     else:
@@ -339,7 +340,7 @@ def find_prime_root(l, blum=True, n=1):
     return p, n, w
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def pGF(p, n, w):
     """Create a finite field for given prime modulus p."""
     if not gmpy2.is_prime(p):
@@ -500,7 +501,7 @@ def find_irreducible(p, d):
     return gfpx.GFpX(p).next_irreducible(p**d - 1)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def xGF(modulus):
     """Create a finite field for given irreducible polynomial."""
     p = modulus.p
@@ -673,7 +674,18 @@ class BinaryFieldElement(ExtensionFieldElement):
         return poly.powmod(a, q2, cls.modulus)
 
 
-HANDLED_FUNCTIONS = {}
+_HANDLED_FUNCTIONS = {}
+
+
+def _implements(numpy_function_name):
+    """Register an __array_function__ implementation."""
+    def decorator(func):
+        if np:
+            numpy_function = eval('np.' + numpy_function_name)
+            _HANDLED_FUNCTIONS[numpy_function] = func
+        return func
+
+    return decorator
 
 
 class FiniteFieldArray:
@@ -752,8 +764,8 @@ class FiniteFieldArray:
         else:
             raise TypeError('wrong type for self in __array_function__(self, ...) call')
 
-        if func in HANDLED_FUNCTIONS:
-            return HANDLED_FUNCTIONS[func](*args, **kwargs)
+        if func in _HANDLED_FUNCTIONS:
+            return _HANDLED_FUNCTIONS[func](*args, **kwargs)
 
         args = list(args)
         for i in range(len(args)):
@@ -761,16 +773,27 @@ class FiniteFieldArray:
             if isinstance(arg, (cls, cls.field)):
                 args[i] = arg.value
             elif isinstance(arg, tuple):
-                args[i] = tuple(a.value if isinstance(a, (cls, cls.field)) else a for a in arg)
+                arg = list(arg)
+                for j in range(len(arg)):
+                    a = arg[j]
+                    if isinstance(a, (cls, cls.field)):
+                        a = a.value
+                    elif not isinstance(a, int) and not isinstance(a, np.ndarray):
+                        return NotImplemented
+
+                    arg[j] = a
+                args[i] = tuple(arg)
             elif isinstance(arg, list):
                 args[i] = [a.value if isinstance(a, (cls, cls.field)) else a for a in arg]
+            elif not isinstance(arg, int) and not isinstance(arg, np.ndarray):
+                return NotImplemented
 
         a = func(*args, **kwargs)
 
         if isinstance(a, np.ndarray):
             if func.__name__ in ('roll',  'diagonal', 'diag_flat'):
                 a = cls(a, check=False)
-            else:
+            elif func.__name__ != 'flatnonzero':
                 a = cls(a)
         elif isinstance(a, list):
             # for func like vsplit returning list of arrays
@@ -781,33 +804,23 @@ class FiniteFieldArray:
             a = cls.field(a)
         return a
 
-    def implements(numpy_function_name):
-        """Register an __array_function__ implementation."""
-        def decorator(func):
-            if np:
-                numpy_function = eval('np.' + numpy_function_name)
-                HANDLED_FUNCTIONS[numpy_function] = func
-            return func
-
-        return decorator
-    # TODO: use @staticmethod Python 3.10+, in 3.9- TypeError: 'staticmethod' object is not callable
-
     @property
-    @implements('shape')
+    @_implements('shape')
     def shape(self):
         return self.value.shape
 
     @property
-    @implements('ndim')
+    @_implements('ndim')
     def ndim(self):
         return self.value.ndim
 
     @property
-    @implements('size')
+    @_implements('size')
     def size(self):
         return self.value.size
 
-    @implements('block')
+    @staticmethod
+    @_implements('block')
     def _np_block(arrays):
         def extract_type(s):
             if isinstance(s, list):
@@ -842,7 +855,8 @@ class FiniteFieldArray:
                 a = self.field(a)
             yield a
 
-    @implements('linalg.solve')
+    @staticmethod
+    @_implements('linalg.solve')
     def gauss_solve(A, B):
         """Linear solve by Gaussian elimination on matrix (A | B)."""
         # TODO: extend to more dimensions, solve in last 2 dimensions
@@ -877,14 +891,16 @@ class FiniteFieldArray:
 
         return cls(A[:, n:], check=False)
 
-    @implements('linalg.inv')
+    @staticmethod
+    @_implements('linalg.inv')
     def gauss_inv(A):
         """Inverse by Gaussian elimination on augmented matrix (A | I)."""
         # TODO: extend to more dimensions, invert last 2 dimensions
         B = type(A)(np.eye(len(A), dtype='O'))
         return FiniteFieldArray.gauss_solve(A, B)
 
-    @implements('linalg.det')
+    @staticmethod
+    @_implements('linalg.det')
     def gauss_det(a):
         """Determinant by Gaussian elimination on (last 2 dimensions of) array a."""
         cls = type(a)
@@ -924,7 +940,8 @@ class FiniteFieldArray:
             d = cls(d, check=False)
         return d
 
-    @implements('linalg.matrix_power')
+    @staticmethod
+    @_implements('linalg.matrix_power')
     def matrix_pow(A, n):  # needed for handling negative n
         cls = type(A)
         p = cls.field.modulus
@@ -944,7 +961,8 @@ class FiniteFieldArray:
             C = np.matmul(C, D) % p
         return cls(C)
 
-    @implements('diag')
+    @staticmethod
+    @_implements('diag')
     def diag(a, k=0):
         cls = type(a)
         return cls(np.diag(a.value, k), check=False)
@@ -1273,9 +1291,6 @@ class FiniteFieldArray:
     def copy(self, *args, **kwargs):
         return type(self)(self.value.copy(*args, **kwargs), check=False)
 
-    def choose(self, *args, **kwargs):
-        return type(self)(self.value.choose(*args, **kwargs), check=False)
-
     def compress(self, *args, **kwargs):
         return type(self)(self.value.compress(*args, **kwargs), check=False)
 
@@ -1412,8 +1427,27 @@ class PrimeFieldArray(FiniteFieldArray):
                 p4 = (p+1) >> 2
             p = gmpy2.mpz(p)
             p4 = gmpy2.mpz(p4)
-            powmod = gmpy2.powmod
-            return np.vectorize(lambda a: int(powmod(a, p4, p)), otypes='O')(a)
+
+            W = int(os.getenv('MPYC_MAXWORKERS'))
+            if W == 0:
+                powmod = gmpy2.powmod
+                return np.vectorize(lambda a: int(powmod(a, p4, p)), otypes='O')(a)
+
+            # Experimental use of W worker threads.
+            # Using gmpy2's new function powmod_base_list(), which releases the GIL.
+            # Example: "python np_lpsolver.py -i6 -M3 -W2" about 1.4x faster than for W=0.
+            from gmpy2 import powmod_base_list  # NB: requires gmpy2 >= 2.1.3
+            import concurrent.futures
+            n = a.size
+            s = a.flat
+            with concurrent.futures.ThreadPoolExecutor(max_workers=W) as executor:
+                tasks = {executor.submit(powmod_base_list, s[i*n//W:(i+1)*n//W], p4, p): i
+                         for i in range(W)}
+            s = np.empty(n, dtype='O')
+            for task in concurrent.futures.as_completed(tasks):
+                i = tasks[task]
+                s[i*n//W:(i+1)*n//W] = task.result()
+            return np.vectorize(int, otypes='O')(s).reshape(a.shape)
 
         _sqrt = cls.field._sqrt
         return np.vectorize(lambda a: _sqrt(a, INV=INV), otypes='O')(a)

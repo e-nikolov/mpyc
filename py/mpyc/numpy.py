@@ -1,4 +1,4 @@
-"""This module acts as a stub to avoid a dependency for the numpy package.
+"""This module acts as a stub to avoid a (hard) dependency for the numpy package.
 
 If the numpy package is not available, MPyC still runs but with less functionality.
 Use of NumPy can be disabled to avoid loading the numpy package.
@@ -8,8 +8,6 @@ types---along with vectorized implementations---for secure numbers and the under
 finite field types. The array types are accessible through the 'array' attribute,
 e.g., for secint48=mpc.SecInt(48), the array type is secint48.array and the array type
 for the underlying prime field is secint48.field.array.
-
-... work in progress for MPyC version 0.9
 """
 
 import os
@@ -19,7 +17,7 @@ import logging
 def _matmul_shape(shapeA, shapeB):
     """Return shape of A @ B for given shapes of A and B.
 
-    None is returned for the shape if A and B are both 1-D arrays,
+    None is returned for the shape if A and B are both 1D arrays,
     as A @ B is a scalar in this case, which has no shape.
 
     Note that A @ B does not allow A and/or B to be 0-D arrays.
@@ -52,7 +50,7 @@ def _item_shape(shape, key):
     Alternatively, the item's shape could be obtained as a[key].shape for dummy array
     a=np.empty(shape), but this potentially consumes a large amount of memory.
     """
-    # TODO: handle field acces  a['field-name']
+    # TODO: handle field access  a['field-name']
     if not isinstance(key, tuple):
         key = (key,)
     if len(key) == 1 and isinstance(key[0], np.ndarray) and \
@@ -60,7 +58,7 @@ def _item_shape(shape, key):
         return (key[0].sum(),)
 
     try:
-        # Replace ellipsis ... in key by 0 or more : slices, depending on occurences of np.newaxis.
+        # Replace ellipsis ... in key by 0 or more : slices, depending on occurrences of np.newaxis.
         # NB: tests like "Ellipsis in key" trigger elementwise ==-testing for arrays; to avoid
         # this use key0 as a pruned version of key with everything but .../newaxis collapsed to 0.
         key0 = tuple(a if a is Ellipsis or a is np.newaxis else 0 for a in key)
@@ -148,8 +146,8 @@ def _item_shape(shape, key):
         shape_item.extend(shape[i:])
         return tuple(shape_item)
 
-    except Exception as e:  # IndexError, ValueError, or other
-        logging.debug(f'Exception "{e}" in mpyc.numpy._item_shape for {shape=} {key=}')
+    except Exception as exc:  # IndexError, ValueError, or other
+        logging.debug(f'Exception "{exc}" in mpyc.numpy._item_shape for {shape=} {key=}')
         # Let Numpy generate error message by calling a[key] for dummy array a of given shape:
         return np.empty(shape)[key]
 
@@ -163,22 +161,25 @@ try:
     np._matmul_shape = _matmul_shape
     np._item_shape = _item_shape
 
+    if np.lib.NumpyVersion(np.__version__) < '1.22.0':
+        logging.warning(f'NumPy {np.__version__} not (fully) supported. Upgrade to NumPy 1.22+.')
+
     if np.lib.NumpyVersion(np.__version__) < '1.23.0':
+        __fromiter = np.fromiter
+
         def _fromiter(iterable, dtype, **kwargs):
-            if dtype != object:
-                return np.fromiter(iterable, dtype, **kwargs)
-            # No dtype=object for np.fromiter(), workaournd via np.array():
-            return np.array(list(iterable), dtype=object)
+            if np.dtype(dtype) != object:
+                return __fromiter(iterable, dtype, **kwargs)
+
+            # No dtype=object for np.fromiter(), workaround via 1D array:
+            x = list(iterable)
+            a = np.empty(len(x), dtype=object)
+            for i in range(len(x)):
+                a[i] = x[i]
+            return a
 
         np.fromiter = _fromiter
-
-    if np.lib.NumpyVersion(np.__version__) < '1.22.0':
-        # No is_integer() for np.float32, workaround via float():
-        _is_integer = lambda a: float(a).is_integer()
-    else:
-        _is_integer = lambda a: a.is_integer()
-    np.is_integral = _is_integer
-
 except ImportError:
+    del _matmul_shape
     del _item_shape
     np = None

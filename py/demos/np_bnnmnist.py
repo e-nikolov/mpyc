@@ -60,7 +60,10 @@ async def bsgn_0(a):
 
     n = a.size
     s = mpc.np_random_bits(Zp, n, signed=True)  # n random signs
-    r2 = mpc._np_randoms(Zp, n) ** 2  # n random squares modulo p
+    r2 = mpc._np_randoms(Zp, n)
+    if mpc.options.no_prss:
+        r2 = await r2
+    r2 **= 2  # n random squares modulo p
     r2 = mpc._reshare(r2)
     s, r2 = await mpc.gather(s, r2)
     y = s * r2
@@ -86,8 +89,11 @@ async def bsgn_1(a):
     legendre_p = np.vectorize(lambda a: legendre(a, p), otypes="O")
 
     n = a.size
-    s = mpc.np_random_bits(Zp, 3 * n, signed=True)  # 3n random signs
-    r2 = mpc._np_randoms(Zp, 3 * n) ** 2  # 3n random squares modulo p
+    s = mpc.np_random_bits(Zp, 3*n, signed=True)  # 3n random signs
+    r2 = mpc._np_randoms(Zp, 3*n)
+    if mpc.options.no_prss:
+        r2 = await r2
+    r2 **= 2  # 3n random squares modulo p
     r2 = mpc._reshare(r2)
     s, r2 = await mpc.gather(s, r2)
     s = s.reshape(3, n)
@@ -126,8 +132,11 @@ async def bsgn_2(a):
     legendre_p = np.vectorize(lambda a: legendre(a, p), otypes="O")
 
     n = a.size
-    s = mpc.np_random_bits(Zp, 6 * n, signed=True)  # 6n random signs
-    r2 = mpc._np_randoms(Zp, 6 * n) ** 2  # 6n random squares modulo p
+    s = mpc.np_random_bits(Zp, 6*n, signed=True)  # 6n random signs
+    r2 = mpc._np_randoms(Zp, 6*n)
+    if mpc.options.no_prss:
+        r2 = await r2
+    r2 **= 2  # 6n random squares modulo p
     r2 = mpc._reshare(r2)
     s, r2 = await mpc.gather(s, r2)
     s = s.reshape(6, n)
@@ -144,7 +153,7 @@ async def bsgn_2(a):
     y = await mpc.output(y, threshold=2 * mpc.threshold)
     t = np.sum(s[:5] * legendre_p(y[:5].value), axis=0)
     t = await mpc.output(t * y[5])
-    return Zp.array(s[5] * legendre_p(t.value)).reshape(a.shape)
+    return (s[5] * legendre_p(t.value)).reshape(a.shape)
 
 
 async def main():
@@ -185,10 +194,10 @@ async def main():
     df = gzip.open(os.path.join("data", "cnn", "t10k-labels-idx1-ubyte.gzip"))
     d = df.read()[8 + offset : 8 + offset + batch_size]
     labels = list(map(int, d))
-    print("Labels:", labels)
-    df = gzip.open(os.path.join("data", "cnn", "t10k-images-idx3-ubyte.gzip"))
-    d = df.read()[16 + offset * 28**2 : 16 + (offset + batch_size) * 28**2]
-    L = np.array(list(d)).reshape(batch_size, 28**2)
+    print('Labels:', labels)
+    df = gzip.open(os.path.join('data', 'cnn', 't10k-images-idx3-ubyte.gzip'))
+    d = df.read()[16 + offset * 28**2: 16 + (offset + batch_size) * 28**2]
+    L = np.frombuffer(d, dtype=np.ubyte).reshape(batch_size, 28**2)
     if batch_size == 1:
         x = np.array(L[0]).reshape(28, 28)
         print(np.array2string(np.vectorize(lambda a: int(bool((a / 255))))(x), separator=""))
@@ -236,10 +245,9 @@ async def main():
     if args.no_legendre:
         secint.bit_length = 14
     for i in range(batch_size):
-        prediction = int(await mpc.output(mpc.argmax(L[i].tolist())[0]))
-
-        error = "******* ERROR *******" if prediction != labels[i] else ""
-        print(f"Image #{offset+i} with label {labels[i]}: {prediction} predicted. {error}")
+        prediction = await mpc.output(np.argmax(L[i]))
+        error = '******* ERROR *******' if prediction != labels[i] else ''
+        print(f'Image #{offset+i} with label {labels[i]}: {prediction} predicted. {error}')
         print(await mpc.output(L[i]))
 
     await mpc.shutdown()

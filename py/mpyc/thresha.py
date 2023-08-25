@@ -10,11 +10,12 @@ function (PRF).
 """
 
 __all__ = ['random_split', 'recombine', 'pseudorandom_share', 'pseudorandom_share_zero',
-           'np_pseudorandom_share', 'np_pseudorandom_share_0', 'PRF']
+           'np_random_split', 'np_recombine', 'np_pseudorandom_share', 'np_pseudorandom_share_0',
+           'PRF']
 
 from math import prod
 import functools
-import hashlib
+from hashlib import shake_128
 import secrets
 from mpyc.numpy import np
 
@@ -43,7 +44,27 @@ def random_split(field, s, t, m):
     return shares
 
 
-@functools.lru_cache(maxsize=None)
+def np_random_split(field, s, t, m):
+    """Split each secret given in s into m random Shamir shares.
+
+    The (maximum) degree for the Shamir polynomials is t, 0 <= t < m.
+    Return matrix of shares, one row per party.
+    """
+    p = field.modulus
+    tp = type(p)  # int or gfpx.Polynomial
+    if isinstance(s, field.array):
+        s = s.value
+    n = len(s)
+    _randbelow = secrets.randbelow
+    order = field.order
+    C = np.fromiter((_randbelow(order) for _ in range(t * n)), 'O', count=t * n).reshape(t, n)
+    V = np.vander(np.array([tp(i) for i in range(1, m+1)], dtype='O'), N=t+1, increasing=True)
+    # NB: each entry in first column of V is a 1 of type int (also if tp is gfpx.Polynomial)
+    shares = (V @ np.concatenate((s.reshape(1, n), C))) % p
+    return shares
+
+
+@functools.cache
 def _recombination_vector(field, xs, x_r):
     """Compute and store a recombination vector.
 
@@ -95,7 +116,23 @@ def recombine(field, points, x_rs=0):
     return sums
 
 
-@functools.lru_cache(maxsize=None)
+def np_recombine(field, points, x_rs=0):
+    """Recombine shares given by points into secrets.
+
+    Recombination is done for x-coordinates x_rs.
+    """
+    xs, shares = list(zip(*points))
+    if not isinstance(x_rs, list):
+        x_rs = (x_rs,)
+    vector = np.array([_recombination_vector(field, xs, x_r) for x_r in x_rs], dtype='O')
+    shares = field.array(shares)
+    sums = vector @ shares
+    if isinstance(x_rs, tuple):
+        sums = sums[0]
+    return sums
+
+
+@functools.cache
 def _f_S_i(field, m, i, S):
     """Compute and store polynomial f_S evaluated for party i.
 
@@ -217,7 +254,7 @@ class PRF:
         elif not (l := self.byte_length):
             iterable = (0 for _ in range(n_))
         else:
-            dk = hashlib.pbkdf2_hmac('sha1', self.key, s, 1, n_ * l)
+            dk = shake_128(self.key + s).digest(n_ * l)
             byteorder = 'little'
             from_bytes = int.from_bytes  # cache
             bound = self.max
