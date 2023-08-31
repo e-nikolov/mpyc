@@ -16,5 +16,6 @@ class MyWriter(io.StringIO):
             display(line)
 
 
+# TODO add error handling?
 sys.stdout = MyWriter()
 # sys.stderr = MyWriter()

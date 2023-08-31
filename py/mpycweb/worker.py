@@ -1,4 +1,3 @@
-## Receiving stuff from the main JS thread
 import asyncio
 from asyncio import futures
 import json
@@ -21,25 +20,24 @@ logging = logging.getLogger(__name__)
 import inspect
 
 
-async def run_mpc(data):
+async def run_mpc(options):
     logging.debug("starting mpyc execution...")
-    mpc.options.no_async = data.no_async
-    m = len(data.parties)
-
+    # TODO automatically set the no_async based on the number of parties
+    m = len(options.parties)
     mpc.options.threshold = (m - 1) // 2
+    mpc.options.no_async = m == 1 and options.no_async
 
     assert 2 * mpc.options.threshold < m, f"threshold {mpc.options.threshold} too large for {m} parties"
 
     parties = []
-    for pid, peerID in enumerate(data.parties):
+    for pid, peerID in enumerate(options.parties):
         parties.append(Party(pid, peerID))
-    logging.debug(f"setting parties {sdump(parties)}")
     mpc.options.parties = parties
 
     # reinitialize the mpyc runtime with the new parties
-    mpc.__init__(data.pid, parties, mpc.options)
+    mpc.__init__(options.pid, parties, mpc.options)
 
-    f = await exec_async(data.exec)
+    f = await exec_async(options.exec)
     # print("mpc done")
 
 
@@ -51,80 +49,6 @@ async def exec_async(source: str):
         return await func()
     else:
         return func()
-
-
-def runcode(loop: AbstractEventLoop, coro: types.FunctionType):
-    future = asyncio.Future()
-
-    def callback():
-        print("callback? 1")
-        global inner_future
-        inner_future = None
-
-        print("callback? 2")
-        if not asyncio.iscoroutine(coro):
-            future.set_result(coro)
-            return
-
-        print("callback? 3")
-        try:
-            inner_future = loop.create_task(coro)
-            futures._chain_future(inner_future, future)
-        except BaseException as exc:
-            future.set_exception(exc)
-        print("callback? 4")
-
-    print(loop.call_soon_threadsafe)
-    print(loop.call_soon)
-    loop.call_soon(callback)
-    print("called soon?")
-    return future.result()
-    # try:
-
-    # except:
-    #     traceback.print_stack()
-
-
-def runcode2(loop: AbstractEventLoop, code: types.CodeType):
-    future = asyncio.Future()
-
-    def callback():
-        global inner_future
-        inner_future = None
-
-        func = types.FunctionType(code, globals())
-        # func = types.FunctionType(code, locals())
-        try:
-            coro = func()
-        except SystemExit:
-            raise
-
-        except BaseException as ex:
-            future.set_exception(ex)
-            return
-
-        print("callback? 2")
-        if not inspect.iscoroutine(coro):
-            future.set_result(coro)
-            return
-
-        print("callback? 3")
-        try:
-            inner_future = loop.create_task(coro)
-            futures._chain_future(inner_future, future)
-        except BaseException as exc:
-            future.set_exception(exc)
-        print("callback? 4")
-
-    print(loop.call_soon_threadsafe)
-    print(loop.call_soon)
-    loop.call_soon(callback)
-    print("called soon?")
-
-    return future.result()
-    # try:
-    # except BaseException:
-    #     traceback.print_stack()
 
 
 xworker.sync.run_mpc = run_mpc

@@ -1,7 +1,6 @@
-from asyncio import Future, Task
+from asyncio import Future
 import time
 import types
-from typing import Awaitable, Coroutine
 
 from .debug import *
 
@@ -15,12 +14,46 @@ import logging
 logging = logging.getLogger(__name__)
 # pyright: reportMissingImports=false
 from polyscript import xworker
+from pyodide.code import run_js
+import pyodide.webloop as webloop
+
+import js
+
+from pyodide.ffi import create_once_callable
+
+# https://github.com/pyodide/pyodide/issues/4006
+# The pyodide Webloop relies onsetTimeout(), which has a minimum delay of 4ms
+# this slows down code that uses await asyncio.sleep(0)
+# This monkey patch replaces setTimeout() with a faster version that uses MessageChannel
+run_js("""
+const oldSetTimeout = setTimeout;
+       
+function fastSetTimeout(callback, delay) {
+    if (delay == undefined || isNaN(delay) || delay < 0) {
+        delay = 0;
+    }
+    if (delay < 10) {
+        const channel = new MessageChannel();
+        channel.port1.onmessage = () => { callback() };
+        channel.port2.postMessage('');
+    } else {
+        oldSetTimeout(callback, delay);
+    }
+}
+       """)
+webloop.setTimeout = js.fastSetTimeout
 
 
-pjs = peerjs.Client(xworker.sync)
+async def ping():
+    while True:
+        xworker.sync.log(f"Python Worker Stats")
+        await asyncio.sleep(5)
 
 
-def run2(self, f):
+asyncio.ensure_future(ping())
+
+
+def run(self, f):
     """Run the given coroutine or future until it is done."""
     logging.debug(f"monkey patched run() {f.__class__.__name__}")
 
@@ -34,25 +67,19 @@ def run2(self, f):
                     return exc.value
         else:
             return asyncio.ensure_future(f)
-
-    return asyncio.ensure_future(f)
-
-
-async def run(self, f):
-    """Run the given coroutine or future until it is done."""
-    if asyncio.iscoroutine(f):
-        return await f
-    if asyncio.isfuture(f):
-        return await f
-    return f
+    # TODO await in JS? https://github.com/pyodide/pyodide/issues/1219
+    return self._loop.run_until_complete(f)
 
 
-mpc.run = types.MethodType(run2, mpc)
+mpc.run = types.MethodType(run, mpc)
+
+pjs = peerjs.Client(xworker.sync)
 
 
 # The regular start() starts TCP connections, which don't work in the browser.
 # We monkey patch it to use PeerJS instead.
 async def start(runtime: Runtime) -> None:
+    # TODO refactor runtime.start() to work with multiple transports
     """Start the MPyC runtime with a PeerJS transport.
 
     Open connections with other parties, if any.
@@ -133,10 +160,11 @@ async def shutdown(self):
 
     # Close connections to all parties > self.pid.
     logging.info("Closing connections with other parties")
+    # TODO refactor to make this work with closing only the connections to peers with pid > self.pid
     for peer in self.parties:
         if peer.pid == self.pid:
             continue
-        logging.info("Closing connection with peer %d", peer.pid)
+        logging.debug("Closing connection with peer %d", peer.pid)
         peer.protocol.close_connection()
     await self.parties[self.pid].protocol
 

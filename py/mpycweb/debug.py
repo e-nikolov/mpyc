@@ -56,18 +56,19 @@ def sdump(obj):
 
     if s == "":
         try:
-            s = "pformat: " + pformat(obj, indent=4)
-        except:
-            pass
-
-    if s == "":
-        try:
             s = "attrs: "
 
             for attr in dir(obj):
                 s += f"obj.%s = %r\n" % (attr, getattr(obj, attr))
         except:
             pass
+
+    if s == "":
+        try:
+            s = "pformat: " + pformat(obj, indent=4)
+        except:
+            pass
+
     return f"type: {type(obj)}: {s}"
 
 
@@ -75,15 +76,6 @@ def dump(obj):
     logging.debug("-----------------------")
     logging.debug(sdump(obj))
     logging.debug("-----------------------")
-
-
-# def dump(obj):
-#     try:
-#         pprint(json.dumps(obj))
-#     except:
-#         # for attr in dir(obj):
-#         #     print("obj.%s = %r" % (attr, getattr(obj, attr)))
-#         pprint(dir(obj))
 
 
 class bcolors:
@@ -127,12 +119,3 @@ def set_log_level(level):
 
 
 # set_log_level(logging.INFO)
-
-
-async def ping():
-    while True:
-        xworker.sync.log("Python Worker Ping")
-        await asyncio.sleep(5)
-
-
-asyncio.ensure_future(ping())

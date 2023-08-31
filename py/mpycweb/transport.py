@@ -12,7 +12,7 @@ from .debug import *
 
 
 class AbstractClient:
-    def send_runtime_message(self, pid: int, message: str):
+    def send_runtime_message(self, pid: int, message: bytes):
         raise NotImplementedError
 
     def send_ready_message(self, pid: int, message: str):
@@ -44,18 +44,11 @@ class PeerJSTransport(asyncio.Transport):
         if not self._listener:
             self._loop.create_task(self._connect_to_peer())
 
-    def is_closing(self):
-        return self._closing
-
-    def close(self):
-        self._closing = True
-        self._protocol.connection_lost(None)
-
-    def set_protocol(self, protocol: asyncoro.MessageExchanger):
-        self._protocol = protocol
-
-    def get_protocol(self):
-        return self._protocol
+    async def _connect_to_peer(self):
+        while not self.peer_ready_to_start:
+            ## send ready messages to this connection's peer to check if the user has clicked "run mpyc demo"
+            self.client.send_ready_message(self.pid, "ready?")
+            await asyncio.sleep(1)
 
     def write(self, data: bytes):
         """Write some data bytes to the transport.
@@ -63,13 +56,11 @@ class PeerJSTransport(asyncio.Transport):
         This does not block; it buffers the data and arranges for it
         to be sent out asynchronously.
         """
-        self.client.send_runtime_message(self.pid, data.hex())
+        self.client.send_runtime_message(self.pid, data)
 
-    async def _connect_to_peer(self):
-        while not self.peer_ready_to_start:
-            ## send ready messages to this connection's peer to check if the user has clicked "run mpyc demo"
-            self.client.send_ready_message(self.pid, "ready?")
-            await asyncio.sleep(3)
+    def on_runtime_message(self, message: bytes):
+        # logging.debug(f"received {message} from {self.pid}")
+        self._protocol.data_received(message)
 
     def on_ready_message(self, message: str):
         match message:
@@ -85,6 +76,15 @@ class PeerJSTransport(asyncio.Transport):
                 self.peer_ready_to_start = True
                 self._protocol.connection_made(self)
 
-    def on_runtime_message(self, message: str):
-        # logging.debug(f"received {data.hex()} from {self.pid}")
-        self._protocol.data_received(bytes.fromhex(message))
+    def is_closing(self):
+        return self._closing
+
+    def close(self):
+        self._closing = True
+        self._protocol.connection_lost(None)
+
+    def set_protocol(self, protocol: asyncoro.MessageExchanger):
+        self._protocol = protocol
+
+    def get_protocol(self):
+        return self._protocol

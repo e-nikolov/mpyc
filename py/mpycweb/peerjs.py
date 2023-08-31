@@ -11,6 +11,7 @@ from mpyc.runtime import mpc, Party, Runtime
 from .debug import *
 from . import worker
 from .transport import PeerJSTransport, AbstractClient
+from pyodide.ffi import JsProxy
 
 
 class Client(AbstractClient):
@@ -24,18 +25,11 @@ class Client(AbstractClient):
 
     async def create_connection(
         self, protocol_factory: Callable[[], asyncoro.MessageExchanger], loop: AbstractEventLoop, pid: int, listener: bool
-    ) -> tuple[Future[Transport], Future[Protocol]]:
+    ) -> tuple[Transport, Protocol]:
         p = protocol_factory()
         t = PeerJSTransport(loop, pid, self, p, listener)
         self.transports[pid] = t
-
-        ft: Future[Transport] = loop.create_future()
-        ft.set_result(t)
-
-        fp: Future[Protocol] = loop.create_future()
-        fp.set_result(p)
-
-        return ft, fp
+        return t, p
 
     def send_ready_message(self, pid: int, message: str):
         self.worker.sendReadyMessage(pid, message)
@@ -43,10 +37,10 @@ class Client(AbstractClient):
     def on_ready_message(self, pid: int, ready_message: str):
         self.transports[pid].on_ready_message(ready_message)
 
-    def send_runtime_message(self, pid: int, message: str):
-        logging.debug(f"sending {message} to {pid}")
+    def send_runtime_message(self, pid: int, message: bytes):
+        # logging.debug(f"sending {message} to {pid}")
         self.worker.sendRuntimeMessage(pid, message)
 
-    def on_runtime_message(self, pid: int, runtime_message: str):
+    def on_runtime_message(self, pid: int, runtime_message: JsProxy):
         # logging.debug(f"received {runtime_message} from {pid}")
-        self.transports[pid].on_runtime_message(runtime_message)
+        self.transports[pid].on_runtime_message(runtime_message.to_py())

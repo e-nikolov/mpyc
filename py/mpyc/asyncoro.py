@@ -101,7 +101,7 @@ class MessageExchanger(Protocol):
 
         First message from peer is processed differently if peer is a client.
         """
-        logging.debug(f"received {data.hex()} from peer {self.peer_pid}")
+        # logging.debug(f"received {data} from peer {self.peer_pid}")
         self.bytes.extend(data)
         # no associated peer_pid yet, so we're a server
         if self.peer_pid is None:  # peer is client (this party is server)
@@ -172,7 +172,6 @@ class MessageExchanger(Protocol):
 
     def close_connection(self):
         """Close connection with the peer."""
-        logging.info("Closing connection with peer %d", self.peer_pid)
         self.transport.close()
 
 

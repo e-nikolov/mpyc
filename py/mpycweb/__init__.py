@@ -14,5 +14,5 @@ from mpyc.runtime import mpc, Runtime
 # pyright: reportMissingImports=false
 from polyscript import xworker
 
-
+# TODO refactor to fire an event instead of printing
 display("PyScript runtime started.")

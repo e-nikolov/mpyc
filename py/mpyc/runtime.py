@@ -131,7 +131,7 @@ class Runtime:
 
     def _send_message(self, peer_pid, data):
         """Send data to given peer, labeled by current program counter."""
-        logging.debug(f"sending {data.hex()} to peer {peer_pid}")
+        logging.debug(f"sending {data} to peer {peer_pid}")
         self.stats_messages_sent += 1
         if peer_pid not in self.stats_messages_sent_to:
             self.stats_messages_sent_to[peer_pid] = 0
@@ -227,9 +227,10 @@ class Runtime:
             peer.protocol = Future(loop=loop) if peer.pid == self.pid else None
         if self.options.ssl:
             import ssl  # NB: avoid "dependency" for PyScript (ssl unvendored in Pyodide)
-            crtfile = os.path.join('.config', f'party_{self.pid}.crt')
-            keyfile = os.path.join('.config', f'party_{self.pid}.key')
-            cafile = os.path.join('.config', 'mpyc_ca.crt')
+
+            crtfile = os.path.join(".config", f"party_{self.pid}.crt")
+            keyfile = os.path.join(".config", f"party_{self.pid}.key")
+            cafile = os.path.join(".config", "mpyc_ca.crt")
 
         # Listen for all parties < self.pid.
 
@@ -299,9 +300,9 @@ class Runtime:
             await asyncio.sleep(0)
         elapsed = time.time() - self.start_time
         elapsed = str(datetime.timedelta(seconds=elapsed))  # format: YYYY-MM-DDTHH:MM:SS[.ffffff]
-        elapsed = elapsed[:-3] if elapsed[-7] == '.' else elapsed + '.000'  # keep milliseconds .fff
+        elapsed = elapsed[:-3] if elapsed[-7] == "." else elapsed + ".000"  # keep milliseconds .fff
         nbytes = [peer.protocol.nbytes_sent if peer.pid != self.pid else 0 for peer in self.parties]
-        logging.info(f'Stop MPyC -- elapsed time: {elapsed}|bytes sent: {sum(nbytes)}')
+        logging.info(f"Stop MPyC -- elapsed time: {elapsed}|bytes sent: {sum(nbytes)}")
         logging.debug(f'Bytes sent per party: {" ".join(map(str, nbytes))}')
         m = len(self.parties)
         if m == 1:
@@ -315,7 +316,7 @@ class Runtime:
         # Close connections to all parties > self.pid.
         logging.debug("Closing connections with other parties")
         for peer in self.parties[self.pid + 1 :]:
-            logging.info("Closing connection with peer %d", peer.pid)
+            logging.debug("Closing connection with peer %d", peer.pid)
             peer.protocol.close_connection()
         await self.parties[self.pid].protocol
 
@@ -447,7 +448,7 @@ class Runtime:
 
         sftype = type(x[0])  # all elts assumed of same type
         if issubclass(sftype, self.SecureObject):
-            if hasattr(sftype, '_input'):
+            if hasattr(sftype, "_input"):
                 return sftype._input(x, senders)
 
             if issubclass(sftype, self.SecureArray):
@@ -656,12 +657,12 @@ class Runtime:
             shares = [pickle.dumps(elts) for elts in shares]
         # Recombine the first 2t+1 output_shares.
         shares = self._exchange_shares(shares)
-        shares = await self.gather(shares[:2*t+1])
+        shares = await self.gather(shares[: 2 * t + 1])
         if shape is None or self.options.mix32_64bit:
-            points = [(j+1, field.from_bytes(s)) for j, s in enumerate(shares)]
+            points = [(j + 1, field.from_bytes(s)) for j, s in enumerate(shares)]
             y = thresha.recombine(field, points)
         else:
-            points = [(j+1, pickle.loads(s)) for j, s in enumerate(shares)]
+            points = [(j + 1, pickle.loads(s)) for j, s in enumerate(shares)]
             y = thresha.np_recombine(field, points)
         if shape is None:
             y = [field(a) for a in y]
@@ -688,8 +689,7 @@ class Runtime:
             return []
 
         s_type = type(x[0])  # all elts assumed of same type
-        if (issubclass(s_type, self.SecureFiniteField) and
-                issubclass(t_type, self.SecureFiniteField)):
+        if issubclass(s_type, self.SecureFiniteField) and issubclass(t_type, self.SecureFiniteField):
             # conversion via secure integers
             size = max(s_type.field.order, t_type.field.order)
             l = max(32, size.bit_length())
@@ -719,13 +719,13 @@ class Runtime:
             k = self.options.sec_param
             l = min(s_type.bit_length, t_type.bit_length)
             if self.options.no_prss:
-                bound = (1<<(k + l)) // (t+1) + 1
+                bound = (1 << (k + l)) // (t + 1) + 1
             else:
-                bound = (1<<(k + l)) // math.comb(m, t) + 1
+                bound = (1 << (k + l)) // math.comb(m, t) + 1
 
         if self.options.no_prss:
             uci = self._program_counter[0] % m
-            senders = tuple((uci + i) % m for i in range(t+1))  # TODO: sort out load balancing
+            senders = tuple((uci + i) % m for i in range(t + 1))  # TODO: sort out load balancing
             if self.pid in senders:
                 r = [secrets.randbelow(bound) for _ in range(n)]
                 s_r = [s_field(a) for a in r]
@@ -888,8 +888,7 @@ class Runtime:
                     else:
                         m = len(self.parties)
                         prfs = self.prfs(field.order)
-                        z = thresha.pseudorandom_share_zero(field, m, self.pid, prfs,
-                                                            self._prss_uci(), 1)
+                        z = thresha.pseudorandom_share_zero(field, m, self.pid, prfs, self._prss_uci(), 1)
                         rs += z[0]
                 if await self.output(rs, threshold=threshold):
                     break  # nonzero r ensured because rs is nonzero
@@ -938,8 +937,7 @@ class Runtime:
                     else:
                         m = len(self.parties)
                         prfs = self.prfs(field.order)
-                        rs += thresha.np_pseudorandom_share_0(field, m, self.pid, prfs,
-                                                              self._prss_uci(), n)
+                        rs += thresha.np_pseudorandom_share_0(field, m, self.pid, prfs, self._prss_uci(), n)
                 if np.all(await self.output(rs, threshold=threshold)):
                     break  # nonzero r ensured because rs is nonzero
                     # TODO: handle cases with low success probability (considering alternatives
@@ -1194,8 +1192,7 @@ class Runtime:
                 else:
                     m = len(self.parties)
                     prfs = self.prfs(field.order)
-                    z = thresha.pseudorandom_share_zero(field, m, self.pid, prfs,
-                                                        self._prss_uci(), 1)
+                    z = thresha.pseudorandom_share_zero(field, m, self.pid, prfs, self._prss_uci(), 1)
                     ar += z[0]
             ar = await self.output(ar, threshold=threshold)
             if ar:  # happens with probability 1 - 1/field.order, which is usually close to 1
@@ -1236,7 +1233,7 @@ class Runtime:
                 ar += thresha.np_pseudorandom_share_0(field, m, self.pid, prfs, self._prss_uci(), n)
         ar = await self.output(ar, threshold=threshold)
         if np.count_nonzero(ar.value) < n:
-            b = np.empty(n, dtype='O')
+            b = np.empty(n, dtype="O")
             ar_nonzero = ar != 0
             b[ar_nonzero] = (r[ar_nonzero] / ar[ar_nonzero]).value
             del r, ar
@@ -1297,7 +1294,7 @@ class Runtime:
             return c
 
         if b == 0:
-            return type(a)(np.ones(a.shape, dtype='O'))
+            return type(a)(np.ones(a.shape, dtype="O"))
 
         if b < 0:
             a = self.np_reciprocal(a)
@@ -1372,11 +1369,11 @@ class Runtime:
         if self.options.no_prss:
             r = await r
         a = a.value
-        c = [Zp(a * r[i].value + (1-(z[i].value << 1)) * u2[i].value) for i in range(k)]
+        c = [Zp(a * r[i].value + (1 - (z[i].value << 1)) * u2[i].value) for i in range(k)]
         # -1 is nonsquare for Blum p, u[i] !=0 w.v.h.p.
         # If a == 0, c[i] is square mod p iff z[i] == 0.
         # If a != 0, c[i] is square mod p independent of z[i].
-        c = await self.output(c, threshold=2*self.threshold)
+        c = await self.output(c, threshold=2 * self.threshold)
         for i in range(k):
             if c[i] == 0:
                 c[i] = Zp(1)
@@ -1406,7 +1403,7 @@ class Runtime:
         k = self.options.sec_param
 
         r_bits = self.random_bits(Zp, l)
-        r_divl = self._random(Zp, 1<<k)
+        r_divl = self._random(Zp, 1 << k)
         r_bits = await r_bits
         r_modl = 0
         for r_i in reversed(r_bits):
@@ -1416,7 +1413,7 @@ class Runtime:
             r_divl = (await r_divl)[0]
         r_divl = r_divl.value
         a = await self.gather(a)
-        a_rmodl = a + ((1<<l) + r_modl)
+        a_rmodl = a + ((1 << l) + r_modl)
         c = await self.output(a_rmodl + (r_divl << l))
         c = c.value % (1 << l)
 
@@ -1542,9 +1539,9 @@ class Runtime:
                 m,
             )  # NB: sets integral attr to True for SecureFixedPoint numbers
 
-        i0, min0 = self._argmin(x[:n//2], key)
-        i1, min1 = self._argmin(x[n//2:], key)
-        i1 += n//2
+        i0, min0 = self._argmin(x[: n // 2], key)
+        i1, min1 = self._argmin(x[n // 2 :], key)
+        i1 += n // 2
         c = key(min1) < key(min0)
         a = self.if_else(c, i1, i0)
         m = self.if_else(c, min1, min0)  # TODO: merge if_else's once integral attr per list element
@@ -1630,7 +1627,7 @@ class Runtime:
         return x
 
     def np_sort(self, a, axis=-1, key=None):
-        """"Returns new array sorted along given axis.
+        """ "Returns new array sorted along given axis.
 
         By default, axis=-1.
         If axis is None, the array is flattened.
@@ -1650,10 +1647,10 @@ class Runtime:
 
         # n >= 2
         a = self.np_swapaxes(a, axis, -1)  # switch to last axis
-        t = (n-1).bit_length()
-        p = 1 << t-1
+        t = (n - 1).bit_length()
+        p = 1 << t - 1
         while p:
-            d, q, r = p, 1 << t-1, 0
+            d, q, r = p, 1 << t - 1, 0
             while d:
                 I = np.fromiter((i for i in range(n - d) if i & p == r), dtype=int)
                 b0 = a[..., I]
@@ -1685,7 +1682,7 @@ class Runtime:
         if self.options.no_prss:
             r = (await r)[0]
         r = r.value
-        c = await self.output(a + ((1<<l) + (r << 1) + b.value))
+        c = await self.output(a + ((1 << l) + (r << 1) + b.value))
         x = 1 - b if c.value & 1 else b  # xor
         if f:
             x <<= f
@@ -1766,7 +1763,7 @@ class Runtime:
             r_modl <<= 1
             r_modl += r_i.value
         k = self.options.sec_param
-        r_divl = self._random(field, 1<<(secint.bit_length + k - l))
+        r_divl = self._random(field, 1 << (secint.bit_length + k - l))
         if self.options.no_prss:
             r_divl = (await r_divl)[0]
         r_divl = r_divl.value
@@ -2058,15 +2055,15 @@ class Runtime:
             axes = axis + tuple(i for i in range(a.ndim) if i not in axis)
             a = self.np_transpose(a, axes=axes)
             # Flatten specified axes to one dimension:
-            a = self.np_reshape(a, (-1,) + a.shape[len(axis):])
+            a = self.np_reshape(a, (-1,) + a.shape[len(axis) :])
         elif axis := axis % a.ndim:
             # Move nonzero axis to front:
-            axes = (axis,) + tuple(range(axis)) + tuple(range(axis+1, a.ndim))
+            axes = (axis,) + tuple(range(axis)) + tuple(range(axis + 1, a.ndim))
             a = self.np_transpose(a, axes=axes)
 
         while (n := a.shape[0]) > 1:
-            n0 = n%2
-            m = a[n0:(n+1)//2] * a[(n+1)//2:]
+            n0 = n % 2
+            m = a[n0 : (n + 1) // 2] * a[(n + 1) // 2 :]
             if n0:
                 m = self.np_concatenate((a[:1], m), axis=0)
             a = m
@@ -2204,9 +2201,9 @@ class Runtime:
         return x
 
     def if_else(self, c, x, y):
-        '''Secure selection between x and y based on condition c.'''
+        """Secure selection between x and y based on condition c."""
         if isinstance(c, self.SecureFixedPoint) and not c.integral:
-            raise ValueError('condition must be integral')
+            raise ValueError("condition must be integral")
 
         if x is y:  # introduced for github.com/meilof/oblif
             return x
@@ -2243,9 +2240,9 @@ class Runtime:
         return x, y
 
     def if_swap(self, c, x, y):
-        '''Secure swap of x and y based on condition c.'''
+        """Secure swap of x and y based on condition c."""
         if isinstance(c, self.SecureFixedPoint) and not c.integral:
-            raise ValueError('condition must be integral')
+            raise ValueError("condition must be integral")
 
         if isinstance(x, list):
             z = self._if_swap_list(c, x, y)
@@ -2461,7 +2458,7 @@ class Runtime:
         return a
 
     @mpc_coro_no_pc
-    async def np_flatten(self, a, order='C'):
+    async def np_flatten(self, a, order="C"):
         """Return 1D copy of a.
 
         Default 'C' for row-major order (C style).
@@ -2504,16 +2501,16 @@ class Runtime:
         return stype.field.array([a.value for a in x], check=False)
 
     @mpc_coro_no_pc
-    async def np_reshape(self, a, shape, order='C'):
+    async def np_reshape(self, a, shape, order="C"):
         stype = type(a)
         if isinstance(shape, int):
             shape = (shape,)  # ensure shape is a tuple
         if -1 in shape:
             if shape.count(-1) > 1:
-                raise ValueError('can only specify one unknown dimension')
+                raise ValueError("can only specify one unknown dimension")
 
             if (n := a.size) % (n1 := -math.prod(shape)) != 0:
-                raise ValueError(f'cannot reshape array of size {n} into shape {shape}')
+                raise ValueError(f"cannot reshape array of size {n} into shape {shape}")
 
             i = shape.index(-1)
             shape = list(shape)
@@ -2600,8 +2597,7 @@ class Runtime:
             i += 1
         stype = type(a)
         if issubclass(stype, self.SecureFixedPointArray):
-            integral = all(a.integral if isinstance(a, stype) else stype(a).integral
-                           for a in arrays)
+            integral = all(a.integral if isinstance(a, stype) else stype(a).integral for a in arrays)
             await self.returnType((stype, integral, shape))
         else:
             await self.returnType((stype, shape))
@@ -2624,8 +2620,7 @@ class Runtime:
         shape = tuple(shape)
         stype = type(a)
         if issubclass(stype, self.SecureFixedPointArray):
-            integral = all(a.integral if isinstance(a, stype) else stype(a).integral
-                           for a in arrays)
+            integral = all(a.integral if isinstance(a, stype) else stype(a).integral for a in arrays)
             await self.returnType((stype, integral, shape))
         else:
             await self.returnType((stype, shape))
@@ -2640,6 +2635,7 @@ class Runtime:
         then these are concatenated along the second to last axis,
         and so on until the outermost list is reached.
         """
+
         def extract_type(s):
             if isinstance(s, list):
                 for a in s:
@@ -2856,18 +2852,18 @@ class Runtime:
             axes = axis + tuple(i for i in range(a.ndim) if i not in axis)
             a = self.np_transpose(a, axes=axes)
             # Flatten specified axes to one dimension:
-            a = self.np_reshape(a, (-1,) + a.shape[len(axis):])
+            a = self.np_reshape(a, (-1,) + a.shape[len(axis) :])
         elif axis := axis % a.ndim:
             if keepdims:
                 shape = list(a.shape)
                 shape[axis] = 1
             # Move nonzero axis to front:
-            axes = (axis,) + tuple(range(axis)) + tuple(range(axis+1, a.ndim))
+            axes = (axis,) + tuple(range(axis)) + tuple(range(axis + 1, a.ndim))
             a = self.np_transpose(a, axes=axes)
 
         while (n := a.shape[0]) > 1:
-            n0 = n%2
-            a1, a2 = a[n0:(n+1)//2], a[(n+1)//2:]
+            n0 = n % 2
+            a1, a2 = a[n0 : (n + 1) // 2], a[(n + 1) // 2 :]
             m = a1 + (a2 < a1) * (a2 - a1)
             if n0:
                 m = self.np_concatenate((a[:1], m), axis=0)
@@ -2905,18 +2901,18 @@ class Runtime:
             axes = axis + tuple(i for i in range(a.ndim) if i not in axis)
             a = self.np_transpose(a, axes=axes)
             # Flatten specified axes to one dimension:
-            a = self.np_reshape(a, (-1,) + a.shape[len(axis):])
+            a = self.np_reshape(a, (-1,) + a.shape[len(axis) :])
         elif axis := axis % a.ndim:
             if keepdims:
                 shape = list(a.shape)
                 shape[axis] = 1
             # Move nonzero axis to front:
-            axes = (axis,) + tuple(range(axis)) + tuple(range(axis+1, a.ndim))
+            axes = (axis,) + tuple(range(axis)) + tuple(range(axis + 1, a.ndim))
             a = self.np_transpose(a, axes=axes)
 
         while (n := a.shape[0]) > 1:
-            n0 = n%2
-            a1, a2 = a[n0:(n+1)//2], a[(n+1)//2:]
+            n0 = n % 2
+            a1, a2 = a[n0 : (n + 1) // 2], a[(n + 1) // 2 :]
             m = a1 + (a1 < a2) * (a2 - a1)
             if n0:
                 m = self.np_concatenate((a[:1], m), axis=0)
@@ -2977,7 +2973,7 @@ class Runtime:
 
     def np_absolute(self, a, l=None):
         """Secure elementwise absolute value of a."""
-        return (-2*self.np_sgn(a, l=l, LT=True) + 1) * a
+        return (-2 * self.np_sgn(a, l=l, LT=True) + 1) * a
 
     def np_less(self, a, b):
         """Secure comparison a < b, elementwise with broadcast."""
@@ -2990,7 +2986,7 @@ class Runtime:
         if issubclass(stype, self.SecureFiniteField):
             return 1 - self.np_pow(d, stype.field.order - 1)
 
-        if stype.bit_length/2 > self.options.sec_param >= 8 and stype.field.order%4 == 3:
+        if stype.bit_length / 2 > self.options.sec_param >= 8 and stype.field.order % 4 == 3:
             return self._np_is_zero(d)
 
         return self.np_sgn(d, EQ=True)
@@ -3022,12 +3018,12 @@ class Runtime:
         z = z.value.reshape((k, n))
         u2 = u2.value.reshape((k, n))
 
-        c = Zp.array(a * r + (1-(z << 1)) * u2)
+        c = Zp.array(a * r + (1 - (z << 1)) * u2)
         del a, r, u2
         # -1 is nonsquare for Blum p, u2[i,j] !=0 w.v.h.p.
         # If a[j] == 0, c[i,j] is square mod p iff z[i,j] == 0.
         # If a[j] != 0, c[i,j] is square mod p independent of z[i,j].
-        c = await self.output(c, threshold=2*self.threshold)
+        c = await self.output(c, threshold=2 * self.threshold)
         z = np.where(c.value == 0, 0, z)
         c = np.where(c.is_sqr(), 1 - z, z)
         del z
@@ -3059,7 +3055,7 @@ class Runtime:
         k = self.options.sec_param
 
         r_bits = self.np_random_bits(Zp, (l + int(not EQ)) * n)
-        r_divl = self._np_randoms(Zp, n, 1<<k)
+        r_divl = self._np_randoms(Zp, n, 1 << k)
         r_bits = (await r_bits).value
         if not EQ:
             s_sign = (r_bits[-n:] << 1) - 1
@@ -3142,7 +3138,7 @@ class Runtime:
         if key is None:
             key = lambda a: a
 
-        key_size = getattr(key, 'size', 1)
+        key_size = getattr(key, "size", 1)
         assert key_size in (1, a.shape[-1])
 
         shape = a.shape
@@ -3220,8 +3216,8 @@ class Runtime:
             u = self.np_concatenate((1 - c, c), axis=1)
             m = c * (a2 - a1) + a1
         else:
-            n0 = n%2
-            a1, a2 = a[:, n0::2], a[:, n0 + 1::2]  # NB: odd-even split to return first occurrence
+            n0 = n % 2
+            a1, a2 = a[:, n0::2], a[:, n0 + 1 :: 2]  # NB: odd-even split to return first occurrence
             c = key(a2) < key(a1)
             cc = c if c.ndim == a.ndim else c.reshape(*c.shape, 1)  # TODO: use c[..., np.newaxis]?
             m = cc * (a2 - a1) + a1
@@ -3232,7 +3228,7 @@ class Runtime:
                 u0, u = u[:, :1], u[:, 1:]
             u2 = u * c
             u = self.np_concatenate((u - u2, u2), axis=0)
-            u = self.np_reshape(u, (len(c), 2*c.shape[1]), order='F')
+            u = self.np_reshape(u, (len(c), 2 * c.shape[1]), order="F")
             if n0:
                 u = self.np_concatenate((u0, u), axis=1)
         return u, m
@@ -3270,7 +3266,7 @@ class Runtime:
         if key is None:
             key = lambda a: a
 
-        key_size = getattr(key, 'size', 1)
+        key_size = getattr(key, "size", 1)
         assert key_size in (1, a.shape[-1])
 
         shape = a.shape
@@ -3348,8 +3344,8 @@ class Runtime:
             u = self.np_concatenate((1 - c, c), axis=1)
             m = c * (a2 - a1) + a1
         else:
-            n0 = n%2
-            a1, a2 = a[:, n0::2], a[:, n0 + 1::2]  # NB: odd-even split to return first occurrence
+            n0 = n % 2
+            a1, a2 = a[:, n0::2], a[:, n0 + 1 :: 2]  # NB: odd-even split to return first occurrence
             c = key(a1) < key(a2)
             cc = c if c.ndim == a.ndim else c.reshape(*c.shape, 1)  # TODO: use c[..., np.newaxis]?
             m = cc * (a2 - a1) + a1
@@ -3360,7 +3356,7 @@ class Runtime:
                 u0, u = u[:, :1], u[:, 1:]
             u2 = u * c
             u = self.np_concatenate((u - u2, u2), axis=0)
-            u = self.np_reshape(u, (len(c), 2*c.shape[1]), order='F')
+            u = self.np_reshape(u, (len(c), 2 * c.shape[1]), order="F")
             if n0:
                 u = self.np_concatenate((u0, u), axis=1)
         return u, m
@@ -3448,11 +3444,11 @@ class Runtime:
         if bound is None:
             bound = field.order
         else:
-            d = t+1 if self.options.no_prss else math.comb(m, t)
+            d = t + 1 if self.options.no_prss else math.comb(m, t)
             bound = 1 << max(0, (bound // d).bit_length() - 1)  # NB: rounded power of 2
         if self.options.no_prss:
             uci = self._program_counter[0] % m
-            senders = tuple((uci + i) % m for i in range(t+1))  # TODO: sort out load balancing
+            senders = tuple((uci + i) % m for i in range(t + 1))  # TODO: sort out load balancing
             if self.pid in senders:
                 x = [field(secrets.randbelow(bound)) for _ in range(n)]
             else:
@@ -3488,11 +3484,11 @@ class Runtime:
         if bound is None:
             bound = field.order
         else:
-            d = t+1 if self.options.no_prss else math.comb(m, t)
+            d = t + 1 if self.options.no_prss else math.comb(m, t)
             bound = 1 << max(0, (bound // d).bit_length() - 1)  # NB: rounded power of 2
         if self.options.no_prss:
             uci = self._program_counter[0] % m
-            senders = tuple((uci + i) % m for i in range(t+1))  # TODO: sort out load balancing
+            senders = tuple((uci + i) % m for i in range(t + 1))  # TODO: sort out load balancing
             if self.pid in senders:
                 x = field.array([secrets.randbelow(bound) for _ in range(n)])
             else:
@@ -3541,7 +3537,7 @@ class Runtime:
         if p == 2:
             if self.options.no_prss:
                 uci = self._program_counter[0] % m
-                senders = tuple((uci + i) % m for i in range(t+1))  # TODO: sort out load balancing
+                senders = tuple((uci + i) % m for i in range(t + 1))  # TODO: sort out load balancing
                 if self.pid in senders:
                     bits = [field(secrets.randbits(1)) for _ in range(n)]
                 else:
@@ -3560,9 +3556,9 @@ class Runtime:
             # Alternative: uniformly random secret value r, squared and opened as in PRSS case
             # in 3 rounds, with break-even point at t=7, hence advantageous for m >= 15.
             uci = self._program_counter[0] % m
-            senders = tuple((uci + i) % m for i in range(t+1))  # TODO: sort out load balancing
+            senders = tuple((uci + i) % m for i in range(t + 1))  # TODO: sort out load balancing
             if self.pid in senders:
-                bits = [field(2*secrets.randbits(1)-1) for _ in range(n)]
+                bits = [field(2 * secrets.randbits(1) - 1) for _ in range(n)]
             else:
                 bits = [field(0)] * n
             bits = self.input(bits, senders=senders)
@@ -3581,7 +3577,7 @@ class Runtime:
                 zs = thresha.pseudorandom_share_zero(field, m, self.pid, prfs, self._prss_uci(), h)
                 # Compute and open the squares and compute square roots.
                 r2s = [field(r.value**2 + z.value) for r, z in zip(rs, zs)]
-                r2s = await self.output(r2s, threshold=2*t)
+                r2s = await self.output(r2s, threshold=2 * t)
                 for r, r2 in zip(rs, r2s):
                     if r2.value != 0:
                         h -= 1
@@ -3590,7 +3586,7 @@ class Runtime:
                             bits[h] %= field.modulus
 
         if not signed:
-            q = (p+1) >> 1  # q = 1/2 mod p
+            q = (p + 1) >> 1  # q = 1/2 mod p
             for i in range(n):
                 bits[i] = (bits[i] + 1) * q
         for i in range(n):
@@ -3620,7 +3616,7 @@ class Runtime:
         if p == 2:
             if self.options.no_prss:
                 uci = self._program_counter[0] % m
-                senders = tuple((uci + i) % m for i in range(t+1))  # TODO: sort out load balancing
+                senders = tuple((uci + i) % m for i in range(t + 1))  # TODO: sort out load balancing
                 if self.pid in senders:
                     bits = field.array([secrets.randbits(1) for _ in range(n)], check=False)
                 else:
@@ -3637,10 +3633,9 @@ class Runtime:
 
         if self.options.no_prss:
             uci = self._program_counter[0] % m
-            senders = tuple((uci + i) % m for i in range(t+1))  # TODO: sort out load balancing
+            senders = tuple((uci + i) % m for i in range(t + 1))  # TODO: sort out load balancing
             if self.pid in senders:
-                bits = field.array(np.fromiter((2*secrets.randbits(1)-1 for _ in range(n)),
-                                               'O', count=n))
+                bits = field.array(np.fromiter((2 * secrets.randbits(1) - 1 for _ in range(n)), "O", count=n))
             else:
                 bits = field.array(np.zeros(n, dtype=object), check=False)
             bits = self.input(bits, senders=senders)
@@ -3648,8 +3643,8 @@ class Runtime:
             bits = [a[0] for a in bits]
             bits = np.stack(bits)
             while (_n := bits.shape[0]) > 1:
-                n0 = _n%2
-                _s = bits[n0:(_n+1)//2] * bits[(_n+1)//2:]
+                n0 = _n % 2
+                _s = bits[n0 : (_n + 1) // 2] * bits[(_n + 1) // 2 :]
                 _s = await self._reshare(_s)
                 if n0:
                     _s = np.concatenate((bits[:1], _s), axis=0)
@@ -3657,15 +3652,15 @@ class Runtime:
             bits = bits[0].value
         else:
             prfs = self.prfs(field.order)
-            r = np.array([], dtype='O')
-            r2 = np.array([], dtype='O')
+            r = np.array([], dtype="O")
+            r2 = np.array([], dtype="O")
             h = n
             while h:
                 _r = thresha.np_pseudorandom_share(field, m, self.pid, prfs, self._prss_uci(), h)
                 z = thresha.np_pseudorandom_share_0(field, m, self.pid, prfs, self._prss_uci(), h)
                 # Compute and open the squares and later compute square roots.
                 _r2 = field.array(_r.value**2 + z.value)
-                _r2 = await self.output(_r2, threshold=2*t)
+                _r2 = await self.output(_r2, threshold=2 * t)
                 mask = _r2.value != 0
                 h -= np.count_nonzero(mask)
                 if h:
@@ -3754,7 +3749,7 @@ class Runtime:
             return self.convert(a_bits, stype)
 
         k = self.options.sec_param
-        r_divl = self._random(field, 1<<(stype.bit_length + k - l))
+        r_divl = self._random(field, 1 << (stype.bit_length + k - l))
         if self.options.no_prss:
             r_divl = (await r_divl)[0]
         r_divl = r_divl.value
@@ -3791,12 +3786,12 @@ class Runtime:
                 r_modl = np.sum(r_bits.value << shifts, axis=a.ndim)
                 a = await self.gather(a)
                 c = await self.output(a + r_modl)
-                c = np.vectorize(int, otypes='O')(c.value)
+                c = np.vectorize(int, otypes="O")(c.value)
                 c_bits = np.right_shift.outer(c, shifts) & 1
                 return c_bits + r_bits
 
             if field.ext_deg > 1:
-                raise TypeError('Binary field or prime field required.')
+                raise TypeError("Binary field or prime field required.")
 
     @mpc_coro_no_pc
     async def from_bits(self, x):
@@ -3823,10 +3818,10 @@ class Runtime:
         await self.returnType((type(x), True, tuple(shape)))
         x = await self.gather(x)
         shifts = np.arange(l)
-        s = np.sum(x.value << shifts, axis=x.ndim-1)
+        s = np.sum(x.value << shifts, axis=x.ndim - 1)
         return type(x).field.array(s)
 
-    def find(self, x, a, bits=True, e='len(x)', f=None, cs_f=None):
+    def find(self, x, a, bits=True, e="len(x)", f=None, cs_f=None):
         """Return index ix of the first occurrence of a in list x.
 
         The elements of x and a are assumed to be in {0, 1}, by default.
@@ -4042,7 +4037,7 @@ class Runtime:
 
         f = secfxp.frac_length
         k = f + 6
-        secfxp2 = self.SecFxp(2*k)  # TODO: tune bit length and fractional length
+        secfxp2 = self.SecFxp(2 * k)  # TODO: tune bit length and fractional length
         n = 2**k
         r_bits = self.random_bits(secfxp2, k)
         psi = 0
@@ -4050,9 +4045,9 @@ class Runtime:
             psi <<= 1
             psi += r_i
         r12 = r_bits[1] * r_bits[2]
-        s0 = 1 - 2*r_bits[0]
-        c = s0 * (1 - r_bits[1] - r_bits[2] + r12 + (r_bits[2] - 2*r12)/math.sqrt(2))
-        s = s0 * (r_bits[1] - r12 + r_bits[2]/math.sqrt(2))
+        s0 = 1 - 2 * r_bits[0]
+        c = s0 * (1 - r_bits[1] - r_bits[2] + r12 + (r_bits[2] - 2 * r12) / math.sqrt(2))
+        s = s0 * (r_bits[1] - r12 + r_bits[2] / math.sqrt(2))
         cs_psi = [(c, -s)]
         for i in range(3, k):
             theta_i = math.pi / 2**i
@@ -4063,11 +4058,11 @@ class Runtime:
         R = self._random(secfxp2, 2**self.options.sec_param) << k
 
         a = self.convert(a, secfxp2)
-        a = (a / (2*math.pi)) * n
+        a = (a / (2 * math.pi)) * n
         a = self.trunc(a) << k
         chi = await mpc.output(a + psi + R * n, raw=True)
         chi = chi.value >> k
-        chi = (chi % n) * 2*math.pi/n
+        chi = (chi % n) * 2 * math.pi / n
         c, s = math.cos(chi), math.sin(chi)
         c, s = self._cpx_mul(cs_psi, (c, s))
         c, s = self.convert([c, s], secfxp)
@@ -4128,7 +4123,7 @@ class Runtime:
         r >>= f
         a = await self.gather(a)
         a >>= f
-        R = self._random(type(a), 1<<self.options.sec_param)
+        R = self._random(type(a), 1 << self.options.sec_param)
         if self.options.no_prss:
             R = (await R)[0]
         R += 1
@@ -4179,13 +4174,14 @@ def generate_configs(m, addresses):
         configs[i].set(f"Party {i}", "host", "")  # empty host string for owner
     return configs
 
+
 def setup():
     """Setup a runtime."""
     parser = mpyc.get_arg_parser()
     argv = sys.argv  # keep raw args
     options, args = parser.parse_known_args()
     if options.VERSION:
-        print(f'MPyC {mpyc.__version__}')
+        print(f"MPyC {mpyc.__version__}")
         sys.exit()
 
     if options.HELP:
@@ -4278,19 +4274,19 @@ def setup():
             flg = lambda a: getattr(sys.flags, a, 0)
             flags = ["-" + flg(a) * c for a, c in flgmap.items() if flg(a)]
             # convert sys._xoptions into command line arguments
-            xopts = ['-X' + a + ('' if c is True else '=' + c) for a, c in sys._xoptions.items()]
-            for i in range(m-1, 0, -1):
-                cmd_line = [sys.executable] + flags + xopts + argv + ['-I', str(i)]
-                if options.output_windows and sys.platform.startswith(('win32', 'linux', 'darwin')):
-                    if sys.platform.startswith('win32'):
-                        subprocess.Popen(['start'] + cmd_line, shell=True)
-                    elif sys.platform.startswith('linux'):
+            xopts = ["-X" + a + ("" if c is True else "=" + c) for a, c in sys._xoptions.items()]
+            for i in range(m - 1, 0, -1):
+                cmd_line = [sys.executable] + flags + xopts + argv + ["-I", str(i)]
+                if options.output_windows and sys.platform.startswith(("win32", "linux", "darwin")):
+                    if sys.platform.startswith("win32"):
+                        subprocess.Popen(["start"] + cmd_line, shell=True)
+                    elif sys.platform.startswith("linux"):
                         # TODO: check for other common Linux terminals
-                        subprocess.Popen(['gnome-terminal', '--'] + cmd_line)
-                    elif sys.platform.startswith('darwin'):
-                        cmd_line = ' '.join(cmd_line)
+                        subprocess.Popen(["gnome-terminal", "--"] + cmd_line)
+                    elif sys.platform.startswith("darwin"):
+                        cmd_line = " ".join(cmd_line)
                         cmd_line = f'tell application "Terminal" to do script "{cmd_line}"'
-                        subprocess.Popen(['osascript', '-e', cmd_line])
+                        subprocess.Popen(["osascript", "-e", cmd_line])
                 elif options.output_file:
                     with open(f"party{options.M}_{i}.log", "a") as f:
                         f.write("\n")
@@ -4303,9 +4299,9 @@ def setup():
         base_port = options.base_port or 11365
         parties = [Party(i, "localhost", base_port + i) for i in range(m)]
 
-    options.no_prss = options.no_prss or os.getenv('MPYC_NOPRSS') == '1'  # check if MPYC_NOPRSS set
+    options.no_prss = options.no_prss or os.getenv("MPYC_NOPRSS") == "1"  # check if MPYC_NOPRSS set
     if options.no_prss:
-        logging.info('Use of PRSS (pseudorandom secret sharing) disabled.')
+        logging.info("Use of PRSS (pseudorandom secret sharing) disabled.")
 
     if options.threshold is None:
         options.threshold = (m - 1) // 2
