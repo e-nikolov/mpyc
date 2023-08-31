@@ -86,7 +86,7 @@ async def start(runtime: Runtime) -> None:
     """
     logging.debug("monkey patched start()")
     logging.info(f"Start MPyC runtime v{runtime.version} with a PeerJS transport")
-    logging.info(f"{len(mpc.parties)} parties and threshold of {mpc.options.threshold}")
+    logging.info(f"{len(mpc.parties)} parties, threshold={mpc.options.threshold}, no_async={mpc.options.no_async}")
     runtime.start_time = time.time()
 
     m = len(runtime.parties)
