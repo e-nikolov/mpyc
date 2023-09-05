@@ -195,11 +195,11 @@ async def main():
     logging.info('--------------- INPUT   -------------')
     print(f'Type = {secint.__name__}, range = ({offset}, {offset + batch_size})')
     # read batch_size labels and images at given offset
-    df = gzip.open(os.path.join('data', 'cnn', 't10k-labels-idx1-ubyte.gz'))
+    df = gzip.open(os.path.join('data', 'cnn', 't10k-labels-idx1-ubyte.gzip'))
     d = df.read()[8 + offset: 8 + offset + batch_size]
     labels = list(map(int, d))
     print('Labels:', labels)
-    df = gzip.open(os.path.join('data', 'cnn', 't10k-images-idx3-ubyte.gz'))
+    df = gzip.open(os.path.join('data', 'cnn', 't10k-images-idx3-ubyte.gzip'))
     d = df.read()[16 + offset * 28**2: 16 + (offset + batch_size) * 28**2]
     L = np.frombuffer(d, dtype=np.ubyte).reshape(batch_size, 28**2)
     if batch_size == 1:
