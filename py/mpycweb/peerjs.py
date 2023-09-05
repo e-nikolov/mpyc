@@ -3,7 +3,6 @@ from asyncio import AbstractEventLoop, Future, Protocol, Transport
 import logging
 from typing import Any, Callable
 
-# pyright: reportMissingImports=false
 logging = logging.getLogger("peerjs.py")
 
 from mpyc import asyncoro

@@ -76,6 +76,9 @@ files = [
     "cnnmnist.py",
     "dsa.py",
     "aes.py",
+    "np_aes.py",
+    "np_bnnmnist.py",
+    "np_cnnmnist.py",
     "lpsolver.py",
     "kmsurvival.py",
     "elgamal.py"

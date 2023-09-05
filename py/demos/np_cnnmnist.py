@@ -39,10 +39,10 @@ def scale_int(x, f2):
 
 
 def load(name, f, a=2):
-    W = np.load(os.path.join("data", "cnn", "W_" + name + ".npy"))
-    if name.startswith("conv"):
+    W = np.load(os.path.join('data', 'cnn', 'W_' + name + '.npy'))
+    if name.startswith('conv'):
         W = np.flip(W, axis=3)  # for use with np.convolve()
-    b = np.load(os.path.join("data", "cnn", "b_" + name + ".npy"))
+    b = np.load(os.path.join('data', 'cnn', 'b_' + name + '.npy'))
     if issubclass(secnum, mpc.SecureInteger):
         W = secnum.array(scale_int(W, 1 << f))
         b = secnum.array(scale_int(b, 1 << (a * f)))
@@ -69,14 +69,15 @@ async def convolvetensor(x, W, b):
     x, W, b = await mpc.gather(x, W, b)
     x, W, b = x.value, W.value, b.value
     Y = np.zeros(shape, dtype=object)
-    s2 = (s - 1) // 2
+    s2 = (s-1) // 2
     for i in range(k):
         for j in range(v):
             Z = np.empty((m, n), dtype=object)
             for l in range(r):
                 for I in range(m):
                     i_s2 = I - s2
-                    Z[I] = sum(np.convolve(x[i, l, i_d], W[j, l, i_d - i_s2], mode="same") for i_d in range(max(0, i_s2), min(i_s2 + s, m)))
+                    Z[I] = sum(np.convolve(x[i, l, i_d], W[j, l, i_d - i_s2], mode='same')
+                               for i_d in range(max(0, i_s2), min(i_s2+s, m)))
                 Y[i, j] += Z
     Y += b[:, np.newaxis, np.newaxis]
     Y = stype.sectype.field.array(Y)
@@ -113,66 +114,66 @@ async def main():
 
     f = 6
 
-    logging.info("--------------- INPUT   -------------")
-    print(f"Type = {secnum.__name__}, range = ({offset}, {offset + batch_size})")
+    logging.info('--------------- INPUT   -------------')
+    print(f'Type = {secnum.__name__}, range = ({offset}, {offset + batch_size})')
     # read batch_size labels and images at given offset
-    df = gzip.open(os.path.join("data", "cnn", "t10k-labels-idx1-ubyte.gzip"))
-    d = df.read()[8 + offset : 8 + offset + batch_size]
+    df = gzip.open(os.path.join('data', 'cnn', 't10k-labels-idx1-ubyte.gz'))
+    d = df.read()[8 + offset: 8 + offset + batch_size]
     labels = list(map(int, d))
     print('Labels:', labels)
-    df = gzip.open(os.path.join('data', 'cnn', 't10k-images-idx3-ubyte.gzip'))
+    df = gzip.open(os.path.join('data', 'cnn', 't10k-images-idx3-ubyte.gz'))
     d = df.read()[16 + offset * 28**2: 16 + (offset + batch_size) * 28**2]
     x = np.frombuffer(d, dtype=np.ubyte) / 255
     x = np.reshape(x, (batch_size, 1, 28, 28))
     if batch_size == 1:
-        print(np.array2string(np.vectorize(lambda a: int(bool(a)))(x[0, 0]), separator=""))
+        print(np.array2string(np.vectorize(lambda a: int(bool(a)))(x[0, 0]), separator=''))
     if issubclass(secnum, mpc.SecureInteger):
         x = secnum.array(scale_int(x, 1 << f))
     else:
         x = secnum.array(x, integral=False)
 
-    logging.info("--------------- LAYER 1 -------------")
-    W, b = load("conv1", f)
-    logging.info("- - - - - - - - conv2d  - - - - - - -")
+    logging.info('--------------- LAYER 1 -------------')
+    W, b = load('conv1', f)
+    logging.info('- - - - - - - - conv2d  - - - - - - -')
     x = convolvetensor(x, W, b)
     if issubclass(secnum, mpc.SecureInteger):
         secnum.bit_length = 16
-    logging.info("- - - - - - - - maxpool - - - - - - -")
+    logging.info('- - - - - - - - maxpool - - - - - - -')
     x = maxpool(x)
-    logging.info("- - - - - - - - ReLU    - - - - - - -")
+    logging.info('- - - - - - - - ReLU    - - - - - - -')
     x = (x >= 0) * x
-    await mpc.barrier("after-layer-1")
+    await mpc.barrier('after-layer-1')
 
-    logging.info("--------------- LAYER 2 -------------")
-    W, b = load("conv2", f, 3)
-    logging.info("- - - - - - - - conv2d  - - - - - - -")
+    logging.info('--------------- LAYER 2 -------------')
+    W, b = load('conv2', f, 3)
+    logging.info('- - - - - - - - conv2d  - - - - - - -')
     x = convolvetensor(x, W, b)
     if issubclass(secnum, mpc.SecureInteger):
         secnum.bit_length = 23
-    logging.info("- - - - - - - - maxpool - - - - - - -")
+    logging.info('- - - - - - - - maxpool - - - - - - -')
     x = maxpool(x)
-    logging.info("- - - - - - - - ReLU    - - - - - - -")
+    logging.info('- - - - - - - - ReLU    - - - - - - -')
     x = (x >= 0) * x
-    await mpc.barrier("after-layer-2")
+    await mpc.barrier('after-layer-2')
 
     x = x.reshape(batch_size, 64 * 7**2)
 
-    logging.info("--------------- LAYER 3 -------------")
-    W, b = load("fc1", f, 4)
-    logging.info("- - - - - - - - fc 3136 x 1024  - - -")
+    logging.info('--------------- LAYER 3 -------------')
+    W, b = load('fc1', f, 4)
+    logging.info('- - - - - - - - fc 3136 x 1024  - - -')
     x = x @ W + b
     if issubclass(secnum, mpc.SecureInteger):
         secnum.bit_length = 30
-    logging.info("- - - - - - - - ReLU    - - - - - - -")
+    logging.info('- - - - - - - - ReLU    - - - - - - -')
     x = (x >= 0) * x
-    await mpc.barrier("after-layer-3")
+    await mpc.barrier('after-layer-3')
 
-    logging.info("--------------- LAYER 4 -------------")
-    W, b = load("fc2", f, 5)
-    logging.info("- - - - - - - - fc 1024 x 10  - - - -")
+    logging.info('--------------- LAYER 4 -------------')
+    W, b = load('fc2', f, 5)
+    logging.info('- - - - - - - - fc 1024 x 10  - - - -')
     x = x @ W + b
 
-    logging.info("--------------- OUTPUT  -------------")
+    logging.info('--------------- OUTPUT  -------------')
     if issubclass(secnum, mpc.SecureInteger):
         secnum.bit_length = 37
 
@@ -184,6 +185,5 @@ async def main():
 
     await mpc.shutdown()
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     mpc.run(main())

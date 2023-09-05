@@ -12,7 +12,6 @@ import datetime
 import logging
 
 logging = logging.getLogger(__name__)
-# pyright: reportMissingImports=false
 from polyscript import xworker
 from pyodide.code import run_js
 import pyodide.webloop as webloop
@@ -27,12 +26,12 @@ from pyodide.ffi import create_once_callable
 # This monkey patch replaces setTimeout() with a faster version that uses MessageChannel
 run_js("""
 const oldSetTimeout = setTimeout;
-       
+
 function fastSetTimeout(callback, delay) {
     if (delay == undefined || isNaN(delay) || delay < 0) {
         delay = 0;
     }
-    if (delay < 10) {
+    if (delay < 1) {
         const channel = new MessageChannel();
         channel.port1.onmessage = () => { callback() };
         channel.port2.postMessage('');
@@ -40,7 +39,7 @@ function fastSetTimeout(callback, delay) {
         oldSetTimeout(callback, delay);
     }
 }
-       """)
+        """)
 webloop.setTimeout = js.fastSetTimeout
 
 
