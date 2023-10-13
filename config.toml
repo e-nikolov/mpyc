@@ -6,7 +6,8 @@ packages = [
     "matplotlib",
     "scipy",
     "lifelines",
-    "setuptools"
+    "setuptools",
+    "rich"
 ]
 
 # "https://e-nikolov.github.io/mpyc/py/mpyc-0.8.8-py3-none-any.whl"
@@ -18,11 +19,11 @@ packages = [
 
 # plugins = ["py-terminal.py"]
 # plugins = ["py-term.js"]
-# plugins = ["py-term.py"]
-[[fetch]]
-from = "./py/"
-to_folder = "./"
-files = ["logging_setup.py"]
+# plugins = ["py-term.py"] 
+# [[fetch]]
+# from = "./py/"
+# to_folder = "./"
+# files = ["logging_setup.py"]
 
 [[fetch]]
 from = "./py/mpycweb"
@@ -32,13 +33,15 @@ files = [
     "debug.py",
     "patches.py",
     "peerjs.py",
-    "redirect_stdout.py",
     "transport.py",
-    "worker.py"
+    "worker_init.py",
+    "worker.py",
+    "log.py",
+    "stats.py"
 ]
 
 [[fetch]]
-from = "./py/demos"
+from = "./py/mpyc/demos"
 to_folder = "./"
 files = [
     "data/lp/kb2.csv",
@@ -63,8 +66,8 @@ files = [
     "data/cnn/b_conv2.npy",
     "data/cnn/b_fc1.npy",
     "data/cnn/b_fc2.npy",
-    "data/cnn/t10k-images-idx3-ubyte.gzip",
-    "data/cnn/t10k-labels-idx1-ubyte.gzip",
+    "data/cnn/t10k-images-idx3-ubyte.gz",
+    "data/cnn/t10k-labels-idx1-ubyte.gz",
     "data/cnn/W_conv1.npy",
     "data/cnn/W_conv2.npy",
     "data/cnn/W_fc1.npy",
@@ -85,7 +88,7 @@ files = [
 ]
 
 [[fetch]]
-from = "./py/mpyc"
+from = "./py/mpyc/mpyc"
 to_folder = "./mpyc"
 files = [
     "__main__.py",

@@ -1,9 +1,22 @@
 # pyright: reportMissingImports=false
-import sys
-import mpycweb.redirect_stdout
-import logging_setup
-from mpyc.runtime import mpc
-import mpycweb
+import asyncio
+
 from mpycweb.debug import *
 
-# TODO fix the WebLoop performance with asyncio.sleep(0) https://github.com/pyodide/pyodide/issues/4006
+# from mpyc.runtime import mpc
+from mpycweb import *
+
+# TODO refactor to fire an event instead of printing
+# logging.info("PyScript runtime started.")
+asyncio.get_event_loop().call_soon(xworker.sync.onWorkerReady)
+
+import polyscript
+import pyodide
+import pyscript
+import sys
+import logging
+
+# logging.debug(f"PyScript {pyscript.version =}")
+# logging.debug(f"Polyscript {polyscript.version =}")
+logging.debug(f"Python {sys.version=}")
+logging.debug(f"Pyodide {pyodide.__version__ =}")

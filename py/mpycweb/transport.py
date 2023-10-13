@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 # pyright: reportMissingImports=false
-logging = logging.getLogger("transport.py")
+logging = logging.getLogger(__name__)
 
 from mpyc import asyncoro
 from mpyc.runtime import mpc, Party, Runtime
@@ -36,7 +36,7 @@ class PeerJSTransport(asyncio.Transport):
         self.pid = pid
         self.client = client
 
-        self.ready_to_start = True
+        self.ready_for_next_run = True
         self.peer_ready_to_start = False
 
         # need to coordinate the start of running the demo with all peers
@@ -56,30 +56,32 @@ class PeerJSTransport(asyncio.Transport):
         This does not block; it buffers the data and arranges for it
         to be sent out asynchronously.
         """
+
         self.client.send_runtime_message(self.pid, data)
 
     def on_runtime_message(self, message: bytes):
-        # logging.debug(f"received {message} from {self.pid}")
         self._protocol.data_received(message)
 
     def on_ready_message(self, message: str):
+        logging.debug(f"receiving on_ready_message {message}")
         match message:
             case "ready?":
                 logging.debug(f"party {self.pid} asks if we are ready to start")
-                if self.ready_to_start:
+                if self.ready_for_next_run:
                     self._protocol.connection_made(self)
                     self.client.send_ready_message(self.pid, "ready_ack")
+                    self.ready_for_next_run = False
 
             case "ready_ack":
                 logging.debug(f"party {self.pid} confirmed ready to start")
-                # self._loop.call_soon(self._protocol.connection_made, self)
+                self._loop.call_soon(self._protocol.connection_made, self)
                 self.peer_ready_to_start = True
-                self._protocol.connection_made(self)
 
     def is_closing(self):
         return self._closing
 
     def close(self):
+        logging.debug("closing connection")
         self._closing = True
         self._protocol.connection_lost(None)
 
